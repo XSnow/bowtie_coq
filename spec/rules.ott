@@ -1,0 +1,377 @@
+%%Challenge: A & ( B | C ) <: ( A & B ) | ( A & C )
+%%Workaround: ignore it.
+%%* omit record types
+
+%%--------------------------------------------------------------
+
+%%Type
+
+%%OrdinaryType   A, B, C, D ::= Int | Top | Bot | A -> B | A & B | A \/ B
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% GRAMMAR (LNgen portion)
+
+grammar
+
+typ, A, B, C, D, char {{ tex \mathsf{Char} }}, bool {{ tex \mathsf{Bool} }} % , ll {{ tex \{ l \} }}
+  :: 't_'             ::=                  {{ com types }}
+  | int               ::   :: int          {{ com int }} {{ tex \mathsf{Int} }}
+  | Top               ::   :: top          {{ com top type }} {{ tex \mathsf{Top} }}
+  | Bot               ::   :: bot          {{ com bottom type }} {{ tex \mathsf{Bot} }}
+  | A -> B            ::   :: arrow        {{ com function types }}
+  | A & B             ::   :: and          {{ com intersection }}
+  | A \/ B            ::   :: or           {{ com union }}
+  | ( A )             :: S :: paren        {{ coq [[A]] }}
+%  | { l : A }         ::   :: rcd          {{ com record }}
+
+
+parsing
+  t_or <= t_and
+  t_arrow <= t_or
+  t_arrow <= t_and
+  t_arrow right t_arrow
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% GRAMMAR  (non LNgen portion)
+
+grammar
+
+
+terminals :: 'terminals_' ::=
+  | &                ::  :: and          {{ tex \, \& \, }}
+  | \/               ::  :: or          {{ tex \, \mid \, }}
+  | ,                ::  :: break      {{ tex , }}
+  | <:b              ::  :: subb       {{ tex <: }}
+  | <::              ::  :: subd       {{ tex <: }}
+  | ||-              ::  :: turnstileb {{ tex \vdash }}
+  | |-&              ::  :: wfCombined {{ tex \vdash_{\&} }}
+  | <|               ::  :: triangleL  {{ tex \mathbin{\lhd} }}
+  | |>               ::  :: triangleR  {{ tex \mathbin{\rhd} }}
+
+
+formula :: 'formula_' ::=
+  | judgement        ::   :: judgement
+  | not formula      :: M :: not
+    {{ tex \neg [[formula]] }}
+    {{ coq not ([[formula]]) }}
+  | ( formula )      :: M :: brackets
+    {{ tex ([[formula]]\!) }}
+    {{ coq [[formula]] }}
+  | < formula >              :: M :: high_form
+    {{ tex \hlmath{[[formula]]} }}
+    {{ coq [[formula]] }}
+  | l1 <> l2                 ::   :: label
+    {{ coq [[l1]] <> [[l2]] }}
+    {{ tex [[l1]] \neq [[l2]] }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+defns
+OSubtyping :: '' ::=
+
+defn
+A < B  :: :: osub :: OS_
+{{ com Original BCD Declarative Subtyping + Unions }}
+{{ tex [[A]] \leq [[B]] }}
+by
+
+
+---------------------- :: refl
+A < A
+
+
+A < B
+B < C
+--------------- :: trans
+A < C
+
+
+--------------- :: top
+A < Top
+
+
+--------------------------- :: topArr
+Top < Top -> Top
+
+
+%------------------------------- :: topRcd
+%Top < { l : Top }
+
+
+--------------- :: bot
+Bot < A
+
+
+%--------------------------- :: botArr
+%Bot < A -> Bot
+
+
+%------------------------------- :: botRcd
+%{ l : Bot } < Bot
+
+
+B < A
+C < D
+------------------------ :: arr
+A -> C < B -> D
+
+
+A < B
+A < C
+--------------- :: and
+A < B & C
+
+
+------------------------- :: andl
+A & B < A
+
+
+----------------- :: andr
+A & B < B
+
+
+A < C
+B < C
+--------------- :: or
+A \/ B < C
+
+
+------------------------- :: orl
+A < A \/ B
+
+
+----------------- :: orr
+B < A \/ B
+
+
+----------------------------------------------------- :: distArr
+(A -> B) & (A -> C) < A -> B & C
+
+
+----------------------------------------------------- :: distArrU
+(A -> C) & (B -> C) < A \/ B -> C
+
+
+%A < B
+%-------------------------------------------- :: rcd
+%{ l : A } < { l : B }
+
+
+%--------------------------------------------------- :: distRcd
+%{ l : A } & { l : B } < { l : A & B }
+
+
+
+defns
+SplitType :: '' ::=
+
+defn
+split A B C :: :: spl :: Sp_
+{{ com Splittable Types }}
+{{ tex [[B]] \mathbin{\lhd} [[A]] \mathbin{\rhd} [[C]] }}
+by
+
+
+----------------:: and
+split A&B A B
+
+
+split B C D
+-------------------------- :: arrow
+split A->B A->C A->D
+
+
+%split B C D
+%-------------------------- :: rcd
+%split {l:B} {l:C} {l:D}
+
+
+splitU A B C
+-------------------------- :: arrowUnion
+split A->D B->D C->D
+
+
+defn
+splitU A B C :: :: splu :: SpU_
+{{ com Split Union Types }}
+{{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
+by
+
+
+-------------------:: and
+splitU A \/ B A B
+
+
+splitU B C D
+-------------------------- :: arrow
+splitU A->B A->C A->D
+
+
+%splitU B C D
+%-------------------------- :: rcd
+%splitU {l:B} {l:C} {l:D}
+
+
+split A B C
+-------------------------- :: arrowUnion
+splitU A->D B->D C->D
+
+
+
+defns
+OrdinaryType :: '' ::=
+
+defn
+ordinary A :: :: ord :: O_
+{{ com Ordinary Types }}
+{{ tex [[A]]~\mathsf{Ordinary} }}
+by
+
+
+---------------- :: top
+ordinary Top
+
+
+---------------- :: bot
+ordinary Bot
+
+
+---------------- :: int
+ordinary int
+
+
+ordinaryU A
+ordinary B
+---------------- :: arrow
+ordinary A->B
+
+
+---------------- :: or
+ordinary A\/B
+
+
+%ordinary B
+%---------------- :: rcd
+%ordinary {l:B}
+
+
+defn
+ordinaryU A :: :: ordu :: OU_
+{{ com Ordinary Types (for unions) }}
+{{ tex [[A]]~\mathsf{OrdinaryU} }}
+by
+
+
+---------------- :: top
+ordinaryU Top
+
+
+---------------- :: bot
+ordinaryU Bot
+
+
+---------------- :: int
+ordinaryU int
+
+
+ordinary A
+ordinaryU B
+---------------- :: arrow
+ordinaryU A->B
+
+
+---------------- :: and
+ordinaryU A&B
+
+
+%ordinaryU B
+%---------------- :: rcd
+%ordinaryU {l:B}
+
+
+
+defns
+TopLikeType :: '' ::=
+
+defn
+topLike A :: :: topLike :: TL_
+{{ com Top-like Types }}
+{{ tex \rceil[[A]]\lceil }}
+by
+
+---------------- :: top
+topLike Top
+
+
+topLike A
+topLike B
+---------------- :: and
+topLike A & B
+
+
+topLike B
+---------------- :: arr
+topLike A -> B
+
+
+%topLike B
+%---------------- :: rcd
+%topLike {l:B}
+
+
+
+defns
+Subtyping :: '' ::=
+
+defn
+A <: B  :: :: sub :: S_
+{{ com Modular BCD Subtyping  (\textless :)}}
+by
+
+
+---------------------- :: int
+int <: int
+
+
+ordinary B
+topLike B
+--------------- :: top
+A <: B
+
+
+ordinary C
+A <: C
+------------------------- :: andl
+A & B <: C
+
+
+ordinary C
+B <: C
+----------------- :: andr
+A & B <: C
+
+
+ordinary D
+B <: A
+C <: D
+------------------------ :: arr
+A -> C <: B -> D
+
+
+%ordinary D
+%C <: D
+%------------------------ :: rcd
+%{l:C} <: {l:D}
+
+
+split D B C
+A <: B
+A <: C
+--------------- :: and
+A <: D
+
+
+splitU A B C
+B <: D
+C <: D
+--------------- :: or
+A <: D

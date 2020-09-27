@@ -1,0 +1,15 @@
+*.aux 
+*.log 
+*.bbl
+*.blg
+*.pdf
+*.glob
+*.vo
+*.vok
+*.vos
+coq/.CoqSrc.mk.d
+coq/CoqSrc.mk
+coq/CoqSrc.mk.conf
+coq/_CoqProject
+coq/rules_inf.v
+coq/syntax_ott.v
