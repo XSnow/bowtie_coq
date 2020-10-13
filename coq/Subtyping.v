@@ -42,30 +42,13 @@ Ltac solve_false := try intro; try solve [false; eauto with falseHd].
 Ltac destructT A := lets [?|(?&?&?)]: (ord_or_split A).
 
 
-(* split relation *)
-Lemma split_unique : forall T A1 A2 B1 B2,
-    (spl T A1 B1 -> spl T A2 B2 -> A1 = A2 /\ B1 = B2) /\
-    (splu T A1 B1 -> splu T A2 B2 -> A1 = A2 /\ B1 = B2).
-Proof.
-  intro T.
-  induction T; introv; split; intros s1 s2;
-    try solve [inverts s1; inverts* s2].
-  Abort.
-    inverts* s2;
-    forwards* (eq1&eq2): IHs1; split; congruence.
-Qed.
-
 Ltac split_unify :=
   repeat match goal with
-  | [ H1: spl ?A _ _ , H2: spl ?A _ _ |- _ ] =>
-           (progress forwards (?&?): split_unique H1 H2;
-            subst; clear H2)
   | [ H: spl (t_and _ _) _ _ |- _ ] => inverts H
   | [ H: spl (t_arrow _ _) _ _ |- _ ] => inverts H
-  | [ H: spl (t_rcd _ _) _ _ |- _ ] => inverts H
+(*  | [ H: spl (t_rcd _ _) _ _ |- _ ] => inverts H *)
          end;
   auto.
-
 
 
 (* R *)
@@ -73,30 +56,20 @@ Inductive R : typ -> Prop :=
 | Rord : forall A, ord A -> R A
 | Rspl : forall B C A, spl A B C -> R B -> R C -> R A.
 
-Hint Constructors R : core.
+Inductive Ru : typ -> Prop :=
+| Ruord : forall A, ordu A -> Ru A
+| Ruspl : forall B C A, splu A B C -> Ru B -> Ru C -> Ru A.
+
+Hint Constructors R Ru : core.
 
 
-Lemma rfun : forall B, R B -> forall A, R A -> R (t_arrow A B).
-Proof.
-  intros B RB.
-  induction RB; intros; eauto.
-Qed.
-
-Lemma rrcd : forall A, R A-> forall l, R (t_rcd l A).
-Proof.
-  intros A RA.
-  induction RA; intros; eauto.
-Qed.
-
-Lemma decideR : forall A, R A.
+Lemma decideR : forall A, R A /\ Ru A.
 Proof.
   introv. induction* A.
-  - apply~ rfun.
-  - apply~ rrcd.
-Qed.
+  - destruct IHA1; destruct IHA2. admit.
+Admitted.
 
-Ltac inductionT A := assert (r: R A) by apply (decideR A); induction r.
-
+Ltac inductionR A := assert (r: R A) by apply (decideR A); induction r.
 
 
 (* topLike *)
@@ -118,45 +91,61 @@ Proof.
   introv H. inverts~ H.
 Qed.
 
-Hint Immediate topLike_arrow_inv topLike_and_l_inv topLike_and_r_inv: core.
+Lemma topLike_or_inv : forall A B,
+    topLike (t_or A B) -> topLike A \/ topLike B.
+Proof.
+  introv H. inverts~ H.
+Qed.
 
+Hint Immediate topLike_arrow_inv topLike_and_l_inv topLike_and_r_inv topLike_or_inv: core.
+
+Hint Constructors topLike: core.
 
 Lemma topLike_combine: forall A B C,
     spl C A B -> topLike A -> topLike B -> topLike C.
 Proof.
   introv s tl1 tl2. induction* s.
-  inverts tl1. inverts tl2. auto.
+Qed.
+
+Lemma topLike_combine_union: forall A B C,
+    splu C A B -> topLike A \/ topLike B -> topLike C.
+Proof.
+  introv s [tl1 | tl2]; induction* s.
 Qed.
 
 Lemma topLike_split_l: forall A B C,
     topLike C -> spl C A B -> topLike A.
 Proof.
   introv tl s. induction* s.
-  inverts* tl.
 Qed.
 
 Lemma topLike_split_r: forall A B C,
     topLike C -> spl C A B -> topLike B.
 Proof.
   introv tl s. induction* s.
+Qed.
+
+Lemma topLike_split_union: forall A B C,
+    topLike C -> splu C A B -> topLike A \/ topLike B.
+Proof.
+  introv tl s. induction* s.
   inverts* tl.
 Qed.
 
-Hint Immediate topLike_combine : core.
-Hint Immediate topLike_split_l topLike_split_r : core.
+Hint Immediate topLike_combine topLike_combine_union topLike_split_l topLike_split_r topLike_split_union : core.
 
+Hint Constructors sub : core.
 
 (* topLike specification *)
 Lemma topLike_super_top: forall A,
     topLike A <-> sub t_top A.
 Proof with eauto.
   split; intros H.
-  - inductionT A...
-  - inductions H... iauto.
-Qed.
+  - inductionR A; iauto.
+  - inductionR A; iauto.
+Abort.
 
-Hint Immediate topLike_super_top : core.
-
+(* Hint Immediate topLike_super_top : core. *)
 
 
 (* subtyping *)

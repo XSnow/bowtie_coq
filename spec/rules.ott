@@ -308,6 +308,16 @@ topLike B
 topLike A & B
 
 
+topLike A
+---------------- :: orL
+topLike A \/ B
+
+
+topLike B
+---------------- :: orR
+topLike A \/ B
+
+
 topLike B
 ---------------- :: arr
 topLike A -> B
@@ -336,6 +346,10 @@ ordinary B
 topLike B
 --------------- :: top
 A <: B
+
+
+--------------- :: bot
+Bot <: A
 
 
 ordinary C

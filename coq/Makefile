@@ -26,7 +26,6 @@ coq: $(COQMKFILENAME) $(VOFILES)
 %.vo: %.v $(COQMKFILENAME)
 	@$(MAKE) -f $(COQMKFILENAME) $*.vo
 
-
 $(SYNTAX)_ott.v: $(OTT_LOC)/$(OTTFILE).ott
 	ott $(OTT_LOC)/$(OTTFILE).ott -o $(SYNTAX)_ott.v -coq_lngen true -coq_expand_list_types true
 	@if grep '<<no parses (' $@ >/dev/null 2>&1 && \
