@@ -302,58 +302,45 @@ by
 int <: int
 
 
-ordinaryU A
 --------------- :: top
 A <: Top
 
 
-ordinary A
 --------------- :: bot
 Bot <: A
 
 
-%% right ordinary
 %% left intersection
 
-ordinary C
 A <: C
 ------------------------- :: andl
 A & B <: C
 
 
-ordinary C
 B <: C
 ----------------- :: andr
 A & B <: C
 
 
-%% left ordinaryU
 %% right union
 
-ordinaryU A
 A <: B
 ----------------- :: orl
 A <: B \/ C
 
 
-ordinaryU A
 A <: C
 ----------------- :: orr
 A <: B \/ C
 
 
-%% both ordinary
 %% both arrow
 
-ordinaryU A->C
-ordinary B->D
 B <: A
 C <: D
 ------------------------ :: arr
 A -> C <: B -> D
 
-
-%% all the above rules deal with ordinaryU on the left and ordinary on the right
 
 %% when the right type can be split in the intersection way,
 %% both parts has to be supertypes of the left one

@@ -104,14 +104,15 @@ Lemma sub_spl : forall A B,
     (forall C D, splu A C D -> sub C B /\ sub D B).
 Proof.
   introv S.
-  induction S; split; introv Sp; try solve_false; eauto;
+  induction S; split; introv Sp; try solve_false; eauto.
+  Abort.
+  (*
     lets* (IHS1a&IHS1b): IHS1;
     lets* (IHS2a&IHS2b): IHS2.
   -
     inverts Sp; try solve_false.
     try solve [forwards*: IHS1b].
 
-Abort. (*
   -
     inverts Sp; try solve_false.
     + try solve [forwards*: IHS2b].
@@ -122,7 +123,6 @@ Abort. (*
 Lemma sub_l_andl : forall A B C, sub A C -> sub (t_and A B) C.
 Proof.
   introv s. induction* s; eauto.
-  apply S_andl.
 Abort.
 
 Lemma sub_l_andr : forall A B C, sub B C -> sub (t_and A B) C.
@@ -230,7 +230,15 @@ Proof with eomg.
     forwards* (?&?): split_decrease_size H...
 Qed.
 
-Hint Resolve split_decrease_size splitu_decrease_size : sizeTypHd.
+Lemma split_decrease_size1: forall A B C,
+    spl A B C -> size_typ B < size_typ A.
+Admitted.
+
+Lemma split_decrease_size2: forall A B C,
+    spl A B C -> size_typ C < size_typ A.
+Admitted.
+
+Hint Resolve split_decrease_size1 split_decrease_size2 splitu_decrease_size : sizeTypHd.
 
 Ltac indTypSize s :=
   assert (SizeInd: exists i, s < i) by eauto;
@@ -243,42 +251,43 @@ Ltac indTypSize s :=
 (* apply IH on every types *)
 Hint Extern 0 =>
   match goal with
-  | [ A : typ, IH : forall A, size_typ A < _ -> _ |- sub ?A _ ] => (forwards*: IH A; eomg)
-  | [ A : typ, IH : forall A, size_typ A < _ -> _ |- sub _ ?A ] => (forwards*: IH A; eomg)
+  | [ A : typ, IH : forall A, size_typ A < _ -> _ |-  _ ] => (forwards*: IH A; eomg)
   end : sizeTypHd.
 
-Lemma spl_sub_l : forall A B C,
-    spl A B C -> sub A B.
-Proof.
-  introv H. induction* H.
-Admitted.
-
 Lemma refl : forall A, sub A A.
-Proof with eomg.
+Proof with (auto with sizeTypHd).
   introv.
   indTypSize (size_typ A).
   lets ([Hi|(?&?&Hi)]&[Hu|(?&?&Hu)]): ord_or_split A.
   - (* A ord & ordu *)
     inverts* Hi; inverts* Hu.
     + (* arr *)
-      auto with sizeTypHd.
+      applys S_arr...
   - (* ord A & splu A *)
     lets* (?&?): splitu_decrease_size Hu.
     inverts* Hi.
     + (* arr *)
-      inverts keep Hu.
-      applys S_or Hu.
-      admit. admit. admit.
+      applys S_arr...
     + (* or *)
-      inverts keep Hu.
-      applys S_or Hu.
-      applys S_orl. admit.
-      admit. admit.
+      applys S_or...
   - (* ordu A & spl A *)
-    admit.
+    lets* (?&?): split_decrease_size Hi.
+    inverts* Hu.
+    + (* arr *)
+      applys S_arr...
+    + (* and *)
+      applys S_and...
   - (* spl A & splu A *)
-    applys S_or Hu; applys S_and Hi.
-
+    lets* (?&?): splitu_decrease_size Hu.
+    lets* (?&?): split_decrease_size Hi.
+    inverts* Hi.
+    + (* and *)
+      applys S_and...
+    + (* arr *)
+      applys S_arr...
+    + (* arr *)
+      applys S_arr...
+Qed.
 
     applys S_or Hu.
     assert (sub x x) by eauto with sizeTypHd.
