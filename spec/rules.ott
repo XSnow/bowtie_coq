@@ -89,8 +89,8 @@ A < C
 A < Top
 
 
---------------------------- :: topArr
-Top < Top -> Top
+%--------------------------- :: topArr
+%Top < Top -> Top
 
 
 %------------------------------- :: topRcd
@@ -290,46 +290,6 @@ ordinaryU A&B
 
 
 defns
-TopLikeType :: '' ::=
-
-defn
-topLike A :: :: topLike :: TL_
-{{ com Top-like Types }}
-{{ tex \rceil[[A]]\lceil }}
-by
-
----------------- :: top
-topLike Top
-
-
-topLike A
-topLike B
----------------- :: and
-topLike A & B
-
-
-topLike A
----------------- :: orL
-topLike A \/ B
-
-
-topLike B
----------------- :: orR
-topLike A \/ B
-
-
-topLike B
----------------- :: arr
-topLike A -> B
-
-
-%topLike B
-%---------------- :: rcd
-%topLike {l:B}
-
-
-
-defns
 Subtyping :: '' ::=
 
 defn
@@ -342,15 +302,18 @@ by
 int <: int
 
 
-ordinary B
-topLike B
+ordinaryU A
 --------------- :: top
-A <: B
+A <: Top
 
 
+ordinary A
 --------------- :: bot
 Bot <: A
 
+
+%% right ordinary
+%% left intersection
 
 ordinary C
 A <: C
@@ -364,18 +327,36 @@ B <: C
 A & B <: C
 
 
-ordinary D
+%% left ordinaryU
+%% right union
+
+ordinaryU A
+A <: B
+----------------- :: orl
+A <: B \/ C
+
+
+ordinaryU A
+A <: C
+----------------- :: orr
+A <: B \/ C
+
+
+%% both ordinary
+%% both arrow
+
+ordinaryU A->C
+ordinary B->D
 B <: A
 C <: D
 ------------------------ :: arr
 A -> C <: B -> D
 
 
-%ordinary D
-%C <: D
-%------------------------ :: rcd
-%{l:C} <: {l:D}
+%% all the above rules deal with ordinaryU on the left and ordinary on the right
 
+%% when the right type can be split in the intersection way,
+%% both parts has to be supertypes of the left one
 
 split D B C
 A <: B
@@ -383,6 +364,8 @@ A <: C
 --------------- :: and
 A <: D
 
+%% when the left type can be split in the union way,
+%% both parts has to be subtypes of the right one
 
 splitU A B C
 B <: D

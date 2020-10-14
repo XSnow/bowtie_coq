@@ -35,7 +35,25 @@ Proof.
     inverts* s.
 Qed.
 
-Hint Resolve split_ord_false : falseHd.
+Lemma split_int : forall A B,
+    spl t_int A B -> False.
+Proof.
+  intros. inverts H.
+Qed.
+
+Lemma split_top : forall A B,
+    spl t_top A B -> False.
+Proof.
+  intros. inverts H.
+Qed.
+
+Lemma split_bot : forall A B,
+    spl t_bot A B -> False.
+Proof.
+  intros. inverts H.
+Qed.
+
+Hint Resolve split_ord_false split_int split_top split_bot : falseHd.
 
 Ltac solve_false := try intro; try solve [false; eauto with falseHd].
 
@@ -71,113 +89,58 @@ Admitted.
 
 Ltac inductionR A := assert (r: R A) by apply (decideR A); induction r.
 
-
-(* topLike *)
-Lemma topLike_arrow_inv : forall A B,
-    topLike (t_arrow A B) -> topLike B.
-Proof.
-  introv H. inverts~ H.
-Qed.
-
-Lemma topLike_and_l_inv : forall A B,
-    topLike (t_and A B) -> topLike A.
-Proof.
-  introv H. inverts~ H.
-Qed.
-
-Lemma topLike_and_r_inv : forall A B,
-    topLike (t_and A B) -> topLike B.
-Proof.
-  introv H. inverts~ H.
-Qed.
-
-Lemma topLike_or_inv : forall A B,
-    topLike (t_or A B) -> topLike A \/ topLike B.
-Proof.
-  introv H. inverts~ H.
-Qed.
-
-Hint Immediate topLike_arrow_inv topLike_and_l_inv topLike_and_r_inv topLike_or_inv: core.
-
-Hint Constructors topLike: core.
-
-Lemma topLike_combine: forall A B C,
-    spl C A B -> topLike A -> topLike B -> topLike C.
-Proof.
-  introv s tl1 tl2. induction* s.
-Qed.
-
-Lemma topLike_combine_union: forall A B C,
-    splu C A B -> topLike A \/ topLike B -> topLike C.
-Proof.
-  introv s [tl1 | tl2]; induction* s.
-Qed.
-
-Lemma topLike_split_l: forall A B C,
-    topLike C -> spl C A B -> topLike A.
-Proof.
-  introv tl s. induction* s.
-Qed.
-
-Lemma topLike_split_r: forall A B C,
-    topLike C -> spl C A B -> topLike B.
-Proof.
-  introv tl s. induction* s.
-Qed.
-
-Lemma topLike_split_union: forall A B C,
-    topLike C -> splu C A B -> topLike A \/ topLike B.
-Proof.
-  introv tl s. induction* s.
-  inverts* tl.
-Qed.
-
-Hint Immediate topLike_combine topLike_combine_union topLike_split_l topLike_split_r topLike_split_union : core.
-
+(* subtyping *)
 Hint Constructors sub : core.
 
-(* topLike specification *)
-Lemma topLike_super_top: forall A,
-    topLike A <-> sub t_top A.
-Proof with eauto.
-  split; intros H.
-  - inductionR A; iauto.
-  - inductionR A; iauto.
-Abort.
+Lemma sub_spl_spl : forall A B C B' C' D,
+    spl A B C -> spl A B' C' -> sub D B -> sub D C -> sub D B' /\ sub D C'.
+Proof.
+  introv Hsp1 Hsp2 S1 S2.
+Admitted.
 
-(* Hint Immediate topLike_super_top : core. *)
+Lemma sub_spl : forall A B,
+    sub A B ->
+    (forall C D, spl B C D -> sub A C /\ sub A D) /\
+    (forall C D, splu A C D -> sub C B /\ sub D B).
+Proof.
+  introv S.
+  induction S; split; introv Sp; try solve_false; eauto;
+    lets* (IHS1a&IHS1b): IHS1;
+    lets* (IHS2a&IHS2b): IHS2.
+  -
+    inverts Sp; try solve_false.
+    try solve [forwards*: IHS1b].
 
+Abort. (*
+  -
+    inverts Sp; try solve_false.
+    + try solve [forwards*: IHS2b].
+    + try solve [forwards*: IHS1a].
+  - admit.
+*)
 
-(* subtyping *)
 Lemma sub_l_andl : forall A B C, sub A C -> sub (t_and A B) C.
 Proof.
-  introv s. induction* s.
-Qed.
+  introv s. induction* s; eauto.
+  apply S_andl.
+Abort.
 
 Lemma sub_l_andr : forall A B C, sub B C -> sub (t_and A B) C.
 Proof.
   introv s. induction* s.
-Qed.
+Abort.
 
 Lemma sub_fun : forall A B C D,
     sub B D -> sub C A -> sub (t_arrow A B) (t_arrow C D).
 Proof.
   introv s. induction* s.
-Qed.
+Abort.
 
-Lemma sub_rcd : forall A B l,
-    sub A B -> sub (t_rcd l A) (t_rcd l B).
-Proof.
-  introv H.
-  induction* H.
-Defined.
-
-Hint Resolve sub_l_andl sub_l_andr sub_fun sub_rcd: core.
-
-
+(*
 Lemma refl : forall A, sub A A.
 Proof.
-  introv. induction* A.
+  introv. inductionR A.
+  - induction* H.
 Qed.
 
 Hint Resolve refl : core.
@@ -241,7 +204,7 @@ Proof.
 Qed.
 
 Hint Immediate andr_l_inv andr_r_inv andl_inv : core.
-
+*)
 
 Lemma typ_size_lg_z : forall T, size_typ T > 0.
 Proof.
@@ -250,41 +213,83 @@ Proof.
   inverts~ H.
 Qed.
 
-Lemma exp_size_lg_z : forall e, size_exp e > 0.
-Proof.
-  introv.
-  pose proof (size_exp_min) e.
-  inverts~ H.
-Qed.
-
 Ltac eomg :=
   pose proof (typ_size_lg_z);
-  pose proof (exp_size_lg_z);
   try omega; auto; simpl in *; try omega.
 
-
 Lemma split_decrease_size: forall A B C,
-    spl A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A.
-Proof.
-  introv H. induction* H; eomg.
+    spl A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A
+with splitu_decrease_size: forall A B C,
+    splu A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A.
+Proof with eomg.
+  - introv H. clear split_decrease_size.
+    induction* H...
+    forwards* (?&?): splitu_decrease_size H...
+  - introv H. clear splitu_decrease_size.
+    induction* H...
+    forwards* (?&?): split_decrease_size H...
 Qed.
 
-Lemma topLike_super_any: forall T A,
-    topLike T -> sub A T.
-Proof.
-  introv H. assert (exists i, (size_typ T) < i) by eauto.
-  inverts H0. gen T.
-  induction x; intros; auto.
-  - inverts H1.
-  -
-    destructT T; eauto.
-    +
-      forwards (?&?): split_decrease_size H0.
-      forwards*: IHx x0. eomg.
-      forwards*: IHx x1. eomg.
-Qed.
+Hint Resolve split_decrease_size splitu_decrease_size : sizeTypHd.
 
-Hint Immediate topLike_super_any : core.
+Ltac indTypSize s :=
+  assert (SizeInd: exists i, s < i) by eauto;
+  destruct SizeInd as [i SizeInd];
+  repeat match goal with | [ h : typ |- _ ] => (gen h) end;
+  induction i as [|i IH]; [
+      intros; match goal with | [ H : _ < 0 |- _ ] => inverts H end
+    | intros ].
+
+(* apply IH on every types *)
+Hint Extern 0 =>
+  match goal with
+  | [ A : typ, IH : forall A, size_typ A < _ -> _ |- sub ?A _ ] => (forwards*: IH A; eomg)
+  | [ A : typ, IH : forall A, size_typ A < _ -> _ |- sub _ ?A ] => (forwards*: IH A; eomg)
+  end : sizeTypHd.
+
+Lemma spl_sub_l : forall A B C,
+    spl A B C -> sub A B.
+Proof.
+  introv H. induction* H.
+Admitted.
+
+Lemma refl : forall A, sub A A.
+Proof with eomg.
+  introv.
+  indTypSize (size_typ A).
+  lets ([Hi|(?&?&Hi)]&[Hu|(?&?&Hu)]): ord_or_split A.
+  - (* A ord & ordu *)
+    inverts* Hi; inverts* Hu.
+    + (* arr *)
+      auto with sizeTypHd.
+  - (* ord A & splu A *)
+    lets* (?&?): splitu_decrease_size Hu.
+    inverts* Hi.
+    + (* arr *)
+      inverts keep Hu.
+      applys S_or Hu.
+      admit. admit. admit.
+    + (* or *)
+      inverts keep Hu.
+      applys S_or Hu.
+      applys S_orl. admit.
+      admit. admit.
+  - (* ordu A & spl A *)
+    admit.
+  - (* spl A & splu A *)
+    applys S_or Hu; applys S_and Hi.
+
+
+    applys S_or Hu.
+    assert (sub x x) by eauto with sizeTypHd.
+    assert (sub x0 x0) by eauto with sizeTypHd.
+    lets* (?&?): splitu_decrease_size Hu.
+    applys S_orl.
+    auto with sizeTypHd.
+    lets* (?&?): splitu_decrease_size Hu.
+      forwards*: IH x...
+  destructT C.
+Qed.
 
 
 Ltac wapply H := eapply H; try eassumption.
@@ -299,15 +304,6 @@ Hint Extern 0 => match goal with
                      inverts H2;
                        auto with falseHd)
                  end : falseHd.
-
-
-Ltac indTypSize s :=
-  assert (SizeInd: exists i, s < i) by eauto;
-  destruct SizeInd as [i SizeInd];
-  repeat match goal with | [ h : typ |- _ ] => (gen h) end;
-  induction i as [|i IH]; [
-      intros; match goal with | [ H : _ < 0 |- _ ] => inverts H end
-    | intros ].
 
 
 Section sub_trans.
