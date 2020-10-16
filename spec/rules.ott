@@ -310,32 +310,38 @@ A <: Top
 Bot <: A
 
 
-%% left intersection
+%% left split
 
+split D A B
 A <: C
 ------------------------- :: andl
-A & B <: C
+D <: C
 
 
+split D A B
 B <: C
 ----------------- :: andr
-A & B <: C
+D <: C
 
 
-%% right union
+%% right splitu
 
+splitU D B C
 A <: B
 ----------------- :: orl
-A <: B \/ C
+A <: D
 
 
+splitU D B C
 A <: C
 ----------------- :: orr
-A <: B \/ C
+A <: D
 
 
 %% both arrow
 
+ordinaryU A->C
+ordinary  B->D
 B <: A
 C <: D
 ------------------------ :: arr
