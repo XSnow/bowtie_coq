@@ -53,7 +53,25 @@ Proof.
   intros. inverts H.
 Qed.
 
-Hint Resolve split_ord_false split_int split_top split_bot : falseHd.
+Lemma splitu_int : forall A B,
+    splu t_int A B -> False.
+Proof.
+  intros. inverts H.
+Qed.
+
+Lemma splitu_top : forall A B,
+    splu t_top A B -> False.
+Proof.
+  intros. inverts H.
+Qed.
+
+Lemma splitu_bot : forall A B,
+    splu t_bot A B -> False.
+Proof.
+  intros. inverts H.
+Qed.
+
+Hint Resolve split_ord_false split_int split_top split_bot splitu_int splitu_top splitu_bot: falseHd.
 
 Ltac solve_false := try intro; try solve [false; eauto with falseHd].
 
@@ -230,15 +248,7 @@ Proof with eomg.
     forwards* (?&?): split_decrease_size H...
 Qed.
 
-Lemma split_decrease_size1: forall A B C,
-    spl A B C -> size_typ B < size_typ A.
-Admitted.
-
-Lemma split_decrease_size2: forall A B C,
-    spl A B C -> size_typ C < size_typ A.
-Admitted.
-
-Hint Resolve split_decrease_size1 split_decrease_size2 splitu_decrease_size : sizeTypHd.
+Hint Resolve splitu_decrease_size : sizeTypHd.
 
 Ltac indTypSize s :=
   assert (SizeInd: exists i, s < i) by eauto;
@@ -289,44 +299,19 @@ Proof with (auto with sizeTypHd).
       applys S_arr...
 Qed.
 
-    applys S_or Hu.
-    assert (sub x x) by eauto with sizeTypHd.
-    assert (sub x0 x0) by eauto with sizeTypHd.
-    lets* (?&?): splitu_decrease_size Hu.
-    applys S_orl.
-    auto with sizeTypHd.
-    lets* (?&?): splitu_decrease_size Hu.
-      forwards*: IH x...
-  destructT C.
-Qed.
-
-
-Ltac wapply H := eapply H; try eassumption.
-
-Hint Extern 0 => match goal with
-                 | [ H1: topLike (t_arrow _ ?D), H2: ~topLike ?D |- False ] => (
-                     inverts H1;
-                       contradiction)
-                 | [ H: topLike t_int |- False ] => (
-                     inverts H )
-                 | [ H1: ord ?A, H2: spl (t_arrow _ ?A) _ _ |- False ] => (
-                     inverts H2;
-                       auto with falseHd)
-                 end : falseHd.
-
 
 Section sub_trans.
 
 Lemma splitl_inv : forall A A1 A2 C,
     spl A A1 A2 -> sub A C -> ord C -> sub A1 C \/ sub A2 C.
 Proof.
-  intros A A1 A2 C s. gen C. induction s; intros.
+  intros A A1 A2 C s. gen C. induction s; intros. (*
   - applys* andl_inv.
   - inverts~ H; solve_false.
     lets~ [?|?]: (IHs D0).
   - inverts~ H; solve_false.
-    lets~ [?|?]: (IHs D0).
-Qed.
+    lets~ [?|?]: (IHs D0). *)
+Abort.
 
 Hint Extern 0 =>
   match goal with
@@ -335,33 +320,68 @@ Hint Extern 0 =>
   end : core.
 
 Lemma trans : forall A B C, sub A B -> sub B C -> sub A C.
-Proof.
+Proof with eomg.
   introv s1 s2.
   indTypSize (size_typ A + size_typ B + size_typ C).
-  destructT C.
-  - (* ord C *)
-    destructT B.
-    + (* ord B *)
-      inverts keep s2 as s2_1 s2_2 s2_3;
-        inverts s1 as s1_1 s1_2 s1_3; solve_false; auto.
-      * (* topLike B *)
-        applys~ S_top. applys TL_arr. applys topLike_super_top.
-        inverts s1_2. applys* IH C0. eomg.
-      *
-        applys~ S_top. applys TL_rcd. applys topLike_super_top.
-        inverts s1_2. applys* IH C0. eomg.
-    + (* spl B x x0 *)
-      (* splitl_inv turns B into x or x0 *)
-      lets (?&?): split_decrease_size B. eauto.
-      forwards~ [s2' |s2']: splitl_inv s2. eauto.
-      applys* IH s2'. eomg.
-      applys* IH s2'. eomg.
-  - (* spl C x x0 *)
-    (* inversion turns C into x and x0 *)
-    lets (?&?): split_decrease_size C. eauto.
-    forwards~ g1: IH s1 x. eauto. eomg.
-    forwards~ g2: IH s1 x0. eauto. eomg.
-    applys~ S_and H.
+  inverts keep s1.
+  - (* int *)
+    inverts~ s2.
+    + (* and *)
+      applys~ S_and H.
+    + (* or *)
+      applys~ S_or H.
+  - (* top *)
+    inverts~ s2; try solve_false.
+    + (* and *)
+      lets (?&?): split_decrease_size H.
+      applys~ S_and H;
+        applys~ IH...
+  - (* bot *)
+    applys~ S_bot.
+  - (* andl *)
+    applys~ S_andl.
+  - (* andr *)
+    applys~ S_andr.
+  - (* orl *)
+    inverts~ s2; try solve_false.
+    + lets (?&?): split_decrease_size H0.
+      applys~ S_and H0.
+    + (* or *)
+      inverts H0.
+      applys~ IH H H1...
+  - (* orr *)
+    inverts~ s2; try solve_false.
+    + lets (?&?): split_decrease_size H0.
+      applys~ S_and H0.
+    + (* or *)
+      inverts H0.
+      applys~ IH H H2...
+  - (* arr *)
+    inverts~ s2; try solve_false.
+    + (* and *)
+      lets (?&?): split_decrease_size H1.
+      applys~ S_and H1.
+    + (* or *)
+      inverts H1.
+      admit. admit.
+  - (* and *)
+    inverts~ s2; try solve_false.
+    + (* andl *)
+      inverts H.
+      applys~ IH H2...
+    + (* andr *)
+      inverts H.
+      applys~ IH H2...
+    + (* arrow *)
+      admit.
+    + (* and *)
+      lets (?&?): split_decrease_size H2.
+      applys~ S_and H2.
+    + (* or *)
+      admit.
+  - (* or *)
+    lets (?&?): splitu_decrease_size H.
+    applys~ S_or H.
 Qed.
 
 End sub_trans.
