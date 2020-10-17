@@ -248,7 +248,13 @@ Proof with eomg.
     forwards* (?&?): split_decrease_size H...
 Qed.
 
-Hint Resolve splitu_decrease_size : sizeTypHd.
+Hint Extern 0 =>
+match goal with
+| [ H: splu _ _ _ |- _ ] =>
+  (lets (?&?): splitu_decrease_size H)
+| [ H: spl _ _ _ |- _ ] =>
+  (lets (?&?): split_decrease_size H)
+end : sizeTypHd.
 
 Ltac indTypSize s :=
   assert (SizeInd: exists i, s < i) by eauto;
@@ -258,10 +264,10 @@ Ltac indTypSize s :=
       intros; match goal with | [ H : _ < 0 |- _ ] => inverts H end
     | intros ].
 
-(* apply IH on every types *)
+(* apply IH on target types *)
 Hint Extern 0 =>
   match goal with
-  | [ A : typ, IH : forall A, size_typ A < _ -> _ |-  _ ] => (forwards*: IH A; eomg)
+  | [ IH : forall A, size_typ A < _ -> _ |- sub ?A ?A ] => (forwards: IH A; eomg)
   end : sizeTypHd.
 
 Lemma refl : forall A, sub A A.
@@ -269,25 +275,22 @@ Proof with (auto with sizeTypHd).
   introv.
   indTypSize (size_typ A).
   lets ([Hi|(?&?&Hi)]&Hu'): ord_or_split A.
-  lets [Hu|(?&?&Hu)]: Hu'.
+  lets [Hu|(?&?&Hu)]: Hu'. clear Hu'.
   - (* ord A & ordu A *)
     inverts* Hi; inverts* Hu.
     + (* arr *)
       applys S_arr...
   - (* ord A & splu A *)
-    lets* (?&?): splitu_decrease_size Hu.
-    applys~ S_or Hu.
-    applys~ S_orl Hu...
-    applys~ S_orr Hu...
+    inverts* Hi.
+    + applys~ S_arr...
+    + applys~ S_or. applys~ S_orl... apply~ S_orr...
   - (* spl A *)
-    lets* (?&?): split_decrease_size Hi.
-    applys~ S_and Hi.
-    applys~ S_andl Hi...
-    applys~ S_andr Hi...
+    inverts keep Hi.
+    + applys~ S_and Hi...
+    + applys~ S_arr...
+    + applys~ S_arr...
 Qed.
 
-
-Section sub_trans.
 
 Lemma splitl_inv : forall A A1 A2 C,
     spl A A1 A2 -> sub A C -> ord C -> sub A1 C \/ sub A2 C.
@@ -300,43 +303,69 @@ Proof.
     lets~ [?|?]: (IHs D0). *)
 Abort.
 
+
+Lemma splitu_inv : forall A A1 A2 C,
+    splu A A1 A2 -> sub A C -> ord C -> sub A1 C /\ sub A2 C.
+Admitted.
+
 Hint Extern 0 =>
-  match goal with
-  | [ IH: forall _ , _ , H1: sub  ?A ?B , H2: sub ?B ?C |- sub ?A ?C ] =>
-    (forwards: IH H1 H2; eomg)
-  end : core.
+match goal with
+| [ IH: forall _ , _ , H1: sub  ?A ?B , H2: sub ?B ?C |- sub ?A ?C ] =>
+  (forwards: IH H1 H2; eomg)
+end : sizeTypHd.
+
 
 Lemma trans : forall A B C, sub A B -> sub B C -> sub A C.
-Proof with eomg.
+Proof with (auto with sizeTypHd).
   introv s1 s2.
   indTypSize (size_typ A + size_typ B + size_typ C).
   inverts keep s1.
   - (* int *)
     inverts~ s2; try solve_false.
+    + applys~ S_and H.
     + applys~ S_orl H.
     + applys~ S_orr H.
-    + (* and *)
-      applys~ S_and H.
   - (* top *)
     inverts~ s2; try solve_false.
-    + lets (?&?): splitu_decrease_size H.
-      applys~ S_orl H.
-    + lets (?&?): splitu_decrease_size H.
-      applys~ S_orr H.
-    + (* and *)
-      lets (?&?): split_decrease_size H.
-      applys~ S_and H;
-        applys~ IH...
+    + applys~ S_and H...
+    + applys~ S_orl H...
+    + applys~ S_orr H...
   - (* bot *)
     applys~ S_bot.
   - (* andl *)
-    lets (?&?): split_decrease_size H.
-    applys~ S_andl H.
+    applys~ S_andl...
   - (* andr *)
-    lets (?&?): split_decrease_size H.
-    applys~ S_andr H.
+    applys~ S_andr...
+  - (* or *)
+    applys~ S_or...
+  - (* arr *)
+    inverts~ s2; try solve_false.
+    + applys~ S_arr...
+    + applys~ S_and H1...
+    + applys S_orl H1...
+    + applys S_orr H1...
+  - (* and *)
+    inverts~ s2; try solve_false.
+    + (* and l *)
+      inverts H...
+    + (* and r *)
+      inverts H...
+    + (* arrow *)
+      admit.
+    + applys~ S_and H2...
+    + lets (?&?): splitu_decrease_size H2.
+      applys S_orl H2.
+      applys IH s1...
+    + lets (?&?): splitu_decrease_size H2.
+      applys S_orr H2.
+      applys IH s1...
+    + (* arr : ordu & split *)
+      admit.
+    + lets (?&?): split_decrease_size H2.
+      applys~ S_and H2.
+    + (* or : spl & splu *)
+      admi.t
   - (* orl *)
-    lets (?&?): splitu_decrease_size H.
     inverts~ s2; try solve_false.
     + (* spl B & splu B *)
       lets (?&?): split_decrease_size H3.
@@ -368,42 +397,6 @@ Proof with eomg.
       lets (?&?): split_decrease_size H3.
       applys~ S_and H3.
     + (* splu B & splu B *)
-      admit.
-  - (* arr *)
-    inverts~ s2; try solve_false.
-    + lets (?&?): splitu_decrease_size H3.
-      applys S_orl H3.
-      applys IH H4...
-    + lets (?&?): splitu_decrease_size H3.
-      applys S_orr H3.
-      applys IH H4...
-    + lets (?&?): split_decrease_size H3.
-      applys S_and H3.
-      applys IH H4...
-      applys IH H5...
-    + (* and *)
-      lets (?&?): splitu_decrease_size H3.
-      assert (Inv: forall A A1 A2 B, ordu B -> splu A A1 A2 -> sub B A -> sub B A1 \/ sub B A2).
-      admit. (* A\/B & A\/B  <: A\/B *)
-      forwards~ [?|?]: Inv H3 s1.
-  - (* and *)
-    inverts~ s2; try solve_false.
-    + (* spl B & spl B *)
-      admit.
-    + (* spl B & spl B *)
-      admit.
-    + lets (?&?): splitu_decrease_size H2.
-      applys S_orl H2.
-      applys IH s1...
-    + lets (?&?): splitu_decrease_size H2.
-      applys S_orr H2.
-      applys IH s1...
-    + (* arr : ordu & split *)
-      admit.
-    + lets (?&?): split_decrease_size H2.
-      applys~ S_and H2.
-    + (* or : spl & splu *)
-      admit.
   - (* or *)
     lets (?&?): splitu_decrease_size H.
     applys~ S_or H.

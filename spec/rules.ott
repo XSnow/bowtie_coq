@@ -310,46 +310,33 @@ A <: Top
 Bot <: A
 
 
-%% left split
-
-split D A B
 A <: C
 ------------------------- :: andl
-D <: C
+A&B <: C
 
 
-split D A B
 B <: C
 ----------------- :: andr
-D <: C
+A&B <: C
 
-
-%% right splitu
-
-splitU D B C
-A <: B
------------------ :: orl
 A <: D
-
-
-splitU D B C
-A <: C
------------------ :: orr
-A <: D
+B <: D
+----------------- :: or
+A\/B <: D
 
 
 %% both arrow
 
-ordinaryU A->C
-ordinary  B->D
 B <: A
 C <: D
 ------------------------ :: arr
 A -> C <: B -> D
 
 
+%% the following rules deal with splittable types on the right
+
 %% when the right type can be split in the intersection way,
-%% both parts has to be supertypes of the left one
+%% both parts have to be supertypes of the left one
 
 split D B C
 A <: B
@@ -357,11 +344,16 @@ A <: C
 --------------- :: and
 A <: D
 
-%% when the left type can be split in the union way,
-%% both parts has to be subtypes of the right one
+%% when the right type can be split in the union way,
+%% at lest one part has to be supertype of the left one
 
-splitU A B C
-B <: D
-C <: D
---------------- :: or
+splitU D B C
+A <: B
+--------------- :: orl
 A <: D
+
+
+splitU D B C
+A <: C
+--------------- :: orr
+A <: D 
