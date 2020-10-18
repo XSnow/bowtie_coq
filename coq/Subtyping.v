@@ -269,6 +269,24 @@ Hint Extern 0 =>
   match goal with
   | [ IH : forall A, size_typ A < _ -> _ |- sub ?A ?A ] => (forwards: IH A; eomg)
   end : sizeTypHd.
+(*
+Lemma spl_sub_part : forall A B C,
+    spl A B C -> sub A B /\ sub A C
+with splu_sub_part : forall A B C,
+    splu A B C -> sub B A /\ sub C A.
+Proof.
+  introv Hsp.
+  induction Hsp.
+  - split. applys S_andl. admit.
+    applys S_andr. admit.
+  - split. applys S_arr. admit.
+    applys S_andr. admit.
+ *)
+
+Lemma sub_fun : forall A B C D,
+    sub B D -> sub C A -> sub (t_arrow A B) (t_arrow C D).
+Proof.
+  introv s. Admitted.
 
 Lemma refl : forall A, sub A A.
 Proof with (auto with sizeTypHd).
@@ -287,7 +305,11 @@ Proof with (auto with sizeTypHd).
   - (* spl A *)
     inverts keep Hi.
     + applys~ S_and Hi...
-    + applys~ S_arr...
+    + assert (sub (t_arrow A0 B) (t_arrow A0 C)). {
+        applys~ sub_fun. admit.
+      }
+                  assert (sub (t_arrow A0 B) (t_arrow A0 D)). applys~ S_and Hi...
+applys~ S_arr...
     + applys~ S_arr...
 Qed.
 
@@ -301,7 +323,7 @@ Proof.
     lets~ [?|?]: (IHs D0).
   - inverts~ H; solve_false.
     lets~ [?|?]: (IHs D0). *)
-Abort.
+Admitted.
 
 
 Lemma splitu_inv : forall A A1 A2 C,
@@ -314,6 +336,11 @@ match goal with
   (forwards: IH H1 H2; eomg)
 end : sizeTypHd.
 
+Hint Extern 0 =>
+match goal with
+| [ H: spl (t_and _ _) _ _ |- _ ] => (inverts H)
+| [ H: splu (t_or _ _) _ _ |- _ ] => (inverts H)
+end : sizeTypHd.
 
 Lemma trans : forall A B C, sub A B -> sub B C -> sub A C.
 Proof with (auto with sizeTypHd).
@@ -323,13 +350,11 @@ Proof with (auto with sizeTypHd).
   - (* int *)
     inverts~ s2; try solve_false.
     + applys~ S_and H.
-    + applys~ S_orl H.
-    + applys~ S_orr H.
   - (* top *)
     inverts~ s2; try solve_false.
+    + applys~ S_orl...
+    + applys~ S_orr...
     + applys~ S_and H...
-    + applys~ S_orl H...
-    + applys~ S_orr H...
   - (* bot *)
     applys~ S_bot.
   - (* andl *)
@@ -338,68 +363,24 @@ Proof with (auto with sizeTypHd).
     applys~ S_andr...
   - (* or *)
     applys~ S_or...
-  - (* arr *)
-    inverts~ s2; try solve_false.
-    + applys~ S_arr...
-    + applys~ S_and H1...
-    + applys S_orl H1...
-    + applys S_orr H1...
-  - (* and *)
-    inverts~ s2; try solve_false.
-    + (* and l *)
-      inverts H...
-    + (* and r *)
-      inverts H...
-    + (* arrow *)
-      admit.
-    + applys~ S_and H2...
-    + lets (?&?): splitu_decrease_size H2.
-      applys S_orl H2.
-      applys IH s1...
-    + lets (?&?): splitu_decrease_size H2.
-      applys S_orr H2.
-      applys IH s1...
-    + (* arr : ordu & split *)
-      admit.
-    + lets (?&?): split_decrease_size H2.
-      applys~ S_and H2.
-    + (* or : spl & splu *)
-      admi.t
   - (* orl *)
-    inverts~ s2; try solve_false.
-    + (* spl B & splu B *)
-      lets (?&?): split_decrease_size H3.
-      admit.
-    + (* spl B & splu B *)
-      admit.
-    + lets (?&?): splitu_decrease_size H3.
-      applys~ S_orl H3.
-    + lets (?&?): splitu_decrease_size H3.
-      applys~ S_orr H3.
-    + (* and *)
-      lets (?&?): split_decrease_size H3.
-      applys~ S_and H3.
-    + (* splu B & splu B *)
-      admit.
+    inverts~ s2; try solve_false...
+    + applys~ S_and H0...
   - (* orr *)
-    lets (?&?): splitu_decrease_size H.
-    inverts~ s2; try solve_false.
-    + (* spl B & splu B *)
-      lets (?&?): split_decrease_size H3.
-      admit.
-    + (* spl B & splu B *)
-      admit.
-    + lets (?&?): splitu_decrease_size H3.
-      applys~ S_orl H3.
-    + lets (?&?): splitu_decrease_size H3.
-      applys~ S_orr H3.
-    + (* and *)
-      lets (?&?): split_decrease_size H3.
-      applys~ S_and H3.
-    + (* splu B & splu B *)
-  - (* or *)
-    lets (?&?): splitu_decrease_size H.
-    applys~ S_or H.
+    inverts~ s2; try solve_false...
+    + applys~ S_and H0...
+  - (* arr *)
+    inverts~ s2; try solve_false...
+    + applys~ S_and H1...
+  - (* and *)
+    inverts~ s2; try solve_false...
+    + (* arrow *)
+      lets ([Hi|(?&?&Hi)]&Hu'): ord_or_split (t_arrow B1 D).
+      * (* ord *)
+        lets~ [Hs|Hs]: splitl_inv H Hi...
+      * (* spl *)
+        applys S_and Hi...
+    + applys~ S_and H2...
 Qed.
 
 End sub_trans.
