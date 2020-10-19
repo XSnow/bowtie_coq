@@ -161,61 +161,6 @@ B < A \/ B
 
 
 
-defns
-SplitType :: '' ::=
-
-defn
-split A B C :: :: spl :: Sp_
-{{ com Splittable Types }}
-{{ tex [[B]] \mathbin{\lhd} [[A]] \mathbin{\rhd} [[C]] }}
-by
-
-
-----------------:: and
-split A&B A B
-
-
-split B C D
--------------------------- :: arrow
-split A->B A->C A->D
-
-
-%split B C D
-%-------------------------- :: rcd
-%split {l:B} {l:C} {l:D}
-
-
-splitU A B C
--------------------------- :: arrowUnion
-split A->D B->D C->D
-
-
-defn
-splitU A B C :: :: splu :: SpU_
-{{ com Split Union Types }}
-{{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
-by
-
-
--------------------:: and
-splitU A \/ B A B
-
-
-splitU B C D
--------------------------- :: arrow
-splitU A->B A->C A->D
-
-
-%splitU B C D
-%-------------------------- :: rcd
-%splitU {l:B} {l:C} {l:D}
-
-
-split A B C
--------------------------- :: arrowUnion
-splitU A->D B->D C->D
-
-
 
 defns
 OrdinaryType :: '' ::=
@@ -290,6 +235,64 @@ ordinaryU A&B
 
 
 defns
+SplitType :: '' ::=
+
+defn
+split A B C :: :: spl :: Sp_
+{{ com Splittable Types }}
+{{ tex [[B]] \mathbin{\lhd} [[A]] \mathbin{\rhd} [[C]] }}
+by
+
+
+----------------:: and
+split A&B A B
+
+
+split B C D
+-------------------------- :: arrow
+split A->B A->C A->D
+
+
+%split B C D
+%-------------------------- :: rcd
+%split {l:B} {l:C} {l:D}
+
+
+ordinary D
+splitU A B C
+-------------------------- :: arrowUnion
+split A->D B->D C->D
+
+
+defn
+splitU A B C :: :: splu :: SpU_
+{{ com Split Union Types }}
+{{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
+by
+
+
+-------------------:: and
+splitU A \/ B A B
+
+
+splitU B C D
+-------------------------- :: arrow
+splitU A->B A->C A->D
+
+
+%splitU B C D
+%-------------------------- :: rcd
+%splitU {l:B} {l:C} {l:D}
+
+
+ordinaryU D
+split A B C
+-------------------------- :: arrowUnion
+splitU A->D B->D C->D
+
+
+
+defns
 Subtyping :: '' ::=
 
 defn
@@ -310,15 +313,17 @@ A <: Top
 Bot <: A
 
 
-
+split D A B
 A <: C
 ------------------------- :: andl
-A&B <: C
+D <: C
 
 
+split D A B
 B <: C
 ----------------- :: andr
-A&B <: C
+D <: C
+
 
 A <: D
 B <: D
@@ -336,6 +341,7 @@ A <: C
 A <: B \/ C
 
 
+ordinary A -> C
 ordinary B -> D
 B <: A
 C <: D

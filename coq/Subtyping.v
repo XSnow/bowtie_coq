@@ -15,13 +15,13 @@ Proof.
   intros A. induction* A.
   split.
   - (* ord VS spl *)
-    lets* (?&[?|(?&?&?)]): IHA1.
-    + (* ordu A1 in A1->A2 *)
-      lets* ([?|(?&?&?)]&?): IHA2.
+    lets* ([?|(?&?&?)]&?): IHA2.
+    + (* ord A2 in A1->A2 *)
+      lets* (?&[?|(?&?&?)]): IHA1.
   - (* ordu VS splu *)
-    lets* ([?|(?&?&?)]&?): IHA1.
-    + (* ord A1 in A1->A2 *)
-      lets* (?&[?|(?&?&?)]): IHA2.
+    lets* (?&[?|(?&?&?)]): IHA2.
+    + (* ordu A2 in A1->A2 *)
+      lets* ([?|(?&?&?)]&?): IHA1.
 Qed.
 
 Lemma split_ord_false : forall A B C,
@@ -75,154 +75,41 @@ Hint Resolve split_ord_false split_int split_top split_bot splitu_int splitu_top
 
 Ltac solve_false := try intro; try solve [false; eauto with falseHd].
 
-Ltac destructT A := lets [?|(?&?&?)]: (ord_or_split A).
+(*
+(* Cannot guess decreasing argument of fix. *)
+Lemma split_unique : forall T A1 A2 B1 B2,
+    spl T A1 B1 -> spl T A2 B2 -> A1 = A2 /\ B1 = B2
+with splitu_unique : forall T A1 A2 B1 B2,
+    splu T A1 B1 -> splu T A2 B2 -> A1 = A2 /\ B1 = B2.
+Proof with solve_false.
+  + introv s1 s2. gen A2 B2.
+    induction s1; intros.
+  - clear split_unique splitu_unique. inverts* s2.
+  - clear splitu_unique.
+    inverts s2...
+    forwards*: split_unique s1 H3.
+  - clear split_unique.
+    inverts s2...
+    forwards* (?&?): splitu_unique H0 H6.
+    subst*.
 
+  + introv s1 s2. gen A2 B2.
+    induction s1; intros.
+  - clear split_unique splitu_unique.
+    inverts* s2.
+  - clear split_unique.
+    inverts s2...
+    forwards*: splitu_unique s1 H3.
+  - clear splitu_unique.
+    inverts s2...
+    forwards* (?&?): split_unique H0 H6.
+    subst*.
+Qed.
+*)
 
-Ltac split_unify :=
-  repeat match goal with
-  | [ H: spl (t_and _ _) _ _ |- _ ] => inverts H
-  | [ H: spl (t_arrow _ _) _ _ |- _ ] => inverts H
-(*  | [ H: spl (t_rcd _ _) _ _ |- _ ] => inverts H *)
-         end;
-  auto.
-
-
-(* R *)
-Inductive R : typ -> Prop :=
-| Rord : forall A, ord A -> R A
-| Rspl : forall B C A, spl A B C -> R B -> R C -> R A.
-
-Inductive Ru : typ -> Prop :=
-| Ruord : forall A, ordu A -> Ru A
-| Ruspl : forall B C A, splu A B C -> Ru B -> Ru C -> Ru A.
-
-Hint Constructors R Ru : core.
-
-
-Lemma decideR : forall A, R A /\ Ru A.
-Proof.
-  introv. induction* A.
-  - destruct IHA1; destruct IHA2. admit.
-Admitted.
-
-Ltac inductionR A := assert (r: R A) by apply (decideR A); induction r.
 
 (* subtyping *)
 Hint Constructors sub : core.
-
-Lemma sub_spl_spl : forall A B C B' C' D,
-    spl A B C -> spl A B' C' -> sub D B -> sub D C -> sub D B' /\ sub D C'.
-Proof.
-  introv Hsp1 Hsp2 S1 S2.
-Admitted.
-
-Lemma sub_spl : forall A B,
-    sub A B ->
-    (forall C D, spl B C D -> sub A C /\ sub A D) /\
-    (forall C D, splu A C D -> sub C B /\ sub D B).
-Proof.
-  introv S.
-  induction S; split; introv Sp; try solve_false; eauto.
-  Abort.
-  (*
-    lets* (IHS1a&IHS1b): IHS1;
-    lets* (IHS2a&IHS2b): IHS2.
-  -
-    inverts Sp; try solve_false.
-    try solve [forwards*: IHS1b].
-
-  -
-    inverts Sp; try solve_false.
-    + try solve [forwards*: IHS2b].
-    + try solve [forwards*: IHS1a].
-  - admit.
-*)
-
-Lemma sub_l_andl : forall A B C, sub A C -> sub (t_and A B) C.
-Proof.
-  introv s. induction* s; eauto.
-Abort.
-
-Lemma sub_l_andr : forall A B C, sub B C -> sub (t_and A B) C.
-Proof.
-  introv s. induction* s.
-Abort.
-
-Lemma sub_fun : forall A B C D,
-    sub B D -> sub C A -> sub (t_arrow A B) (t_arrow C D).
-Proof.
-  introv s. induction* s.
-Abort.
-
-(*
-Lemma refl : forall A, sub A A.
-Proof.
-  introv. inductionR A.
-  - induction* H.
-Qed.
-
-Hint Resolve refl : core.
-
-
-Lemma spl_sub_l : forall A B C,
-    spl A B C -> sub A B.
-Proof.
-  introv H. induction* H.
-Qed.
-
-Lemma spl_sub_r : forall A B C,
-    spl A B C -> sub A C.
-Proof.
-  introv H. induction* H.
-Qed.
-
-Lemma sub_r_spl_l : forall T A B C,
-    sub T A -> spl A B C -> sub T B.
-Proof.
-  introv Hsub Hspl.
-  inverts Hsub; solve_false.
-  split_unify.
-Qed.
-
-Lemma sub_r_spl_r : forall T A B C,
-    sub T A -> spl A B C -> sub T C.
-Proof.
-  introv Hsub Hspl.
-  inverts Hsub; solve_false.
-  split_unify.
-Qed.
-
-Hint Immediate spl_sub_l spl_sub_r sub_r_spl_l sub_r_spl_r : core.
-
-Example sub_spl_demo : forall A B C,
-    sub t_top A -> spl A B C -> sub A B /\ sub A C /\ sub t_top B /\ sub t_top C.
-Proof.
-  jauto.
-Qed.
-
-
-Lemma andr_l_inv : forall A B C,
-    sub A (t_and B C) -> sub A B.
-Proof.
-  introv H. inductions H ; eauto; solve_false.
-  split_unify.
-Qed.
-
-Lemma andr_r_inv : forall A B C,
-    sub A (t_and B C) -> sub A C.
-Proof.
-  introv H. inductions H ; eauto; solve_false.
-  split_unify.
-Qed.
-
-Lemma andl_inv : forall A B C,
-    sub (t_and A B) C -> ord C -> sub A C \/ sub B C.
-Proof.
-  introv s o. inductions s; eauto; solve_false.
-Qed.
-
-Hint Immediate andr_l_inv andr_r_inv andl_inv : core.
-*)
 
 Lemma typ_size_lg_z : forall T, size_typ T > 0.
 Proof.
@@ -242,10 +129,10 @@ with splitu_decrease_size: forall A B C,
 Proof with eomg.
   - introv H. clear split_decrease_size.
     induction* H...
-    forwards* (?&?): splitu_decrease_size H...
+    forwards* (?&?): splitu_decrease_size H0...
   - introv H. clear splitu_decrease_size.
     induction* H...
-    forwards* (?&?): split_decrease_size H...
+    forwards* (?&?): split_decrease_size H0...
 Qed.
 
 Hint Extern 0 =>
@@ -264,29 +151,75 @@ Ltac indTypSize s :=
       intros; match goal with | [ H : _ < 0 |- _ ] => inverts H end
     | intros ].
 
-(* apply IH on target types *)
+
+(* split/u is unique *)
+Hint Extern 0 =>
+  match goal with
+  | [ IH: forall A, size_typ A < _ -> _, A: typ, Hsp: spl ?A _  _|- _ ] =>
+    (forwards (?&?): IH A; eomg)
+  | [ IH: forall A, size_typ A < _ -> _, A: typ, Hsp: splu ?A _  _|- _ ] =>
+    (forwards (?&?): IH A; eomg)
+  end : sizeTypHd.
+
+Hint Extern 0 =>
+  match goal with
+  | [ T: typ, B: typ, B2: typ, H : forall A B C D, spl ?T _ _  -> _, Hsp: spl ?T _  _, Hsp2: spl ?T _  _ |- _ ] =>
+    (forwards (?&?): H Hsp Hsp2; subst~)
+  | [ T: typ, B: typ, B2: typ, H : forall A B C D, splu ?T _ _  -> _, Hsp: splu ?T _  _, Hsp2: splu ?T _  _ |- _ ] =>
+    (forwards (?&?): H Hsp Hsp2; subst~)
+  end : sizeTypHd.
+
+Lemma split_unique_aux : forall T,
+    (forall A1 A2 B1 B2,
+        spl T A1 B1 -> spl T A2 B2 -> A1 = A2 /\ B1 = B2)
+    /\ (forall A1 A2 B1 B2,
+           splu T A1 B1 -> splu T A2 B2 -> A1 = A2 /\ B1 = B2).
+Proof with (solve_false; auto with sizeTypHd).
+  introv.
+  indTypSize (size_typ T).
+  split; introv s1 s2.
+  + inverts s1.
+    - inverts* s2.
+    - inverts s2...
+    - inverts s2...
+  + inverts s1.
+    - inverts* s2.
+    - inverts s2...
+    - inverts s2...
+Qed.
+
+Lemma split_unique : forall T A1 A2 B1 B2,
+    spl T A1 B1 -> spl T A2 B2 -> A1 = A2 /\ B1 = B2.
+Proof.
+  intro T.
+  forwards~ (?&?): split_unique_aux T.
+Qed.
+
+Lemma splitu_unique : forall T A1 A2 B1 B2,
+    splu T A1 B1 -> splu T A2 B2 -> A1 = A2 /\ B1 = B2.
+Proof.
+  intro T.
+  forwards~ (?&?): split_unique_aux T.
+Qed.
+
+Hint Resolve split_unique splitu_unique : core.
+
+Ltac split_unify :=
+  repeat match goal with
+  | [ H1: spl ?A _ _ , H2: spl ?A _ _ |- _ ] =>
+           (forwards (?&?): split_unique H1 H2;
+            subst; clear H2)
+  | [ H1: splu ?A _ _ , H2: splu ?A _ _ |- _ ] =>
+           (forwards (?&?): splitu_unique H1 H2;
+            subst; clear H2)
+         end;
+  solve_false.
+
+(* reflexivity *)
 Hint Extern 0 =>
   match goal with
   | [ IH : forall A, size_typ A < _ -> _ |- sub ?A ?A ] => (forwards: IH A; eomg)
   end : sizeTypHd.
-(*
-Lemma spl_sub_part : forall A B C,
-    spl A B C -> sub A B /\ sub A C
-with splu_sub_part : forall A B C,
-    splu A B C -> sub B A /\ sub C A.
-Proof.
-  introv Hsp.
-  induction Hsp.
-  - split. applys S_andl. admit.
-    applys S_andr. admit.
-  - split. applys S_arr. admit.
-    applys S_andr. admit.
- *)
-
-Lemma sub_fun : forall A B C D,
-    sub B D -> sub C A -> sub (t_arrow A B) (t_arrow C D).
-Proof.
-  introv s. Admitted.
 
 Lemma refl : forall A, sub A A.
 Proof with (auto with sizeTypHd).
@@ -303,33 +236,14 @@ Proof with (auto with sizeTypHd).
     + applys~ S_arr...
     + applys~ S_or. applys~ S_orl... apply~ S_orr...
   - (* spl A *)
-    inverts keep Hi.
-    + applys~ S_and Hi...
-    + assert (sub (t_arrow A0 B) (t_arrow A0 C)). {
-        applys~ sub_fun. admit.
-      }
-                  assert (sub (t_arrow A0 B) (t_arrow A0 D)). applys~ S_and Hi...
-applys~ S_arr...
-    + applys~ S_arr...
+    applys~ S_and Hi...
+    applys~ S_andl Hi...
+    applys~ S_andr Hi...
 Qed.
 
+Hint Resolve refl : core.
 
-Lemma splitl_inv : forall A A1 A2 C,
-    spl A A1 A2 -> sub A C -> ord C -> sub A1 C \/ sub A2 C.
-Proof.
-  intros A A1 A2 C s. gen C. induction s; intros. (*
-  - applys* andl_inv.
-  - inverts~ H; solve_false.
-    lets~ [?|?]: (IHs D0).
-  - inverts~ H; solve_false.
-    lets~ [?|?]: (IHs D0). *)
-Admitted.
-
-
-Lemma splitu_inv : forall A A1 A2 C,
-    splu A A1 A2 -> sub A C -> ord C -> sub A1 C /\ sub A2 C.
-Admitted.
-
+(* transitivity *)
 Hint Extern 0 =>
 match goal with
 | [ IH: forall _ , _ , H1: sub  ?A ?B , H2: sub ?B ?C |- sub ?A ?C ] =>
@@ -343,47 +257,37 @@ match goal with
 end : sizeTypHd.
 
 Lemma trans : forall A B C, sub A B -> sub B C -> sub A C.
-Proof with (auto with sizeTypHd).
+Proof with (solve_false; auto with sizeTypHd).
   introv s1 s2.
   indTypSize (size_typ A + size_typ B + size_typ C).
   inverts keep s1.
   - (* int *)
-    inverts~ s2; try solve_false.
+    inverts~ s2...
     + applys~ S_and H.
   - (* top *)
-    inverts~ s2; try solve_false.
-    + applys~ S_orl...
-    + applys~ S_orr...
+    inverts~ s2...
     + applys~ S_and H...
   - (* bot *)
     applys~ S_bot.
   - (* andl *)
-    applys~ S_andl...
+    applys~ S_andl H...
   - (* andr *)
-    applys~ S_andr...
+    applys~ S_andr H...
   - (* or *)
     applys~ S_or...
   - (* orl *)
-    inverts~ s2; try solve_false...
+    inverts~ s2...
     + applys~ S_and H0...
   - (* orr *)
-    inverts~ s2; try solve_false...
+    inverts~ s2...
     + applys~ S_and H0...
   - (* arr *)
-    inverts~ s2; try solve_false...
-    + applys~ S_and H1...
+    inverts~ s2...
+    + applys~ S_and H3...
   - (* and *)
-    inverts~ s2; try solve_false...
-    + (* arrow *)
-      lets ([Hi|(?&?&Hi)]&Hu'): ord_or_split (t_arrow B1 D).
-      * (* ord *)
-        lets~ [Hs|Hs]: splitl_inv H Hi...
-      * (* spl *)
-        applys S_and Hi...
+    inverts~ s2; split_unify...
     + applys~ S_and H2...
 Qed.
-
-End sub_trans.
 
 
 Hint Immediate trans : core.
@@ -393,11 +297,47 @@ Lemma split_sub: forall A B C,
 Proof with eauto.
   intros A B C H.
   split.
-  - lets~: spl_sub_l H. lets~: spl_sub_r H.
-    apply~ S_and...
-  - induction H...
+  - applys~ S_and. applys~ S_andl H. applys~ S_andr H.
+  - applys S_and H. applys~ S_andl. applys~ S_andr.
 Qed.
 
+Hint Constructors osub : core.
+
+(* declarative subtyping equivalence *)
+Theorem dsub_eq: forall A B,
+    osub A B <-> sub A B.
+Proof.
+  split; introv H.
+  - induction* H.
+    + (* arrow *)
+      clear H H0. indTypSize (size_typ (t_arrow A C) + size_typ (t_arrow B D)).
+      lets ([Hi2|(?&?&Hi2)]&Hu'2): ord_or_split (t_arrow B D).
+      lets ([Hi1|(?&?&Hi1)]&Hu'1): ord_or_split (t_arrow A C).
+      * (* ord, ord *)
+        applys~ S_arr.
+      * (* ord, spl *)
+        admit.
+      * applys~ S_and Hi2; admit.
+    + indTypSize (size_typ C).
+      lets ([Hi2|(?&?&Hi2)]&Hu'2): ord_or_split C.
+      * applys~ S_and. applys~ S_andl. applys~ S_andr.
+      * lets (?&?): split_decrease_size Hi2.
+        applys S_and.
+        applys~ Sp_arrow Hi2.
+        ** forwards* Hs: IH A x B; eomg. applys~ trans Hs.
+           applys* S_and.
+        ** forwards* Hs: IH A x0 B; eomg. applys~ trans Hs.
+           applys* S_and.
+  - induction~ H.
+    + (* and l*)
+      gen C. inductions H; intros.
+      * applys~ OS_trans IHsub.
+      * Abort.
+
+
+Lemma sub_fun : forall A B C D,
+    sub B D -> sub C A -> sub (t_arrow A B) (t_arrow C D).
+Abort.
 
 Hint Extern 0 => match goal with
                  | [ |- sub (t_and ?A ?B) ?A ] => apply sub_l_andl
