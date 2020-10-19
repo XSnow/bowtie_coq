@@ -13,3 +13,6 @@ coq/CoqSrc.mk.conf
 coq/_CoqProject
 coq/rules_inf.v
 coq/syntax_ott.v
+
+pdf/*.mng
+pdf/*.pdf

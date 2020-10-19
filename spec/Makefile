@@ -6,7 +6,7 @@ NAME = rules
 
 .PHONY: clean
 
-all: $(NAME)_included.tex test
+all: test
 
 check: $(NAME)_check
 

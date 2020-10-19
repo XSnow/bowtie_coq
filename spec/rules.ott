@@ -38,8 +38,9 @@ grammar
 
 
 terminals :: 'terminals_' ::=
-  | &                ::  :: and          {{ tex \, \& \, }}
-  | \/               ::  :: or          {{ tex \, \mid \, }}
+  | ->               ::  :: arrow      {{ tex \rightarrow }}
+  | &                ::  :: and        {{ tex \, \& \, }}
+  | \/               ::  :: or         {{ tex \, \mid \, }}
   | ,                ::  :: break      {{ tex , }}
   | <:b              ::  :: subb       {{ tex <: }}
   | <::              ::  :: subd       {{ tex <: }}
@@ -70,7 +71,7 @@ OSubtyping :: '' ::=
 
 defn
 A < B  :: :: osub :: OS_
-{{ com Original BCD Declarative Subtyping + Unions }}
+{{ com Original BCD Declarative Subtyping - Top-Like + Unions }}
 {{ tex [[A]] \leq [[B]] }}
 by
 
@@ -297,7 +298,7 @@ Subtyping :: '' ::=
 
 defn
 A <: B  :: :: sub :: S_
-{{ com Modular BCD Subtyping  (\textless :)}}
+{{ com Algorithmic Subtyping }}
 by
 
 
