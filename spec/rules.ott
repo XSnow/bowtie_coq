@@ -219,8 +219,6 @@ ordinaryU Bot
 ordinaryU int
 
 
-ordinary A
-ordinaryU B
 ---------------- :: arrow
 ordinaryU A->B
 
@@ -260,36 +258,8 @@ split A->B A->C A->D
 
 
 ordinary D
-splitU A B C
 -------------------------- :: arrowUnion
-split A->D B->D C->D
-
-
-defn
-splitU A B C :: :: splu :: SpU_
-{{ com Split Union Types }}
-{{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
-by
-
-
--------------------:: and
-splitU A \/ B A B
-
-
-splitU B C D
--------------------------- :: arrow
-splitU A->B A->C A->D
-
-
-%splitU B C D
-%-------------------------- :: rcd
-%splitU {l:B} {l:C} {l:D}
-
-
-ordinaryU D
-split A B C
--------------------------- :: arrowUnion
-splitU A->D B->D C->D
+split (A\/B)->D A->D B->D
 
 
 
