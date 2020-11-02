@@ -191,6 +191,8 @@ ordinary B
 ordinary A->B
 
 
+ordinary A
+ordinary B
 ---------------- :: or
 ordinary A\/B
 
@@ -261,6 +263,16 @@ ordinary D
 -------------------------- :: arrowUnion
 split (A\/B)->D A->D B->D
 
+
+split A A1 A2
+-------------------------- :: unionl
+split A\/B A1\/B A2\/B
+
+
+ordinary A
+split B B1 B2
+-------------------------- :: unionr
+split A\/B A\/B1 A\/B2
 
 
 defns
