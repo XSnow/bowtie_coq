@@ -225,6 +225,10 @@ ordinaryU int
 ordinaryU A->B
 
 
+% (A1\/A2)&(B1\/B2) ~= (A1&(B1\/B2)) \/ (A2&(B1\/B2))
+
+ordinaryU A
+ordinaryU B
 ---------------- :: and
 ordinaryU A&B
 
@@ -260,19 +264,56 @@ split A->B A->C A->D
 
 
 ordinary D
+splitU A B C
 -------------------------- :: arrowUnion
-split (A\/B)->D A->D B->D
+split A->D B->D C->D
 
 
 split A A1 A2
--------------------------- :: unionl
+-------------------------- :: orl
 split A\/B A1\/B A2\/B
 
 
 ordinary A
 split B B1 B2
--------------------------- :: unionr
+-------------------------- :: orr
 split A\/B A\/B1 A\/B2
+
+
+
+defn
+splitU A B C :: :: splu :: SpU_
+{{ com Split Union Types }}
+{{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
+by
+
+
+--------------------:: or
+splitU A\/B A B
+
+
+%splitU B C D
+%--------------------------- :: arrow
+%splitU A->B A->C A->D
+
+
+%splitU B C D
+%-------------------------- :: rcd
+%splitU {l:B} {l:C} {l:D}
+
+
+% (A1\/A2)&(B1\/B2) ~= (A1&(B1\/B2)) \/ (A2&(B1\/B2))
+
+splitU A A1 A2
+-------------------------- :: andl
+splitU A&B A1&B A2&B
+
+
+ordinaryU A
+splitU B B1 B2
+-------------------------- :: andr
+splitU A&B A&B1 A&B2
+
 
 
 defns
@@ -296,12 +337,14 @@ A <: Top
 Bot <: A
 
 
+ordinary C
 split D A B
 A <: C
 ------------------------- :: andl
 D <: C
 
 
+ordinary C
 split D A B
 B <: C
 ----------------- :: andr
