@@ -349,6 +349,11 @@ Proof with (solve_false; split_unify; auto with sizeTypHd).
         eauto.
 Qed.
 
+
+Lemma or_extend : forall A A1 A2 B,
+    splu A A1 A2 -> sub A1 B -> sub A2 B -> sub A B.
+Admitted.
+
 (* transitivity *)
 Hint Extern 0 =>
 match goal with
@@ -404,6 +409,9 @@ Proof with (solve_false; auto with sizeTypHd).
       (* left splitu property ? *)
       inverts H.
       *
+        lets (Hi&[Hord|(?&?&Hspl)]): ord_or_split A.
+        ** admit.
+        ** applys or_extend Hspl.
     + applys~ S_and H2...
 Qed.
 

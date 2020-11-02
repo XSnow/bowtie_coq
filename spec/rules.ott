@@ -351,6 +351,15 @@ B <: C
 D <: C
 
 
+% A1\/A2 & B <: B
+% seems can be covered by other rules?
+
+% splitu A A1 A2
+% A1 <: B
+% A2 <: B
+% ----------------- :: or
+% A <: B
+
 A <: D
 B <: D
 ----------------- :: or
