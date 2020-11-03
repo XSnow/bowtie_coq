@@ -18,16 +18,16 @@ Proof.
     lets* ([?|(?&?&?)]&?): IHA2.
     + (* ord A2 in A1->A2 *)
       lets* (?&[?|(?&?&?)]): IHA1.
-   - (* ordu VS splu *)
-     lets* (?&[?|(?&?&?)]): IHA2.
-   - (* and *)
-     lets ([?|(?&?&?)]&[?|(?&?&?)]): IHA1;
-       lets ([?|(?&?&?)]&[?|(?&?&?)]): IHA2;
-       split*.
+  - (* ordu VS splu *)
+    lets* (?&[?|(?&?&?)]): IHA2.
+  - (* and *)
+    lets ([?|(?&?&?)]&[?|(?&?&?)]): IHA1;
+      lets ([?|(?&?&?)]&[?|(?&?&?)]): IHA2;
+      split*.
   - (* or *)
-     lets ([?|(?&?&?)]&[?|(?&?&?)]): IHA1;
-       lets ([?|(?&?&?)]&[?|(?&?&?)]): IHA2;
-       split*.
+    lets ([?|(?&?&?)]&[?|(?&?&?)]): IHA1;
+      lets ([?|(?&?&?)]&[?|(?&?&?)]): IHA2;
+      split*.
 Qed.
 
 Lemma split_ord_false : forall A B C,
@@ -91,9 +91,11 @@ Proof.
   inverts~ H.
 Qed.
 
+Create HintDb sizeTypHd.
+
 Ltac eomg :=
   pose proof (typ_size_lg_z);
-  try omega; auto; simpl in *; try omega.
+  simpl in *; try omega.
 
 Lemma split_decrease_size: forall A B C,
     spl A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A
@@ -107,30 +109,35 @@ Proof with eomg.
     induction* H...
 Qed.
 
-Hint Extern 0 =>
-match goal with
-| [ H: spl _ _ _ |- _ ] =>
-  (lets (?&?): split_decrease_size H)
-| [ H: splu _ _ _ |- _ ] =>
-  (lets (?&?): splitu_decrease_size H)
-end : sizeTypHd.
+Ltac spl_size :=
+  match goal with
+  | [ H: spl _ _ _ |- _ ] =>
+    (lets (?&?): split_decrease_size H)
+  | [ H: splu _ _ _ |- _ ] =>
+    (lets (?&?): splitu_decrease_size H)
+  end.
+
+(* enhanced eomg with split_decrease_size *)
+Ltac eomg2 :=
+  pose proof (typ_size_lg_z);
+  simpl in *; try spl_size; try omega.
 
 Ltac indTypSize s :=
   assert (SizeInd: exists i, s < i) by eauto;
   destruct SizeInd as [i SizeInd];
   repeat match goal with | [ h : typ |- _ ] => (gen h) end;
   induction i as [|i IH]; [
-      intros; match goal with | [ H : _ < 0 |- _ ] => inverts H end
-    | intros ].
+    intros; match goal with | [ H : _ < 0 |- _ ] => inverts H end
+  | intros ].
 
 (* split/u is unique *)
 Hint Extern 0 =>
 match goal with
 | [ IH: forall A, size_typ A < _ -> _, A: typ, Hsp: spl ?A _  _|- _ ] =>
-  (forwards (?&?): IH A; eomg)
+  (forwards (?&?): IH A; eomg2)
 | [ IH: forall A, size_typ A < _ -> _, A: typ, Hsp: splu ?A _  _|- _ ] =>
-  (forwards (?&?): IH A; eomg)
-end : sizeTypHd.
+  (forwards (?&?): IH A; eomg2)
+end : split_unique.
 
 Hint Extern 0 =>
 match goal with
@@ -138,14 +145,14 @@ match goal with
   (forwards (?&?): H Hsp Hsp2; subst~)
 | [ T: typ, B: typ, B2: typ, H : forall A B C D, splu ?T _ _  -> _, Hsp: splu ?T _  _, Hsp2: splu ?T _  _ |- _ ] =>
   (forwards (?&?): H Hsp Hsp2; subst~)
-end : sizeTypHd.
+end : split_unique.
 
 Lemma split_unique_aux : forall T,
     (forall A1 A2 B1 B2,
         spl T A1 B1 -> spl T A2 B2 -> A1 = A2 /\ B1 = B2)
     /\ (forall A1 A2 B1 B2,
            splu T A1 B1 -> splu T A2 B2 -> A1 = A2 /\ B1 = B2).
-Proof with (solve_false; auto with sizeTypHd).
+Proof with (solve_false; auto with split_unique).
   introv.
   indTypSize (size_typ T).
   split; introv s1 s2...
@@ -175,98 +182,86 @@ Proof.
   forwards~ (?&?): split_unique_aux T.
 Qed.
 
-Hint Resolve split_unique splitu_unique : core.
-
-
+(* replace solve_false *)
 Ltac split_unify :=
   repeat match goal with
-  | [ H1: spl ?A _ _ , H2: spl ?A _ _ |- _ ] =>
+         | [ H1: spl ?A _ _ , H2: spl ?A _ _ |- _ ] =>
            (forwards (?&?): split_unique H1 H2;
             subst; clear H2)
-  | [ H1: splu ?A _ _ , H2: splu ?A _ _ |- _ ] =>
+         | [ H1: splu ?A _ _ , H2: splu ?A _ _ |- _ ] =>
            (forwards (?&?): splitu_unique H1 H2;
             subst; clear H2)
+         | [ H1: spl (t_and _ _) _ _ |- _ ] =>
+           inverts H1
+         | [ H1: splu (t_or _ _) _ _ |- _ ] =>
+           inverts H1
          end;
   solve_false.
 
+Ltac aauto := try eassumption.
 
 Lemma andl_trans : forall A B B1 B2,
     spl B B1 B2 -> sub A B -> sub A B1.
-Proof with (solve_false; split_unify; auto with sizeTypHd).
+Proof with (aauto; eomg2).
   introv Hspl Hsub.
   indTypSize (size_typ A + size_typ B).
-  inverts~ Hsub...
+  inverts~ Hsub; split_unify; auto with sizeTypHd.
   - (* or *)
-    forwards*: IH H; eomg...
-    forwards*: IH H0; eomg...
-  - (* orl *)
-    inverts Hspl.
-    + forwards*: IH H; eomg...
-    + eauto.
-  - (* orr *)
-    inverts Hspl.
-    + eauto.
-    + forwards*: IH H; eomg...
+    forwards: IH H0...
+    forwards: IH H1...
+    eauto.
 Qed.
 
 Lemma andr_trans : forall A B B1 B2,
     spl B B1 B2 -> sub A B -> sub A B2.
-Proof with (solve_false; split_unify; auto with sizeTypHd).
+Proof with (aauto; eomg).
   introv Hspl Hsub.
   indTypSize (size_typ A + size_typ B).
-  inverts~ Hsub...
+  inverts~ Hsub; split_unify; auto with sizeTypHd.
   - (* or *)
-    forwards*: IH H; eomg...
-    forwards*: IH H0; eomg...
-  - (* orl *)
-    inverts Hspl.
-    + forwards*: IH H; eomg...
-    + eauto.
-  - (* orr *)
-    inverts Hspl.
-    + eauto.
-    + forwards*: IH H; eomg...
+    forwards: IH H0...
+    forwards: IH H1...
+    eauto.
 Qed.
 
 Lemma andl : forall A B C D,
     spl D A B -> sub A C -> sub D C.
-Proof with (solve_false; split_unify; auto with sizeTypHd).
+Proof with (aauto; eomg2).
   introv Hspl Hsub.
   indTypSize (size_typ C).
   lets ([Hi|(?&?&Hi)]&Hu'): ord_or_split C.
   - applys* S_andl.
   - assert (S1: sub A x) by applys* andl_trans Hi.
     assert (S2: sub A x0) by applys* andr_trans Hi.
-    lets (?&?): split_decrease_size Hi.
     applys S_and Hi.
-    applys IH S1 Hspl; eomg...
-    applys IH S2 Hspl; eomg...
+    applys IH S1 Hspl...
+    applys IH S2 Hspl...
 Qed.
+
 
 Lemma andr : forall A B C D,
     spl D A B -> sub B C -> sub D C.
-Proof with (solve_false; split_unify; auto with sizeTypHd).
+Proof with (split_unify; aauto; eomg2).
   introv Hspl Hsub.
   indTypSize (size_typ C).
   lets ([Hi|(?&?&Hi)]&Hu'): ord_or_split C.
   - applys* S_andr.
   - assert (S1: sub B x) by applys* andl_trans Hi.
     assert (S2: sub B x0) by applys* andr_trans Hi.
-    lets (?&?): split_decrease_size Hi.
     applys S_and Hi.
-    applys IH S1 Hspl; eomg...
-    applys IH S2 Hspl; eomg...
+    applys IH S1 Hspl...
+    applys IH S2 Hspl...
 Qed.
 
 (* andl, andr are used in refl proof *)
 (* reflexivity *)
 Hint Extern 0 =>
-  match goal with
-  | [ IH : forall A, size_typ A < _ -> _ |- sub ?A ?A ] => (forwards: IH A; eomg)
-  end : sizeTypHd.
+match goal with
+| [ IH : forall A, size_typ A < _ -> _ |- sub ?A ?A ] => (forwards: IH A; eomg2)
+end : refl.
 
 Lemma refl : forall A, sub A A.
-Proof with (auto with sizeTypHd).
+Proof with (auto with refl).
   introv.
   indTypSize (size_typ A).
   lets ([Hi|(?&?&Hi)]&Hu'): ord_or_split A.
@@ -317,25 +312,22 @@ Hint Resolve split_keep_ordu_l split_keep_ordu_r : core.
 (* Add ordu T -> because counter-example A\/B <: A\/B *)
 Lemma and_meet_or : forall A B T,
     ordu T -> sub T (t_or A B) -> sub T A \/ sub T B.
-Proof with (solve_false; split_unify; auto with sizeTypHd).
+Proof with (split_unify; auto).
   introv Hu Hs.
   indTypSize (size_typ T + size_typ (t_or A B)).
   lets ([Hord|(?&?&Hspl)]&Hu'): ord_or_split (t_or A B).
   - inverts Hs...
-    + lets (?&?): split_decrease_size H0.
-      forwards* [?|?]: IH H1; eomg...
-    + lets (?&?): split_decrease_size H0.
-      forwards* [?|?]: IH H1; eomg...
+    + forwards* [?|?]: IH H1; eomg2.
+    + forwards* [?|?]: IH H1; eomg2.
   - inverts Hspl.
     + inverts~ Hs...
       *
         inverts H...
-        lets (?&?): split_decrease_size H3.
-        forwards~ [?|?]: IH H0; eomg...
-        forwards~ [?|?]: IH H1; eomg...
+        forwards~ [?|?]: IH H0; eomg2.
+        forwards~ [?|?]: IH H1; eomg2.
         eauto.
     + inverts~ Hs... (* used when ord is not added in andl/r
-      *
+                      *
         lets (?&?): split_decrease_size H.
         forwards* [?|?]: IH H0; eomg...
       *
@@ -343,31 +335,95 @@ Proof with (solve_false; split_unify; auto with sizeTypHd).
         forwards* [?|?]: IH H0; eomg... *)
       *
         inverts H...
-        lets (?&?): split_decrease_size H4.
-        forwards~ [?|?]: IH H0; eomg...
-        forwards~ [?|?]: IH H2; eomg...
+        forwards~ [?|?]: IH H0; eomg2.
+        forwards~ [?|?]: IH H2; eomg2.
         eauto.
 Qed.
 
 
-Lemma or_extend : forall A A1 A2 B,
-    splu A A1 A2 -> sub A1 B -> sub A2 B -> sub A B.
-Admitted.
+Lemma orl_trans : forall A A1 A2 B,
+    splu A A1 A2 -> sub A B -> sub A1 B.
+Proof with (split_unify; aauto; eomg2).
+  introv Hspl Hsub.
+  indTypSize (size_typ A + size_typ B).
+  inverts keep Hsub; auto...
+  - (* andl *)
+    inverts H0; (* spl *)
+      try solve [inverts Hspl; applys~ andl; applys* IH H1; eomg2].
+    (* spl A&B *) (* spl A->B *) (* spl A->B *)
+    + (* spl A\/B *)
+      inverts Hspl. applys* andl.
+      applys* IH H1...
+    + (* spl A\/B *)
+      inverts keep Hspl.
+      applys* IH H1...
+  - (* andr *)
+    inverts H0; (* spl *)
+      try solve [inverts Hspl; applys~ andr; applys* IH H1; eomg2].
+    (* spl A&B *) (* spl A->B *) (* spl A->B *)
+    + (* spl A\/B *)
+      inverts Hspl. applys* andr.
+      applys* IH H1...
+    + (* spl A\/B *)
+      inverts keep Hspl.
+      applys* IH H1...
+  - (* orl rhs *)
+    applys~ S_orl.
+    applys* IH H0...
+  - (* orr rhs *)
+    applys~ S_orr.
+    applys* IH H0...
+  - (* and *)
+    applys~ S_and H;
+      applys IH...
+Qed.
+
+Lemma orr_trans : forall A A1 A2 B,
+    splu A A1 A2 -> sub A B -> sub A2 B.
+Proof with (split_unify; aauto; eomg2).
+  introv Hspl Hsub.
+  indTypSize (size_typ A + size_typ B).
+  inverts keep Hsub; auto...
+  - (* andl *)
+    inverts H0; (* spl *)
+      try solve [inverts Hspl; applys~ andl; applys* IH H1; eomg2].
+    (* spl A&B *) (* spl A->B *) (* spl A->B *)
+    + (* spl A\/B *)
+      inverts keep Hspl.
+      applys* IH H1...
+    + (* spl A\/B *)
+      inverts Hspl. applys* andl.
+      applys* IH H1...
+  - (* andr *)
+    inverts H0; (* spl *)
+      try solve [inverts Hspl; applys~ andr; applys* IH H1; eomg2].
+    (* spl A&B *) (* spl A->B *) (* spl A->B *)
+    + (* spl A\/B *)
+      inverts keep Hspl.
+      applys* IH H1...
+    + (* spl A\/B *)
+      inverts Hspl. applys* andr.
+      applys* IH H1...
+  - (* orl rhs *)
+    applys~ S_orl.
+    applys* IH H0...
+  - (* orr rhs *)
+    applys~ S_orr.
+    applys* IH H0...
+  - (* and *)
+    applys~ S_and H;
+      applys IH...
+Qed.
 
 (* transitivity *)
 Hint Extern 0 =>
 match goal with
 | [ IH: forall _ , _ , H1: sub  ?A ?B , H2: sub ?B ?C |- sub ?A ?C ] =>
-  (forwards: IH H1 H2; eomg)
-end : sizeTypHd.
-
-Hint Extern 0 =>
-match goal with
-| [ H: spl (t_and _ _) _ _ |- _ ] => (inverts H)
-end : sizeTypHd.
+  (forwards: IH H1 H2; eomg2)
+end : trans.
 
 Lemma trans : forall A B C, sub A B -> sub B C -> sub A C.
-Proof with (solve_false; auto with sizeTypHd).
+Proof with (split_unify; aauto; auto with trans).
   introv s1 s2.
   indTypSize (size_typ A + size_typ B + size_typ C).
   inverts keep s1.
@@ -386,35 +442,16 @@ Proof with (solve_false; auto with sizeTypHd).
   - (* or *)
     applys~ S_or...
   - (* orl *)
-    inverts~ s2...
-    +
-      lets (Hi&[Hord|(?&?&Hspl)]): ord_or_split A.
-      * forwards~: and_meet_or s1.
-        inverts keep H1. (* spl or *)
-      admit.
-      admit.
-      * admit.
-    + admit.
-    + applys~ S_and H0...
+    assert (sub B0 C) by applys* orl_trans s2...
   - (* orr *)
-    admit. (*
-    inverts~ s2...
-    + applys~ S_and H0... *)
+    assert (sub C0 C) by applys* orr_trans s2...
   - (* arr *)
     inverts~ s2...
     + applys~ S_and H3...
   - (* and *)
-    inverts~ s2; split_unify...
-    + (* or *)
-      (* left splitu property ? *)
-      inverts H.
-      *
-        lets (Hi&[Hord|(?&?&Hspl)]): ord_or_split A.
-        ** admit.
-        ** applys or_extend Hspl.
+    inverts~ s2...
     + applys~ S_and H2...
 Qed.
-
 
 Hint Immediate trans : core.
 
@@ -424,8 +461,8 @@ Lemma split_iso: forall A B C,
 Proof with eauto.
   intros A B C H.
   split.
-  - applys~ S_and. applys~ S_andl H. applys~ S_andr H.
-  - applys S_and H. applys~ S_andl. applys~ S_andr.
+  - applys~ S_and. applys~ andl H. applys~ andr H.
+  - applys S_and H. applys~ andl. applys~ andr.
 Qed.
 
 Lemma split_subl: forall A B C,
@@ -444,59 +481,89 @@ Qed.
 
 Hint Resolve split_subl split_subr : core.
 
+Lemma splitu_keep_ord_l : forall A B C,
+    ord A -> splu A B C -> ord B.
+Proof.
+  introv Hord Hspl.
+  induction Hspl; inverts* Hord.
+Qed.
+
+Lemma splitu_keep_ord_r : forall A B C,
+    ord A -> splu A B C -> ord C.
+Proof.
+  introv Hord Hspl.
+  induction Hspl; inverts* Hord.
+Qed.
+
+Hint Resolve splitu_keep_ord_l splitu_keep_ord_r : core.
 
 Lemma split_subord_inv : forall A B C D,
     spl A B C -> ord D -> sub A D -> sub B D \/ sub C D.
-Proof.
+Proof with (aauto; eauto).
   introv Hspl Hord Hs. gen B C.
-  induction* Hs; intros; split_unify; solve_false; iauto.
-  - inverts Hspl.
-    + forwards* [?|?]: IHHs1 H3.
-    + forwards* [?|?]: IHHs2 H4.
-  - inverts* Hord. forwards* [?|?]: IHHs Hspl.
-  - inverts* Hord. forwards* [?|?]: IHHs Hspl.
-  (* counter-example resolved in this version *)
-  (* counter-example: A&B <: A&B \/ C *)
+  induction Hs; intros; split_unify; intuition.
+  - forwards [?|?]: IHHs...
+  - forwards [?|?]: IHHs...
+    (* counter-example resolved in this version *)
+    (* counter-example: A&B <: A&B \/ C *)
 Qed.
 
-Hint Constructors osub : core.
+Lemma splitu_ordusub_inv : forall A B C D,
+    splu A B C -> ordu D -> sub D A -> sub D B \/ sub D C.
+Proof with (aauto; eauto).
+  introv Hspl Hord Hs. gen B C.
+  induction Hs; intros; split_unify; intuition.
+  - forwards [?|?]: IHHs...
+  - forwards [?|?]: IHHs...
+  - (* spl D and splu D *)
+    inverts Hspl; split_unify.
+    + inverts H.
+      * forwards [?|?]: H0... forwards [?|?]: H1...
+      * forwards [?|?]: H0... forwards [?|?]: H1...
+    + forwards [?|?]: H0...
+    + forwards [?|?]: H1...
+Qed.
 
 Lemma sub_fun : forall A B C D,
     sub B D -> sub C A -> sub (t_arrow A B) (t_arrow C D).
-Proof with (auto with sizeTypHd).
+Proof with (split_unify; aauto; eomg2).
   introv s.
   indTypSize (size_typ (t_arrow A B) + size_typ (t_arrow C D)).
   lets ([Hi2|(?&?&Hi2)]&Hu'2): ord_or_split (t_arrow C D).
   lets ([Hi1|(?&?&Hi1)]&Hu'1): ord_or_split (t_arrow A B).
   - applys~ S_arr.
   - (* subtype splittable ; supertype ordinary *)
-    inverts keep Hi2.
-    + (* split return type *)
-      forwards* (?&?): split_decrease_size H4.
-      applys~ S_andl Hi2;
-        applys* IH.
-        try applys* trans s;
-        eomg.
-    + (* split output type *)
-      applys~ S_and Hi1;
-        applys* IH;
-        try applys* trans H;
-        eomg.
+    inverts keep Hi1.
+    + (* split return type B *)
+      forwards [?|?]: split_subord_inv B s... inverts~ Hi2.
+      * applys~ S_andl Hi1.
+        applys IH...
+      * applys~ S_andr Hi1.
+        applys IH...
+    + (* splitu input type A *)
+      forwards [?|?]: splitu_ordusub_inv A... inverts~ Hi2.
+      * applys~ S_andl Hi1.
+        applys IH...
+      * applys~ S_andr Hi1.
+        applys IH...
   - (* supertype splittable *)
     inverts keep Hi2.
     + (* split return type *)
-      forwards* (?&?): split_decrease_size H4.
-      applys~ S_and Hi2;
-        applys* IH;
-        try applys* trans s;
-        eomg.
-    + (* split output type *)
-      applys~ S_and Hi2;
-        applys* IH;
-        try applys* trans H;
-        eomg.
+      applys~ S_and Hi2.
+      * applys IH...
+        applys andl_trans s...
+      * applys IH...
+        applys andr_trans s...
+    + (* split input type *)
+      applys~ S_and Hi2; clear Hi2.
+      * applys IH...
+        applys orl_trans H5...
+      * applys IH...
+        applys orr_trans H5...
 Qed.
 
+
+Hint Constructors osub : core.
 (* declarative subtyping equivalence *)
 Theorem dsub_eq: forall A B,
     osub A B <-> sub A B.
@@ -568,10 +635,10 @@ Ltac auto_sub :=
 
 
 
-(* declarative subtyping equivalence *)
-Theorem dsub_eq: forall A B,
-    dsub A B <-> sub A B.
-Proof.
-  split; introv H;
-  induction* H.
-Qed.
+    (* declarative subtyping equivalence *)
+    Theorem dsub_eq: forall A B,
+        dsub A B <-> sub A B.
+    Proof.
+      split; introv H;
+        induction* H.
+    Qed.

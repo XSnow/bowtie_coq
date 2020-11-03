@@ -360,17 +360,21 @@ D <: C
 % ----------------- :: or
 % A <: B
 
+
+ordinary A\/B
 A <: D
 B <: D
 ----------------- :: or
 A\/B <: D
 
 
+ordinary B\/C
 A <: B
 --------------- :: orl
 A <: B \/ C
 
 
+ordinary B\/C
 A <: C
 --------------- :: orr
 A <: B \/ C
