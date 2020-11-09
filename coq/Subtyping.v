@@ -666,6 +666,14 @@ Proof with intuition.
   - applys* OS_and.
 Qed.
 
+(* (A \/ B1) & (A \/ B2) < A \/ (B1 & B2) *)
+Lemma osub_distOr: forall A B1 B2,
+    sub (t_and A (t_or B1 B2)) (t_or (t_and A B1) (t_and A B2)).
+Proof with (split_unify; aauto; eomg2).
+  introv.
+      admit.
+Qed.
+
 Lemma osub_and: forall A B C,
     spl A B C -> osub (t_and B C) A
 with osub_or: forall A B C,
@@ -677,12 +685,24 @@ Proof with intuition.
   - clear osub_and osub_or. eauto.
   - forwards: osub_or H0.
     clear osub_and osub_or. eauto.
-  - clear osub_and osub_or.
+  - clear osub_and.
     applys OS_trans (t_or B A)...
     applys OS_trans (t_and (t_or B A1) (t_or B A2)).
     applys OS_and; applys OS_trans.
     applys OS_andl. apply OS_or; eauto.
     applys OS_andr. apply OS_or; eauto.
+    applys OS_trans.
+    applys* osub_or.
+    applys OS_or. applys OS_trans.
+    applys OS_andl. eauto.
+    * (* osub (t_and A1 (t_or B A2)) (t_or B A) *)
+      lets (Hi&[Hu1|(?&?&Hu1)]): ord_or_split A1.
+      ** applys OS_trans. applys* osub_or. eauto.
+      ** applys OS_trans. applys* osub_or. eauto.
+         applys Spl_
+    a
+    applys OS_trans. applys* osub_or.
+    applys OS_andr eauto.
     applys* OS_trans (t_or B (t_and A1 A2)).
   - clear osub_and osub_or.
     applys* OS_trans (t_or A (t_and B1 B2)).
