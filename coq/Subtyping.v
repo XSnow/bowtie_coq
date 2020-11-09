@@ -281,18 +281,6 @@ Qed.
 
 Hint Resolve andl andr refl : core.
 
-
-(* T1\/T3 <| T1&T2 \/ T3 |> T2\/T3 *)
-(* T1&T2 <: D *)
-(* T3 <: D *)
-(* A <: T1\/T3 *)
-(* A <: T2\/T3 *)
-Lemma split_union: forall A B C1 C2,
-    spl (t_or A B) C1 C2 -> (sub A C1 /\ sub C2 A).
-Proof.
-  introv H.
-Abort.
-
 Lemma split_keep_ordu_l : forall A B C,
     ordu A -> spl A B C -> ordu B.
 Proof.
@@ -479,7 +467,25 @@ Proof.
   induction* H.
 Qed.
 
-Hint Resolve split_subl split_subr : core.
+
+Lemma splitu_lsub: forall A B C,
+    splu A B C -> sub B A.
+Proof.
+  introv H.
+  induction* H.
+  applys orl_trans; try applys refl. eauto.
+Qed.
+
+Lemma splitu_rsub: forall A B C,
+    splu A B C -> sub C A.
+Proof.
+  introv H.
+  induction* H.
+  applys orr_trans; try applys refl. eauto.
+Qed.
+
+
+Hint Resolve split_subl split_subr splitu_lsub splitu_rsub: core.
 
 Lemma splitu_keep_ord_l : forall A B C,
     ord A -> splu A B C -> ord B.
@@ -524,7 +530,7 @@ Proof with (aauto; eauto).
     + forwards [?|?]: H1...
 Qed.
 
-Lemma sub_fun : forall A B C D,
+Lemma arrow : forall A B C D,
     sub B D -> sub C A -> sub (t_arrow A B) (t_arrow C D).
 Proof with (split_unify; aauto; eomg2).
   introv s.
@@ -562,83 +568,159 @@ Proof with (split_unify; aauto; eomg2).
         applys orr_trans H5...
 Qed.
 
+Lemma splu_lhs : forall A B C D,
+    splu A B C -> sub B D -> sub C D -> sub A D.
+Proof with (split_unify; aauto; eomg2).
+  introv Hspl Hs1 Hs2.
+  indTypSize (size_typ A + size_typ D).
+  lets ([Hi1|(?&?&Hi1)]&Hu'1): ord_or_split D.
+  - (* ord D *)
+    lets ([Hi2|(?&?&Hi2)]&Hu'2): ord_or_split A.
+    inverts Hspl...
+    + applys S_or...
+    + inverts Hspl...
+      * (* A = B\/C *)
+        inverts Hi2...
+        ** forwards~ [?|?]: split_subord_inv Hs1...
+           *** applys S_andl. auto. eauto.
+               applys* IH...
+           *** applys S_andr. auto. eauto.
+               applys* IH...
+        ** forwards~ [?|?]: split_subord_inv Hs2...
+           *** applys S_andl. auto. eauto.
+               applys* IH...
+           *** applys S_andr. auto. eauto.
+               applys* IH...
+      * (* A = x&x0 *)
+        forwards~ [?|?]: split_subord_inv Hs1...
+        forwards~ [?|?]: split_subord_inv Hs2...
+        ** applys andl. eauto.
+           applys IH...
+        ** applys andr. eauto. auto.
+        ** applys andr. eauto. auto.
+      * (* A = x&x0 *)
+        forwards~ [?|?]: split_subord_inv Hs1...
+        ** applys andl. eauto. auto.
+        ** forwards~ [?|?]: split_subord_inv Hs2...
+           applys andl. eauto. auto.
+           applys andr. eauto. applys IH...
+  - applys S_and...
+    * applys IH...
+      applys~ andl_trans Hi1.
+      applys~ andl_trans Hi1.
+    * applys IH...
+      applys~ andr_trans Hi1.
+      applys~ andr_trans Hi1.
+Qed.
 
-Hint Constructors osub : core.
+Lemma distArrU: forall A B C,
+    sub (t_and (t_arrow A C) (t_arrow B C)) (t_arrow (t_or A B) C).
+Proof with (split_unify; aauto; eomg2).
+  introv.
+  indTypSize (size_typ C).
+  lets ([Hi1|(?&?&Hi1)]&Hu'1): ord_or_split C.
+  - applys* S_and.
+  - (* split C x x0 *)
+    forwards Hs1: IH A B x...
+    forwards Hs2: IH A B x0...
+    applys S_and. eauto.
+    + applys trans Hs1. applys* S_and.
+    + applys trans Hs2. applys* S_and.
+Qed.
+
+Lemma distOr: forall A B1 B2,
+    sub (t_and A (t_or B1 B2)) (t_or (t_and A B1) (t_and A B2)).
+Proof with (split_unify; aauto; eomg2).
+  introv.
+  - applys S_and. eauto.
+    + applys trans. applys* split_subl.
+      applys* splitu_lsub.
+    + (*  sub (t_and A (t_or B1 B2)) (t_or B1 (t_and A B2)) *)
+      admit.
+Qed.
+
+Hint Resolve arrow splu_lhs distArrU : core.
+
 (* declarative subtyping equivalence *)
+Hint Constructors osub : core.
+
+Lemma osub_spl: forall A B C,
+    spl A B C -> osub A B /\ osub A C
+with osub_splu: forall A B C,
+    splu A B C -> osub B A /\ osub C A.
+Proof with intuition.
+  + introv H.
+    induction H...
+  - apply osub_splu in H0...
+  - apply osub_splu in H0...
+  - applys* OS_or.
+  - applys* OS_or.
+  - applys* OS_or.
+  - applys* OS_or.
+
+  +  introv H.
+     induction H...
+  - applys* OS_and.
+  - applys* OS_and.
+  - applys* OS_and.
+  - applys* OS_and.
+Qed.
+
+Lemma osub_and: forall A B C,
+    spl A B C -> osub (t_and B C) A
+with osub_or: forall A B C,
+    splu A B C -> osub A (t_or B C).
+Proof with intuition.
+  + introv H.
+    induction H.
+  - applys OS_refl.
+  - clear osub_and osub_or. eauto.
+  - forwards: osub_or H0.
+    clear osub_and osub_or. eauto.
+  - clear osub_and osub_or.
+    applys OS_trans (t_or B A)...
+    applys OS_trans (t_and (t_or B A1) (t_or B A2)).
+    applys OS_and; applys OS_trans.
+    applys OS_andl. apply OS_or; eauto.
+    applys OS_andr. apply OS_or; eauto.
+    applys* OS_trans (t_or B (t_and A1 A2)).
+  - clear osub_and osub_or.
+    applys* OS_trans (t_or A (t_and B1 B2)).
+  + introv H.
+    induction H.
+  - applys OS_refl.
+  - clear osub_and osub_or.
+    applys OS_trans (t_and B A)...
+    applys OS_trans (t_and B (t_or A1 A2))...
+    applys OS_and...
+     applys OS_trans. applys OS_andr... auto.
+     applys OS_trans (t_or (t_and B A1) (t_and B A2))...
+     applys OS_or... applys OS_trans (t_and A1 B)...
+     applys OS_trans (t_and A2 B)...
+  - clear osub_and osub_or.
+    applys* OS_trans (t_and A (t_or B1 B2)).
+Qed.
+
+Hint Resolve osub_spl osub_splu osub_and osub_or: core.
+
 Theorem dsub_eq: forall A B,
     osub A B <-> sub A B.
-Proof.
+Proof with (aauto; eauto).
   split; introv H.
   - induction* H.
-    + (* arrow *)
-      clear H H0. indTypSize (size_typ (t_arrow A C) + size_typ (t_arrow B D)).
-      lets ([Hi2|(?&?&Hi2)]&Hu'2): ord_or_split (t_arrow B D).
-      lets ([Hi1|(?&?&Hi1)]&Hu'1): ord_or_split (t_arrow A C).
-      * (* ord, ord *)
-        applys~ S_arr.
-      * (* ord, spl *)
-        admit.
-      * applys~ S_and Hi2; admit.
-    + indTypSize (size_typ C).
-      lets ([Hi2|(?&?&Hi2)]&Hu'2): ord_or_split C.
-      * applys~ S_and. applys~ S_andl. applys~ S_andr.
-      * lets (?&?): split_decrease_size Hi2.
-        applys S_and.
-        applys~ Sp_arrow Hi2.
-        ** forwards* Hs: IH A x B; eomg. applys~ trans Hs.
-           applys* S_and.
-        ** forwards* Hs: IH A x0 B; eomg. applys~ trans Hs.
-           applys* S_and.
-  - induction~ H.
-    + (* and l*)
-      gen C. inductions H; intros.
-      * applys~ OS_trans IHsub.
-      * Abort.
-
-
-Lemma sub_fun : forall A B C D,
-    sub B D -> sub C A -> sub (t_arrow A B) (t_arrow C D).
-Abort.
-
-Hint Extern 0 => match goal with
-                 | [ |- sub (t_and ?A ?B) ?A ] => apply sub_l_andl
-                 | [ |- sub (t_and ?A ?B) ?B ] => apply sub_l_andr
-                 | [ H: sub ?A (t_and ?B ?C) |- sub ?A ?B ] => eapply (trans _ (t_and B C))
-                 | [ H: sub ?A (t_and ?B ?C) |- sub ?A ?C ] => eapply (trans _ (t_and B C))
-                 end : core.
-
-
-Ltac auto_sub :=
-  repeat (auto ;
-          match goal with
-          | [ |- sub (t_and ?C ?D) (t_and ?A ?B) ] => (eapply S_and; try apply Sp_and)
-          | [ |- sub (t_and (t_arrow ?A ?B) (t_arrow ?A ?C)) (t_arrow ?A (t_and ?B ?C)) ] => (eapply S_and)
-          | [ H1: sub ?A ?B, H2: sub ?B ?C |- sub ?A ?C ] =>
-            (forwards: trans H1 H2; auto)
-          | [ H: sub t_top ?A |- sub _ ?A ] =>
-            (apply topLike_super_top in H; apply S_top; auto)
-          | [ H: topLike ?A |- sub _ (t_arrow _ ?A) ] =>
-            (apply TL_arr in H; apply S_top; auto)
-
-          | [ H1: spl ?A ?B ?C, H2: ord ?D, H3: sub ?A ?D |- _ ] => (
-              forwards [?|?]: splitl_inv H1 H2 H3;
-              clear H3)
-          | [ H1: spl ?A ?B ?C |- _ ] => (
-              forwards : split_sub H1;
-              forwards : spl_sub_l H1;
-              forwards : spl_sub_r H1;
-              clear H1)
-          | [ |- sub (t_arrow ?A ?B) (t_arrow ?C ?D) ] => apply sub_fun
-          | [ H1: sub ?A ?B |- sub ?A ?C ] =>
-            assert ( sub B C ) by auto
-          end).
-
-
-
-    (* declarative subtyping equivalence *)
-    Theorem dsub_eq: forall A B,
-        dsub A B <-> sub A B.
-    Proof.
-      split; introv H;
-        induction* H.
-    Qed.
+    + (* orl *)
+      applys orl_trans; try applys refl; eauto. admit.
+    + (* orl *)
+      applys orr_trans; try applys refl; eauto. admit.
+  -
+    induction~ H.
+    + (* andl *)
+      forwards (?&?): osub_spl H0. applys OS_trans H2...
+    + (* andr *)
+      forwards (?&?): osub_spl H0. applys OS_trans H3...
+    + applys OS_trans IHsub...
+    + applys OS_trans IHsub...
+    + applys OS_trans (t_and B C)...
+      Unshelve. Unshelve.
+      eauto. eauto.
+Qed.
