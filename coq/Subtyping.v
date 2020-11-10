@@ -628,18 +628,42 @@ Proof with (split_unify; aauto; eomg2).
     + applys trans Hs2. applys* S_and.
 Qed.
 
-Lemma distOr: forall A B1 B2,
-    sub (t_and A (t_or B1 B2)) (t_or (t_and A B1) (t_and A B2)).
-Proof with (split_unify; aauto; eomg2).
+Lemma symm_and: forall A B,
+    sub (t_and A B) (t_and B A).
+Proof.
   introv.
-  - applys S_and. eauto.
-    + applys trans. applys* split_subl.
-      applys* splitu_lsub.
-    + (*  sub (t_and A (t_or B1 B2)) (t_or B1 (t_and A B2)) *)
-      admit.
+  applys* S_and.
 Qed.
 
-Hint Resolve arrow splu_lhs distArrU : core.
+Lemma symm_or: forall A B,
+    sub (t_or A B) (t_or B A).
+Proof.
+  introv.
+  applys* splu_lhs.
+Qed.
+
+Hint Resolve symm_and symm_or : core.
+
+Lemma distAnd: forall A B1 B2,
+    sub (t_and A (t_or B1 B2)) (t_or (t_and A B1) (t_and A B2)).
+Proof with eauto.
+  introv.
+  applys S_and...
+  applys trans. applys symm_and.
+  applys trans (t_or (t_and A B2) B1)...
+  applys S_and...
+Qed.
+
+
+Lemma distOr: forall A B1 B2,
+    sub (t_and (t_or A B1) (t_or A B2)) (t_or A (t_and B1 B2)).
+Proof with eauto.
+  introv.
+  applys trans. applys symm_and.
+  applys trans (t_or (t_and B1 B2) A)...
+Qed.
+
+Hint Resolve arrow splu_lhs distArrU distAnd distOr : core.
 
 (* declarative subtyping equivalence *)
 Hint Constructors osub : core.
@@ -708,10 +732,6 @@ Theorem dsub_eq: forall A B,
 Proof with (aauto; eauto).
   split; introv H.
   - induction* H.
-    + (* orl *)
-      applys orl_trans; try applys refl; eauto. admit.
-    + (* orl *)
-      applys orr_trans; try applys refl; eauto. admit.
   -
     induction~ H.
     + (* andl *)
@@ -721,6 +741,4 @@ Proof with (aauto; eauto).
     + applys OS_trans IHsub...
     + applys OS_trans IHsub...
     + applys OS_trans (t_and B C)...
-      Unshelve. Unshelve.
-      eauto. eauto.
 Qed.
