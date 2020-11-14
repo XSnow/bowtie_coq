@@ -628,18 +628,42 @@ Proof with (split_unify; aauto; eomg2).
     + applys trans Hs2. applys* S_and.
 Qed.
 
-Lemma distOr: forall A B1 B2,
-    sub (t_and A (t_or B1 B2)) (t_or (t_and A B1) (t_and A B2)).
-Proof with (split_unify; aauto; eomg2).
+Lemma symm_and: forall A B,
+    sub (t_and A B) (t_and B A).
+Proof.
   introv.
-  - applys S_and. eauto.
-    + applys trans. applys* split_subl.
-      applys* splitu_lsub.
-    + (*  sub (t_and A (t_or B1 B2)) (t_or B1 (t_and A B2)) *)
-      admit.
+  applys* S_and.
 Qed.
 
-Hint Resolve arrow splu_lhs distArrU : core.
+Lemma symm_or: forall A B,
+    sub (t_or A B) (t_or B A).
+Proof.
+  introv.
+  applys* splu_lhs.
+Qed.
+
+Hint Resolve symm_and symm_or : core.
+
+Lemma distAnd: forall A B1 B2,
+    sub (t_and A (t_or B1 B2)) (t_or (t_and A B1) (t_and A B2)).
+Proof with eauto.
+  introv.
+  applys S_and...
+  applys trans. applys symm_and.
+  applys trans (t_or (t_and A B2) B1)...
+  applys S_and...
+Qed.
+
+
+Lemma distOr: forall A B1 B2,
+    sub (t_and (t_or A B1) (t_or A B2)) (t_or A (t_and B1 B2)).
+Proof with eauto.
+  introv.
+  applys trans. applys symm_and.
+  applys trans (t_or (t_and B1 B2) A)...
+Qed.
+
+Hint Resolve arrow splu_lhs distArrU distAnd distOr : core.
 
 (* declarative subtyping equivalence *)
 Hint Constructors osub : core.
@@ -666,13 +690,38 @@ Proof with intuition.
   - applys* OS_and.
 Qed.
 
-(* (A \/ B1) & (A \/ B2) < A \/ (B1 & B2) *)
-Lemma osub_distOr: forall A B1 B2,
-    sub (t_and A (t_or B1 B2)) (t_or (t_and A B1) (t_and A B2)).
-Proof with (split_unify; aauto; eomg2).
+Lemma osub_symm_and: forall A B,
+    osub (t_and A B) (t_and B A).
+Proof.
   introv.
-      admit.
+  applys* OS_and.
 Qed.
+
+Lemma osub_symm_or: forall A B,
+    osub (t_or A B) (t_or B A).
+Proof.
+  introv.
+  applys* OS_or.
+Qed.
+
+
+Lemma osub_distAnd: forall A B1 B2,
+    osub (t_and (t_or B1 B2) A) (t_or (t_and B1 A) (t_and B2 A)).
+Proof with eauto.
+  introv.
+  applys OS_trans.
+  2:{ applys OS_distOr. }
+  - applys OS_and.
+    + applys OS_trans (t_or (t_and B2 A) B1).
+      2: { applys osub_symm_or. }
+      * applys OS_trans.
+        2: { applys OS_distOr. }
+        ** applys* OS_and.
+    + eauto.
+Qed.
+
+Hint Resolve osub_symm_and osub_symm_or osub_distAnd : core.
+
 
 Lemma osub_and: forall A B C,
     spl A B C -> osub (t_and B C) A
@@ -685,40 +734,23 @@ Proof with intuition.
   - clear osub_and osub_or. eauto.
   - forwards: osub_or H0.
     clear osub_and osub_or. eauto.
-  - clear osub_and.
-    applys OS_trans (t_or B A)...
-    applys OS_trans (t_and (t_or B A1) (t_or B A2)).
-    applys OS_and; applys OS_trans.
-    applys OS_andl. apply OS_or; eauto.
-    applys OS_andr. apply OS_or; eauto.
-    applys OS_trans.
-    applys* osub_or.
-    applys OS_or. applys OS_trans.
-    applys OS_andl. eauto.
-    * (* osub (t_and A1 (t_or B A2)) (t_or B A) *)
-      lets (Hi&[Hu1|(?&?&Hu1)]): ord_or_split A1.
-      ** applys OS_trans. applys* osub_or. eauto.
-      ** applys OS_trans. applys* osub_or. eauto.
-         applys Spl_
-    a
-    applys OS_trans. applys* osub_or.
-    applys OS_andr eauto.
-    applys* OS_trans (t_or B (t_and A1 A2)).
   - clear osub_and osub_or.
-    applys* OS_trans (t_or A (t_and B1 B2)).
+    applys* OS_trans (t_or (t_and A1 A2) B).
+  - clear osub_and osub_or.
+    applys OS_trans (t_or B A)...
+    applys OS_trans (t_and (t_or B1 A) (t_or B2 A))...
+    applys OS_and.
+    applys OS_trans (t_or A B1)...
+    applys OS_trans (t_or A B2)...
+    applys* OS_trans (t_or (t_and B1 B2) A).
   + introv H.
     induction H.
   - applys OS_refl.
   - clear osub_and osub_or.
-    applys OS_trans (t_and B A)...
-    applys OS_trans (t_and B (t_or A1 A2))...
-    applys OS_and...
-     applys OS_trans. applys OS_andr... auto.
-     applys OS_trans (t_or (t_and B A1) (t_and B A2))...
-     applys OS_or... applys OS_trans (t_and A1 B)...
-     applys OS_trans (t_and A2 B)...
+    applys* OS_trans (t_and (t_or A1 A2) B).
   - clear osub_and osub_or.
-    applys* OS_trans (t_and A (t_or B1 B2)).
+    applys OS_trans (t_and B A)...
+    applys* OS_trans (t_and (t_or B1 B2) A).
 Qed.
 
 Hint Resolve osub_spl osub_splu osub_and osub_or: core.
@@ -728,10 +760,6 @@ Theorem dsub_eq: forall A B,
 Proof with (aauto; eauto).
   split; introv H.
   - induction* H.
-    + (* orl *)
-      applys orl_trans; try applys refl; eauto. admit.
-    + (* orl *)
-      applys orr_trans; try applys refl; eauto. admit.
   -
     induction~ H.
     + (* andl *)
@@ -741,6 +769,4 @@ Proof with (aauto; eauto).
     + applys OS_trans IHsub...
     + applys OS_trans IHsub...
     + applys OS_trans (t_and B C)...
-      Unshelve. Unshelve.
-      eauto. eauto.
 Qed.
