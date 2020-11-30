@@ -29,8 +29,8 @@ typ, A, B, C, D, char {{ tex \mathsf{Char} }}, bool {{ tex \mathsf{Bool} }} % , 
 
 mode {{ tex \Diamond }}
   :: 'm_'             ::=
-  | sub               ::   :: sub          {{ tex <: }}
-  | super             ::   :: super        {{ tex :> }}
+  | sub               ::   :: sub          {{ tex < }}
+  | super             ::   :: super        {{ tex > }}
   | ! mode            :: S :: flip         {{ tex \overline{[[mode]]} }} {{ coq (flipmode [[mode]]) }}
 
 parsing
@@ -359,35 +359,36 @@ defns
 Subtyping :: '' ::=
 
 defn
-A <: B  :: :: sub :: S_
+A <: mode :> B  :: :: sub :: S_
 {{ com Algorithmic Subtyping }}
+{{ tex [[A]] :[[mode]]: [[B]] }}
 by
 
 
 ---------------------- :: int
-int <: int
+int <: mode :> int
 
 
---------------- :: top
-A <: Top
+---------------------- :: top
+A <: mode :> |mode|
 
 
---------------- :: bot
-Bot <: A
+---------------------- :: bot
+|!mode| <: mode :> A
 
 
 ordinary C
 split D A B
-A <: C
+A <: sub :> C
 ------------------------- :: andl
-D <: C
+D <: sub :> C
 
 
 ordinary C
 split D A B
-B <: C
+B <: sub :> C
 ----------------- :: andr
-D <: C
+D <: sub :> C
 
 
 % A1\/A2 & B <: B
@@ -401,37 +402,37 @@ D <: C
 
 
 ordinary A\/B
-A <: D
-B <: D
+A <: sub :> D
+B <: sub :> D
 ----------------- :: or
-A\/B <: D
+A\/B <: sub :> D
 
 
 ordinary B\/C
-A <: B
---------------- :: orl
-A <: B \/ C
+A <: sub :> B
+------------------- :: orl
+A <: sub :> B \/ C
 
 
 ordinary B\/C
-A <: C
---------------- :: orr
-A <: B \/ C
+A <: sub :> C
+-------------------- :: orr
+A <: sub :> B \/ C
 
 
 ordinary A -> C
 ordinary B -> D
-B <: A
-C <: D
+A <: !mode :> B
+C <: mode :> D
 ------------------------ :: arr
-A -> C <: B -> D
+A -> C <: mode :> B -> D
 
 
 %% when the right type can be split in the intersection way,
 %% both parts have to be supertypes of the left one
 
 split D B C
-A <: B
-A <: C
+A <: sub :> B
+A <: sub :> C
 --------------- :: and
-A <: D
+A <: sub :> D

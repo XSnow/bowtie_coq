@@ -44,8 +44,8 @@
 
 \newcommand{\ottmode}{
 \ottrulehead{\Diamond}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{ <: }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ :> }{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{ < }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ > }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \overline{ \Diamond } } {\textsf{S}}{}{}{}}
 
 \newcommand{\ottgrammar}{\ottgrammartabular{
@@ -136,21 +136,21 @@
 
 \newcommand{\ottdruleOSXXdistArr}[1]{\ottdrule[#1]{%
 }{
- \ottsym{(}  \ottnt{A}  \rightarrow  \ottnt{B}  \ottsym{)}  \, \& \,  \ottsym{(}  \ottnt{A}  \rightarrow  \ottnt{C}  \ottsym{)}    <:    \ottnt{A}  \rightarrow  \ottnt{B}  \, \& \,  \ottnt{C} }{%
+ \ottsym{(}  \ottnt{A}  \rightarrow  \ottnt{B}  \ottsym{)}  \, \& \,  \ottsym{(}  \ottnt{A}  \rightarrow  \ottnt{C}  \ottsym{)}    <    \ottnt{A}  \rightarrow  \ottnt{B}  \, \& \,  \ottnt{C} }{%
 {\ottdrulename{OS\_distArr}}{}%
 }}
 
 
 \newcommand{\ottdruleOSXXdistArrU}[1]{\ottdrule[#1]{%
 }{
- \ottsym{(}  \ottnt{A}  \rightarrow  \ottnt{C}  \ottsym{)}  \, \& \,  \ottsym{(}  \ottnt{B}  \rightarrow  \ottnt{C}  \ottsym{)}    <:    \ottnt{A}  \, \mid \,  \ottnt{B}  \rightarrow  \ottnt{C} }{%
+ \ottsym{(}  \ottnt{A}  \rightarrow  \ottnt{C}  \ottsym{)}  \, \& \,  \ottsym{(}  \ottnt{B}  \rightarrow  \ottnt{C}  \ottsym{)}    <    \ottnt{A}  \, \mid \,  \ottnt{B}  \rightarrow  \ottnt{C} }{%
 {\ottdrulename{OS\_distArrU}}{}%
 }}
 
 
 \newcommand{\ottdruleOSXXdistOr}[1]{\ottdrule[#1]{%
 }{
- \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \, \mid \,  \ottnt{B}  \ottsym{)}  \, \& \,  \ottsym{(}  \ottnt{A_{{\mathrm{2}}}}  \, \mid \,  \ottnt{B}  \ottsym{)}    <:    \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \, \& \,  \ottnt{A_{{\mathrm{2}}}}  \ottsym{)}  \, \mid \,  \ottnt{B} }{%
+ \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \, \mid \,  \ottnt{B}  \ottsym{)}  \, \& \,  \ottsym{(}  \ottnt{A_{{\mathrm{2}}}}  \, \mid \,  \ottnt{B}  \ottsym{)}    <    \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \, \& \,  \ottnt{A_{{\mathrm{2}}}}  \ottsym{)}  \, \mid \,  \ottnt{B} }{%
 {\ottdrulename{OS\_distOr}}{}%
 }}
 
@@ -368,21 +368,21 @@
 %% defn sub
 \newcommand{\ottdruleSXXint}[1]{\ottdrule[#1]{%
 }{
- \mathsf{Int}   \ottsym{<:}   \mathsf{Int} }{%
+  \mathsf{Int}   : \Diamond :   \mathsf{Int}  }{%
 {\ottdrulename{S\_int}}{}%
 }}
 
 
 \newcommand{\ottdruleSXXtop}[1]{\ottdrule[#1]{%
 }{
-\ottnt{A}  \ottsym{<:}   \mathsf{Top} }{%
+ \ottnt{A}  : \Diamond :  \ottsym{\mbox{$\mid$}}  \Diamond  \ottsym{\mbox{$\mid$}} }{%
 {\ottdrulename{S\_top}}{}%
 }}
 
 
 \newcommand{\ottdruleSXXbot}[1]{\ottdrule[#1]{%
 }{
- \mathsf{Bot}   \ottsym{<:}  \ottnt{A}}{%
+ \ottsym{\mbox{$\mid$}}   \overline{ \Diamond }   \ottsym{\mbox{$\mid$}}  : \Diamond :  \ottnt{A} }{%
 {\ottdrulename{S\_bot}}{}%
 }}
 
@@ -390,9 +390,9 @@
 \newcommand{\ottdruleSXXandl}[1]{\ottdrule[#1]{%
 \ottpremise{ \ottnt{C} ~\mathsf{Ordinary} }%
 \ottpremise{ \ottnt{A}  \mathbin{\lhd}  \ottnt{D}  \mathbin{\rhd}  \ottnt{B} }%
-\ottpremise{\ottnt{A}  \ottsym{<:}  \ottnt{C}}%
+\ottpremise{ \ottnt{A}  :  <  :  \ottnt{C} }%
 }{
-\ottnt{D}  \ottsym{<:}  \ottnt{C}}{%
+ \ottnt{D}  :  <  :  \ottnt{C} }{%
 {\ottdrulename{S\_andl}}{}%
 }}
 
@@ -400,37 +400,37 @@
 \newcommand{\ottdruleSXXandr}[1]{\ottdrule[#1]{%
 \ottpremise{ \ottnt{C} ~\mathsf{Ordinary} }%
 \ottpremise{ \ottnt{A}  \mathbin{\lhd}  \ottnt{D}  \mathbin{\rhd}  \ottnt{B} }%
-\ottpremise{\ottnt{B}  \ottsym{<:}  \ottnt{C}}%
+\ottpremise{ \ottnt{B}  :  <  :  \ottnt{C} }%
 }{
-\ottnt{D}  \ottsym{<:}  \ottnt{C}}{%
+ \ottnt{D}  :  <  :  \ottnt{C} }{%
 {\ottdrulename{S\_andr}}{}%
 }}
 
 
 \newcommand{\ottdruleSXXor}[1]{\ottdrule[#1]{%
 \ottpremise{ \ottnt{A}  \, \mid \,  \ottnt{B} ~\mathsf{Ordinary} }%
-\ottpremise{\ottnt{A}  \ottsym{<:}  \ottnt{D}}%
-\ottpremise{\ottnt{B}  \ottsym{<:}  \ottnt{D}}%
+\ottpremise{ \ottnt{A}  :  <  :  \ottnt{D} }%
+\ottpremise{ \ottnt{B}  :  <  :  \ottnt{D} }%
 }{
-\ottnt{A}  \, \mid \,  \ottnt{B}  \ottsym{<:}  \ottnt{D}}{%
+ \ottnt{A}  \, \mid \,  \ottnt{B}  :  <  :  \ottnt{D} }{%
 {\ottdrulename{S\_or}}{}%
 }}
 
 
 \newcommand{\ottdruleSXXorl}[1]{\ottdrule[#1]{%
 \ottpremise{ \ottnt{B}  \, \mid \,  \ottnt{C} ~\mathsf{Ordinary} }%
-\ottpremise{\ottnt{A}  \ottsym{<:}  \ottnt{B}}%
+\ottpremise{ \ottnt{A}  :  <  :  \ottnt{B} }%
 }{
-\ottnt{A}  \ottsym{<:}  \ottnt{B}  \, \mid \,  \ottnt{C}}{%
+ \ottnt{A}  :  <  :  \ottnt{B}  \, \mid \,  \ottnt{C} }{%
 {\ottdrulename{S\_orl}}{}%
 }}
 
 
 \newcommand{\ottdruleSXXorr}[1]{\ottdrule[#1]{%
 \ottpremise{ \ottnt{B}  \, \mid \,  \ottnt{C} ~\mathsf{Ordinary} }%
-\ottpremise{\ottnt{A}  \ottsym{<:}  \ottnt{C}}%
+\ottpremise{ \ottnt{A}  :  <  :  \ottnt{C} }%
 }{
-\ottnt{A}  \ottsym{<:}  \ottnt{B}  \, \mid \,  \ottnt{C}}{%
+ \ottnt{A}  :  <  :  \ottnt{B}  \, \mid \,  \ottnt{C} }{%
 {\ottdrulename{S\_orr}}{}%
 }}
 
@@ -438,24 +438,24 @@
 \newcommand{\ottdruleSXXarr}[1]{\ottdrule[#1]{%
 \ottpremise{ \ottnt{A}  \rightarrow  \ottnt{C} ~\mathsf{Ordinary} }%
 \ottpremise{ \ottnt{B}  \rightarrow  \ottnt{D} ~\mathsf{Ordinary} }%
-\ottpremise{\ottnt{B}  \ottsym{<:}  \ottnt{A}}%
-\ottpremise{\ottnt{C}  \ottsym{<:}  \ottnt{D}}%
+\ottpremise{ \ottnt{A}  :  \overline{ \Diamond }  :  \ottnt{B} }%
+\ottpremise{ \ottnt{C}  : \Diamond :  \ottnt{D} }%
 }{
-\ottnt{A}  \rightarrow  \ottnt{C}  \ottsym{<:}  \ottnt{B}  \rightarrow  \ottnt{D}}{%
+ \ottnt{A}  \rightarrow  \ottnt{C}  : \Diamond :  \ottnt{B}  \rightarrow  \ottnt{D} }{%
 {\ottdrulename{S\_arr}}{}%
 }}
 
 
 \newcommand{\ottdruleSXXand}[1]{\ottdrule[#1]{%
 \ottpremise{ \ottnt{B}  \mathbin{\lhd}  \ottnt{D}  \mathbin{\rhd}  \ottnt{C} }%
-\ottpremise{\ottnt{A}  \ottsym{<:}  \ottnt{B}}%
-\ottpremise{\ottnt{A}  \ottsym{<:}  \ottnt{C}}%
+\ottpremise{ \ottnt{A}  :  <  :  \ottnt{B} }%
+\ottpremise{ \ottnt{A}  :  <  :  \ottnt{C} }%
 }{
-\ottnt{A}  \ottsym{<:}  \ottnt{D}}{%
+ \ottnt{A}  :  <  :  \ottnt{D} }{%
 {\ottdrulename{S\_and}}{}%
 }}
 
-\newcommand{\ottdefnsub}[1]{\begin{ottdefnblock}[#1]{$\ottnt{A}  \ottsym{<:}  \ottnt{B}$}{\ottcom{Algorithmic Subtyping}}
+\newcommand{\ottdefnsub}[1]{\begin{ottdefnblock}[#1]{$ \ottnt{A}  : \Diamond :  \ottnt{B} $}{\ottcom{Algorithmic Subtyping}}
 \ottusedrule{\ottdruleSXXint{}}
 \ottusedrule{\ottdruleSXXtop{}}
 \ottusedrule{\ottdruleSXXbot{}}
