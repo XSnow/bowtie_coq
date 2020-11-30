@@ -23,7 +23,15 @@ typ, A, B, C, D, char {{ tex \mathsf{Char} }}, bool {{ tex \mathsf{Bool} }} % , 
   | A \/ B            ::   :: or           {{ com union }}
   | ( A )             :: S :: paren        {{ coq [[A]] }}
 %  | { l : A }         ::   :: rcd          {{ com record }}
+  | | mode |          :: S :: topbot       {{ coq (typbymode [[mode]]) }}
+  | [ A mode B ]      :: S :: choose       {{ coq (operatorbymode [[mode]] [[A]] [[B]]) }}
 
+
+mode {{ tex \Diamond }}
+  :: 'm_'             ::=
+  | sub               ::   :: sub          {{ tex <: }}
+  | super             ::   :: super        {{ tex :> }}
+  | ! mode            :: S :: flip         {{ tex \overline{[[mode]]} }} {{ coq (flipmode [[mode]]) }}
 
 parsing
   t_or <= t_and
@@ -66,28 +74,52 @@ formula :: 'formula_' ::=
     {{ tex [[l1]] \neq [[l2]] }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+embed
+{{ coq
+
+Definition flipmode (m: mode) :=
+  match m with
+  | m_sub => m_super
+  | m_super => m_sub
+  end.
+  
+Definition typbymode (m: mode) :=
+  match m with
+  | m_sub => t_top
+  | m_super => t_bot
+  end.
+  
+Definition operatorbymode (m: mode) (A: typ) (B: typ) :=
+  match m with
+  | m_sub => t_and A B
+  | m_super => t_or A B
+  end.
+
+}}
+
 defns
 OSubtyping :: '' ::=
 
 defn
-A < B  :: :: osub :: OS_
+A < mode > B  :: :: osub :: OS_
 {{ com Original BCD Declarative Subtyping - Top-Like + Unions }}
-{{ tex [[A]] \leq [[B]] }}
+{{ tex [[A]] [[mode]] [[B]] }}
 by
 
 
 ---------------------- :: refl
-A < A
+A < mode > A
 
 
-A < B
-B < C
+A < mode >  B
+B < mode > C
 --------------- :: trans
-A < C
+A < mode > C
 
 
---------------- :: top
-A < Top
+------------------ :: top
+A < mode > |mode|
 
 
 %--------------------------- :: topArr
@@ -98,10 +130,6 @@ A < Top
 %Top < { l : Top }
 
 
---------------- :: bot
-Bot < A
-
-
 %--------------------------- :: botArr
 %Bot < A -> Bot
 
@@ -110,54 +138,54 @@ Bot < A
 %{ l : Bot } < Bot
 
 
-B < A
-C < D
+A < ! mode > B
+C < mode >  D
 ------------------------ :: arr
-A -> C < B -> D
+A -> C < mode > B -> D
 
 
-A < B
-A < C
---------------- :: and
-A < B & C
+A < mode > B
+A < mode > C
+---------------------- :: and
+A < mode > [B mode C]
 
 
 ------------------------- :: andl
-A & B < A
+[A mode B] < mode > A
 
 
------------------ :: andr
-A & B < B
+------------------------- :: andr
+[A mode B] < mode > B
 
 
-A < C
-B < C
---------------- :: or
-A \/ B < C
+A < mode > C
+B < mode > C
+------------------------- :: or
+[A ! mode B] < mode > C
 
 
 ------------------------- :: orl
-A < A \/ B
+A  < mode > [A ! mode B]
 
 
------------------ :: orr
-B < A \/ B
+------------------------- :: orr
+B < mode > [A ! mode B]
 
 
--------------------------------------- :: distArr
-(A -> B) & (A -> C) < A -> B & C
+--------------------------------------- :: distArr
+(A -> B) & (A -> C) < sub > A -> B & C
 
 
--------------------------------------- :: distArrU
-(A -> C) & (B -> C) < A \/ B -> C
+--------------------------------------- :: distArrU
+(A -> C) & (B -> C) < sub > A \/ B -> C
 
 
 %-------------------------------------- :: distAnd
 %(B1 \/ B2) & A < (B1 & A) \/ (B2 & A)
 
 
--------------------------------------- :: distOr
-(A1 \/ B) & (A2 \/ B) < (A1 & A2) \/ B
+--------------------------------------------- :: distOr
+(A1 \/ B) & (A2 \/ B) < sub > (A1 & A2) \/ B
 
 
 %A < B
@@ -169,6 +197,9 @@ B < A \/ B
 %{ l : A } & { l : B } < { l : A & B }
 
 
+B  < ! mode > A
+------------------------- :: flip
+A  < mode > B
 
 
 defns
