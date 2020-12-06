@@ -6,14 +6,12 @@ Require Import Omega.
 
 
 (* ordinary & splittable types *)
-Hint Constructors ord spl ordu splu : core.
+Hint Constructors ord spl : core.
 
-Lemma ord_or_split: forall A,
-    (ord A \/ exists B C, spl A B C) /\
-    (ordu A \/ exists B C, splu A B C).
+Lemma ord_or_split: forall A m,
+    (ord m A \/ exists B C, spl m A B C).
 Proof.
-  intros A. induction* A.
-  split.
+  intros. induction* A.
   - (* ord VS spl *)
     lets* ([?|(?&?&?)]&?): IHA2.
     + (* ord A2 in A1->A2 *)
