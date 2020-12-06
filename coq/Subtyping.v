@@ -200,8 +200,29 @@ Ltac split_unify :=
 
 Ltac aauto := try eassumption.
 
+(* duotyping related lemmas *)
+Lemma flip_flip : forall m,
+    flipmode (flipmode m) = m.
+Proof.
+  intros. destruct~ m.
+Qed.
+
+Lemma cal_top : typbymode m_sub = t_top.
+Proof.
+  intros. eauto.
+Qed.
+
+Lemma cal_bot : typbymode m_super = t_bot.
+Proof.
+  intros. eauto.
+Qed.
+
+Hint Rewrite cal_top cal_bot : core.
+
+Notation "A <: B" := (sub A m_sub B) (at level 80, right associativity).
+
 Lemma andl_trans : forall A B B1 B2,
-    spl B B1 B2 -> sub A B -> sub A B1.
+    spl B B1 B2 -> A <: B -> A <: B1.
 Proof with (aauto; eomg2).
   introv Hspl Hsub.
   indTypSize (size_typ A + size_typ B).
@@ -213,7 +234,7 @@ Proof with (aauto; eomg2).
 Qed.
 
 Lemma andr_trans : forall A B B1 B2,
-    spl B B1 B2 -> sub A B -> sub A B2.
+    spl B B1 B2 -> A <: B -> A <: B2.
 Proof with (aauto; eomg).
   introv Hspl Hsub.
   indTypSize (size_typ A + size_typ B).
@@ -225,14 +246,14 @@ Proof with (aauto; eomg).
 Qed.
 
 Lemma andl : forall A B C D,
-    spl D A B -> sub A C -> sub D C.
+    spl D A B -> A <: C -> D <: C.
 Proof with (aauto; eomg2).
   introv Hspl Hsub.
   indTypSize (size_typ C).
   lets ([Hi|(?&?&Hi)]&Hu'): ord_or_split C.
   - applys* S_andl.
-  - assert (S1: sub A x) by applys* andl_trans Hi.
-    assert (S2: sub A x0) by applys* andr_trans Hi.
+  - assert (S1: A <: x) by applys* andl_trans Hi.
+    assert (S2: A <: x0) by applys* andr_trans Hi.
     applys S_and Hi.
     applys IH S1 Hspl...
     applys IH S2 Hspl...
@@ -240,39 +261,55 @@ Qed.
 
 
 Lemma andr : forall A B C D,
-    spl D A B -> sub B C -> sub D C.
+    spl D A B -> B <: C -> D <: C.
 Proof with (split_unify; aauto; eomg2).
   introv Hspl Hsub.
   indTypSize (size_typ C).
   lets ([Hi|(?&?&Hi)]&Hu'): ord_or_split C.
   - applys* S_andr.
-  - assert (S1: sub B x) by applys* andl_trans Hi.
-    assert (S2: sub B x0) by applys* andr_trans Hi.
+  - assert (S1: B <: x) by applys* andl_trans Hi.
+    assert (S2: B <: x0) by applys* andr_trans Hi.
     applys S_and Hi.
     applys IH S1 Hspl...
     applys IH S2 Hspl...
 Qed.
 
+Lemma rev : forall A m B,
+    sub A m B -> sub B (flipmode m) A.
+Proof.
+  intros.
+  induction H; try constructor*.
+  - rewrite <- (flip_flip mode5) at 1.
+    econstructor.
+  - simpl in *.
+
+
 (* andl, andr are used in refl proof *)
 (* reflexivity *)
 Hint Extern 0 =>
 match goal with
-| [ IH : forall A, size_typ A < _ -> _ |- sub ?A ?A ] => (forwards: IH A; eomg2)
+| [ IH : forall A, size_typ A < _ -> _ |- sub ?A _ ?A ] => (forwards*: IH A; eomg2)
 end : refl.
 
-Lemma refl : forall A, sub A A.
+Lemma refl : forall A m, sub A m A.
 Proof with (auto with refl).
-  introv.
+  introv. gen m.
   indTypSize (size_typ A).
   lets ([Hi|(?&?&Hi)]&Hu'): ord_or_split A.
   lets [Hu|(?&?&Hu)]: Hu'. clear Hu'.
   - (* ord A & ordu A *)
     inverts* Hi; inverts* Hu.
+    + destruct m.
+      lets*: S_top t_top m_sub.
+      lets*: S_bot m_super t_top.
+    + destruct m.
+      lets*: S_bot m_sub t_bot.
+      lets*: S_top t_bot m_super.
     + (* arr *)
       applys S_arr...
   - (* ord A & splu A *)
     inverts* Hi; inverts Hu.
-    + applys~ S_or. applys~ S_orl... apply~ S_orr...
+    + destruct m. applys~ S_or. applys~ S_orl... apply~ S_orr...
   - (* spl A *)
     applys~ S_and Hi...
     applys~ andl Hi...
