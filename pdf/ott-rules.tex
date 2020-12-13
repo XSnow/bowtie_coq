@@ -187,43 +187,43 @@
 %% defn ord
 \newcommand{\ottdruleOXXtop}[1]{\ottdrule[#1]{%
 }{
-  \mathsf{Top}  ~\mathsf{Ordinary} }{%
+  \mathsf{Top}  ~\mathsf{Ordinary}_{ \Diamond } }{%
 {\ottdrulename{O\_top}}{}%
 }}
 
 
 \newcommand{\ottdruleOXXbot}[1]{\ottdrule[#1]{%
 }{
-  \mathsf{Bot}  ~\mathsf{Ordinary} }{%
+  \mathsf{Bot}  ~\mathsf{Ordinary}_{ \Diamond } }{%
 {\ottdrulename{O\_bot}}{}%
 }}
 
 
 \newcommand{\ottdruleOXXint}[1]{\ottdrule[#1]{%
 }{
-  \mathsf{Int}  ~\mathsf{Ordinary} }{%
+  \mathsf{Int}  ~\mathsf{Ordinary}_{ \Diamond } }{%
 {\ottdrulename{O\_int}}{}%
 }}
 
 
 \newcommand{\ottdruleOXXarrow}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{A} ~\mathsf{OrdinaryU} }%
-\ottpremise{ \ottnt{B} ~\mathsf{Ordinary} }%
+\ottpremise{ \ottnt{A} ~\mathsf{Ordinary}_{  \overline{ \Diamond }  } }%
+\ottpremise{ \ottnt{B} ~\mathsf{Ordinary}_{ \Diamond } }%
 }{
- \ottnt{A}  \rightarrow  \ottnt{B} ~\mathsf{Ordinary} }{%
+ \ottnt{A}  \rightarrow  \ottnt{B} ~\mathsf{Ordinary}_{ \Diamond } }{%
 {\ottdrulename{O\_arrow}}{}%
 }}
 
 
 \newcommand{\ottdruleOXXor}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{A} ~\mathsf{Ordinary} }%
-\ottpremise{ \ottnt{B} ~\mathsf{Ordinary} }%
+\ottpremise{ \ottnt{A} ~\mathsf{Ordinary}_{ \Diamond } }%
+\ottpremise{ \ottnt{B} ~\mathsf{Ordinary}_{ \Diamond } }%
 }{
- \ottnt{A}  \, \mid \,  \ottnt{B} ~\mathsf{Ordinary} }{%
+ \ottsym{[}  \ottnt{A} \,  \overline{ \Diamond }  \, \ottnt{B}  \ottsym{]} ~\mathsf{Ordinary}_{ \Diamond } }{%
 {\ottdrulename{O\_or}}{}%
 }}
 
-\newcommand{\ottdefnord}[1]{\begin{ottdefnblock}[#1]{$ \ottnt{A} ~\mathsf{Ordinary} $}{\ottcom{Ordinary Types}}
+\newcommand{\ottdefnord}[1]{\begin{ottdefnblock}[#1]{$ \ottnt{A} ~\mathsf{Ordinary}_{ \Diamond } $}{\ottcom{Ordinary Types}}
 \ottusedrule{\ottdruleOXXtop{}}
 \ottusedrule{\ottdruleOXXbot{}}
 \ottusedrule{\ottdruleOXXint{}}
@@ -231,98 +231,53 @@
 \ottusedrule{\ottdruleOXXor{}}
 \end{ottdefnblock}}
 
-%% defn ordu
-\newcommand{\ottdruleOUXXtop}[1]{\ottdrule[#1]{%
-}{
-  \mathsf{Top}  ~\mathsf{OrdinaryU} }{%
-{\ottdrulename{OU\_top}}{}%
-}}
-
-
-\newcommand{\ottdruleOUXXbot}[1]{\ottdrule[#1]{%
-}{
-  \mathsf{Bot}  ~\mathsf{OrdinaryU} }{%
-{\ottdrulename{OU\_bot}}{}%
-}}
-
-
-\newcommand{\ottdruleOUXXint}[1]{\ottdrule[#1]{%
-}{
-  \mathsf{Int}  ~\mathsf{OrdinaryU} }{%
-{\ottdrulename{OU\_int}}{}%
-}}
-
-
-\newcommand{\ottdruleOUXXarrow}[1]{\ottdrule[#1]{%
-}{
- \ottnt{A}  \rightarrow  \ottnt{B} ~\mathsf{OrdinaryU} }{%
-{\ottdrulename{OU\_arrow}}{}%
-}}
-
-
-\newcommand{\ottdruleOUXXand}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{A} ~\mathsf{OrdinaryU} }%
-\ottpremise{ \ottnt{B} ~\mathsf{OrdinaryU} }%
-}{
- \ottnt{A}  \, \& \,  \ottnt{B} ~\mathsf{OrdinaryU} }{%
-{\ottdrulename{OU\_and}}{}%
-}}
-
-\newcommand{\ottdefnordu}[1]{\begin{ottdefnblock}[#1]{$ \ottnt{A} ~\mathsf{OrdinaryU} $}{\ottcom{Ordinary Types (for unions)}}
-\ottusedrule{\ottdruleOUXXtop{}}
-\ottusedrule{\ottdruleOUXXbot{}}
-\ottusedrule{\ottdruleOUXXint{}}
-\ottusedrule{\ottdruleOUXXarrow{}}
-\ottusedrule{\ottdruleOUXXand{}}
-\end{ottdefnblock}}
-
 
 \newcommand{\ottdefnsOrdinaryType}{
-\ottdefnord{}\ottdefnordu{}}
+\ottdefnord{}}
 
 % defns SplitType
 %% defn spl
 \newcommand{\ottdruleSpXXand}[1]{\ottdrule[#1]{%
 }{
- \ottnt{A}  \mathbin{\lhd}  \ottnt{A}  \, \& \,  \ottnt{B}  \mathbin{\rhd}  \ottnt{B} }{%
+ \ottnt{A}  \mathbin{\lhd}_{ \Diamond }  \ottsym{[}  \ottnt{A} \, \Diamond \, \ottnt{B}  \ottsym{]}  \mathbin{\rhd}_{ \Diamond }  \ottnt{B} }{%
 {\ottdrulename{Sp\_and}}{}%
 }}
 
 
 \newcommand{\ottdruleSpXXarrow}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{C}  \mathbin{\lhd}  \ottnt{B}  \mathbin{\rhd}  \ottnt{D} }%
+\ottpremise{ \ottnt{C}  \mathbin{\lhd}_{ \Diamond }  \ottnt{B}  \mathbin{\rhd}_{ \Diamond }  \ottnt{D} }%
 }{
- \ottnt{A}  \rightarrow  \ottnt{C}  \mathbin{\lhd}  \ottnt{A}  \rightarrow  \ottnt{B}  \mathbin{\rhd}  \ottnt{A}  \rightarrow  \ottnt{D} }{%
+ \ottnt{A}  \rightarrow  \ottnt{C}  \mathbin{\lhd}_{ \Diamond }  \ottnt{A}  \rightarrow  \ottnt{B}  \mathbin{\rhd}_{ \Diamond }  \ottnt{A}  \rightarrow  \ottnt{D} }{%
 {\ottdrulename{Sp\_arrow}}{}%
 }}
 
 
 \newcommand{\ottdruleSpXXarrowUnion}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{D} ~\mathsf{Ordinary} }%
-\ottpremise{ \ottnt{B}  \mathbin{\LHD}  \ottnt{A}  \mathbin{\RHD}  \ottnt{C} }%
+\ottpremise{ \ottnt{D} ~\mathsf{Ordinary}_{ \Diamond } }%
+\ottpremise{ \ottnt{B}  \mathbin{\lhd}_{  \overline{ \Diamond }  }  \ottnt{A}  \mathbin{\rhd}_{  \overline{ \Diamond }  }  \ottnt{C} }%
 }{
- \ottnt{B}  \rightarrow  \ottnt{D}  \mathbin{\lhd}  \ottnt{A}  \rightarrow  \ottnt{D}  \mathbin{\rhd}  \ottnt{C}  \rightarrow  \ottnt{D} }{%
+ \ottnt{B}  \rightarrow  \ottnt{D}  \mathbin{\lhd}_{ \Diamond }  \ottnt{A}  \rightarrow  \ottnt{D}  \mathbin{\rhd}_{ \Diamond }  \ottnt{C}  \rightarrow  \ottnt{D} }{%
 {\ottdrulename{Sp\_arrowUnion}}{}%
 }}
 
 
 \newcommand{\ottdruleSpXXorl}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{A_{{\mathrm{1}}}}  \mathbin{\lhd}  \ottnt{A}  \mathbin{\rhd}  \ottnt{A_{{\mathrm{2}}}} }%
+\ottpremise{ \ottnt{A_{{\mathrm{1}}}}  \mathbin{\lhd}_{ \Diamond }  \ottnt{A}  \mathbin{\rhd}_{ \Diamond }  \ottnt{A_{{\mathrm{2}}}} }%
 }{
- \ottnt{A_{{\mathrm{1}}}}  \, \mid \,  \ottnt{B}  \mathbin{\lhd}  \ottnt{A}  \, \mid \,  \ottnt{B}  \mathbin{\rhd}  \ottnt{A_{{\mathrm{2}}}}  \, \mid \,  \ottnt{B} }{%
+ \ottsym{[}  \ottnt{A_{{\mathrm{1}}}} \,  \overline{ \Diamond }  \, \ottnt{B}  \ottsym{]}  \mathbin{\lhd}_{ \Diamond }  \ottsym{[}  \ottnt{A} \,  \overline{ \Diamond }  \, \ottnt{B}  \ottsym{]}  \mathbin{\rhd}_{ \Diamond }  \ottsym{[}  \ottnt{A_{{\mathrm{2}}}} \,  \overline{ \Diamond }  \, \ottnt{B}  \ottsym{]} }{%
 {\ottdrulename{Sp\_orl}}{}%
 }}
 
 
 \newcommand{\ottdruleSpXXorr}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{A} ~\mathsf{Ordinary} }%
-\ottpremise{ \ottnt{B_{{\mathrm{1}}}}  \mathbin{\lhd}  \ottnt{B}  \mathbin{\rhd}  \ottnt{B_{{\mathrm{2}}}} }%
+\ottpremise{ \ottnt{A} ~\mathsf{Ordinary}_{ \Diamond } }%
+\ottpremise{ \ottnt{B_{{\mathrm{1}}}}  \mathbin{\lhd}_{ \Diamond }  \ottnt{B}  \mathbin{\rhd}_{ \Diamond }  \ottnt{B_{{\mathrm{2}}}} }%
 }{
- \ottnt{A}  \, \mid \,  \ottnt{B_{{\mathrm{1}}}}  \mathbin{\lhd}  \ottnt{A}  \, \mid \,  \ottnt{B}  \mathbin{\rhd}  \ottnt{A}  \, \mid \,  \ottnt{B_{{\mathrm{2}}}} }{%
+ \ottsym{[}  \ottnt{A} \,  \overline{ \Diamond }  \, \ottnt{B_{{\mathrm{1}}}}  \ottsym{]}  \mathbin{\lhd}_{ \Diamond }  \ottsym{[}  \ottnt{A} \,  \overline{ \Diamond }  \, \ottnt{B}  \ottsym{]}  \mathbin{\rhd}_{ \Diamond }  \ottsym{[}  \ottnt{A} \,  \overline{ \Diamond }  \, \ottnt{B_{{\mathrm{2}}}}  \ottsym{]} }{%
 {\ottdrulename{Sp\_orr}}{}%
 }}
 
-\newcommand{\ottdefnspl}[1]{\begin{ottdefnblock}[#1]{$ \ottnt{B}  \mathbin{\lhd}  \ottnt{A}  \mathbin{\rhd}  \ottnt{C} $}{\ottcom{Splittable Types}}
+\newcommand{\ottdefnspl}[1]{\begin{ottdefnblock}[#1]{$ \ottnt{B}  \mathbin{\lhd}_{ \Diamond }  \ottnt{A}  \mathbin{\rhd}_{ \Diamond }  \ottnt{C} $}{\ottcom{Splittable Types}}
 \ottusedrule{\ottdruleSpXXand{}}
 \ottusedrule{\ottdruleSpXXarrow{}}
 \ottusedrule{\ottdruleSpXXarrowUnion{}}
@@ -330,39 +285,9 @@
 \ottusedrule{\ottdruleSpXXorr{}}
 \end{ottdefnblock}}
 
-%% defn splu
-\newcommand{\ottdruleSpUXXor}[1]{\ottdrule[#1]{%
-}{
- \ottnt{A}  \mathbin{\LHD}  \ottnt{A}  \, \mid \,  \ottnt{B}  \mathbin{\RHD}  \ottnt{B} }{%
-{\ottdrulename{SpU\_or}}{}%
-}}
-
-
-\newcommand{\ottdruleSpUXXandl}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{A_{{\mathrm{1}}}}  \mathbin{\LHD}  \ottnt{A}  \mathbin{\RHD}  \ottnt{A_{{\mathrm{2}}}} }%
-}{
- \ottnt{A_{{\mathrm{1}}}}  \, \& \,  \ottnt{B}  \mathbin{\LHD}  \ottnt{A}  \, \& \,  \ottnt{B}  \mathbin{\RHD}  \ottnt{A_{{\mathrm{2}}}}  \, \& \,  \ottnt{B} }{%
-{\ottdrulename{SpU\_andl}}{}%
-}}
-
-
-\newcommand{\ottdruleSpUXXandr}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{A} ~\mathsf{OrdinaryU} }%
-\ottpremise{ \ottnt{B_{{\mathrm{1}}}}  \mathbin{\LHD}  \ottnt{B}  \mathbin{\RHD}  \ottnt{B_{{\mathrm{2}}}} }%
-}{
- \ottnt{A}  \, \& \,  \ottnt{B_{{\mathrm{1}}}}  \mathbin{\LHD}  \ottnt{A}  \, \& \,  \ottnt{B}  \mathbin{\RHD}  \ottnt{A}  \, \& \,  \ottnt{B_{{\mathrm{2}}}} }{%
-{\ottdrulename{SpU\_andr}}{}%
-}}
-
-\newcommand{\ottdefnsplu}[1]{\begin{ottdefnblock}[#1]{$ \ottnt{B}  \mathbin{\LHD}  \ottnt{A}  \mathbin{\RHD}  \ottnt{C} $}{\ottcom{Split Union Types}}
-\ottusedrule{\ottdruleSpUXXor{}}
-\ottusedrule{\ottdruleSpUXXandl{}}
-\ottusedrule{\ottdruleSpUXXandr{}}
-\end{ottdefnblock}}
-
 
 \newcommand{\ottdefnsSplitType}{
-\ottdefnspl{}\ottdefnsplu{}}
+\ottdefnspl{}}
 
 % defns Subtyping
 %% defn sub
@@ -388,56 +313,30 @@
 
 
 \newcommand{\ottdruleSXXandl}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{C} ~\mathsf{Ordinary} }%
-\ottpremise{ \ottnt{A}  \mathbin{\lhd}  \ottnt{D}  \mathbin{\rhd}  \ottnt{B} }%
-\ottpremise{ \ottnt{A}  :  <  :  \ottnt{C} }%
+\ottpremise{ \ottnt{D} ~\mathsf{Ordinary}_{  \overline{ \Diamond }  } }%
+\ottpremise{ \ottnt{C} ~\mathsf{Ordinary}_{ \Diamond } }%
+\ottpremise{ \ottnt{A}  \mathbin{\lhd}_{ \Diamond }  \ottnt{D}  \mathbin{\rhd}_{ \Diamond }  \ottnt{B} }%
+\ottpremise{ \ottnt{A}  : \Diamond :  \ottnt{C} }%
 }{
- \ottnt{D}  :  <  :  \ottnt{C} }{%
+ \ottnt{D}  : \Diamond :  \ottnt{C} }{%
 {\ottdrulename{S\_andl}}{}%
 }}
 
 
 \newcommand{\ottdruleSXXandr}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{C} ~\mathsf{Ordinary} }%
-\ottpremise{ \ottnt{A}  \mathbin{\lhd}  \ottnt{D}  \mathbin{\rhd}  \ottnt{B} }%
-\ottpremise{ \ottnt{B}  :  <  :  \ottnt{C} }%
+\ottpremise{ \ottnt{D} ~\mathsf{Ordinary}_{  \overline{ \Diamond }  } }%
+\ottpremise{ \ottnt{C} ~\mathsf{Ordinary}_{ \Diamond } }%
+\ottpremise{ \ottnt{A}  \mathbin{\lhd}_{ \Diamond }  \ottnt{D}  \mathbin{\rhd}_{ \Diamond }  \ottnt{B} }%
+\ottpremise{ \ottnt{B}  : \Diamond :  \ottnt{C} }%
 }{
- \ottnt{D}  :  <  :  \ottnt{C} }{%
+ \ottnt{D}  : \Diamond :  \ottnt{C} }{%
 {\ottdrulename{S\_andr}}{}%
 }}
 
 
-\newcommand{\ottdruleSXXor}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{A}  \, \mid \,  \ottnt{B} ~\mathsf{Ordinary} }%
-\ottpremise{ \ottnt{A}  :  <  :  \ottnt{D} }%
-\ottpremise{ \ottnt{B}  :  <  :  \ottnt{D} }%
-}{
- \ottnt{A}  \, \mid \,  \ottnt{B}  :  <  :  \ottnt{D} }{%
-{\ottdrulename{S\_or}}{}%
-}}
-
-
-\newcommand{\ottdruleSXXorl}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{B}  \, \mid \,  \ottnt{C} ~\mathsf{Ordinary} }%
-\ottpremise{ \ottnt{A}  :  <  :  \ottnt{B} }%
-}{
- \ottnt{A}  :  <  :  \ottnt{B}  \, \mid \,  \ottnt{C} }{%
-{\ottdrulename{S\_orl}}{}%
-}}
-
-
-\newcommand{\ottdruleSXXorr}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{B}  \, \mid \,  \ottnt{C} ~\mathsf{Ordinary} }%
-\ottpremise{ \ottnt{A}  :  <  :  \ottnt{C} }%
-}{
- \ottnt{A}  :  <  :  \ottnt{B}  \, \mid \,  \ottnt{C} }{%
-{\ottdrulename{S\_orr}}{}%
-}}
-
-
 \newcommand{\ottdruleSXXarr}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{A}  \rightarrow  \ottnt{C} ~\mathsf{Ordinary} }%
-\ottpremise{ \ottnt{B}  \rightarrow  \ottnt{D} ~\mathsf{Ordinary} }%
+\ottpremise{ \ottnt{A}  \rightarrow  \ottnt{C} ~\mathsf{Ordinary}_{  \overline{ \Diamond }  } }%
+\ottpremise{ \ottnt{B}  \rightarrow  \ottnt{D} ~\mathsf{Ordinary}_{ \Diamond } }%
 \ottpremise{ \ottnt{A}  :  \overline{ \Diamond }  :  \ottnt{B} }%
 \ottpremise{ \ottnt{C}  : \Diamond :  \ottnt{D} }%
 }{
@@ -447,11 +346,11 @@
 
 
 \newcommand{\ottdruleSXXand}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{B}  \mathbin{\lhd}  \ottnt{D}  \mathbin{\rhd}  \ottnt{C} }%
-\ottpremise{ \ottnt{A}  :  <  :  \ottnt{B} }%
-\ottpremise{ \ottnt{A}  :  <  :  \ottnt{C} }%
+\ottpremise{ \ottnt{B}  \mathbin{\lhd}_{ \Diamond }  \ottnt{D}  \mathbin{\rhd}_{ \Diamond }  \ottnt{C} }%
+\ottpremise{ \ottnt{A}  : \Diamond :  \ottnt{B} }%
+\ottpremise{ \ottnt{A}  : \Diamond :  \ottnt{C} }%
 }{
- \ottnt{A}  :  <  :  \ottnt{D} }{%
+ \ottnt{A}  : \Diamond :  \ottnt{D} }{%
 {\ottdrulename{S\_and}}{}%
 }}
 
@@ -461,9 +360,6 @@
 \ottusedrule{\ottdruleSXXbot{}}
 \ottusedrule{\ottdruleSXXandl{}}
 \ottusedrule{\ottdruleSXXandr{}}
-\ottusedrule{\ottdruleSXXor{}}
-\ottusedrule{\ottdruleSXXorl{}}
-\ottusedrule{\ottdruleSXXorr{}}
 \ottusedrule{\ottdruleSXXarr{}}
 \ottusedrule{\ottdruleSXXand{}}
 \end{ottdefnblock}}

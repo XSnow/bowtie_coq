@@ -24,7 +24,7 @@ typ, A, B, C, D, char {{ tex \mathsf{Char} }}, bool {{ tex \mathsf{Bool} }} % , 
   | ( A )             :: S :: paren        {{ coq [[A]] }}
 %  | { l : A }         ::   :: rcd          {{ com record }}
   | | mode |          :: S :: topbot       {{ coq (typbymode [[mode]]) }}
-  | [ A mode B ]      :: S :: choose       {{ coq (operatorbymode [[mode]] [[A]] [[B]]) }}
+  | [ A mode B ]      :: S :: choose       {{ coq (choose [[mode]] [[A]] [[B]]) }}
 
 
 mode {{ tex \Diamond }}, m {{ tex \Diamond }}
@@ -90,7 +90,7 @@ Definition typbymode (m: mode) :=
   | m_super => t_bot
   end.
   
-Definition operatorbymode (m: mode) (A: typ) (B: typ) :=
+Definition choose (m: mode) (A: typ) (B: typ) :=
   match m with
   | m_sub => t_and A B
   | m_super => t_or A B
@@ -183,7 +183,7 @@ OrdinaryType :: '' ::=
 defn
 ordinary m A :: :: ord :: O_
 {{ com Ordinary Types }}
-{{ tex [[A]]~\mathsf{Ordinary}_[[m]] }}
+{{ tex [[A]]~\mathsf{Ordinary}_{[[m]]} }}
 by
 
 
@@ -218,7 +218,7 @@ SplitType :: '' ::=
 defn
 split m A B C :: :: spl :: Sp_
 {{ com Splittable Types }}
-{{ tex [[B]] \mathbin{\lhd}_[[m]] [[A]] \mathbin{\rhd}_[[m]] [[C]] }}
+{{ tex [[B]] \mathbin{\lhd}_{[[m]]} [[A]] \mathbin{\rhd}_{[[m]]} [[C]] }}
 % {{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
 by
 
@@ -272,21 +272,36 @@ A <: mode :> |mode|
 |!mode| <: mode :> A
 
 
-ordinary !mode D
-ordinary mode C
+%ordinary !mode D
+%ordinary mode C
 split mode D A B
 A <: mode :> C
 ------------------------- :: andl
 D <: mode :> C
 
 
-ordinary !mode D
-ordinary mode C
+%ordinary !mode D
+%ordinary mode C
 split mode D A B
 B <: mode :> C
 ----------------- :: andr
 D <: mode :> C
 
+
+%ordinary !mode D
+%ordinary mode C
+split !mode C A B
+D <: mode :> A
+------------------------- :: orl
+D <: mode :> C
+
+
+%ordinary !mode D
+%ordinary mode C
+split !mode C A B
+D <: mode :> B
+----------------- :: orr
+D <: mode :> C
 
 ordinary !mode A -> C
 ordinary mode B -> D
@@ -294,6 +309,14 @@ A <: !mode :> B
 C <: mode :> D
 ------------------------ :: arr
 A -> C <: mode :> B -> D
+
+
+% ordinary mode D
+split !mode A B C
+B <: mode :> D
+C <: mode :> D
+--------------- :: or
+A <: mode :> D
 
 
 split mode D B C
