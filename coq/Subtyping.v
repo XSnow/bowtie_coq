@@ -12,10 +12,12 @@ Lemma ord_or_split: forall m A,
     ord m A \/ exists B C, spl m A B C.
 Proof.
   intros. gen m. induction* A; intros.
-  - (* ord VS spl *)
-    lets* [?|(?&?&?)]: IHA2.
-    + (* ord A2 in A1->A2 *)
-      lets* [?|(?&?&?)]: IHA1 (flipmode m).
+  - (* arrow *)
+    destruct m.
+    + lets* [?|(?&?&?)]: IHA2.
+      (* ord A2 in A1->A2 *)
+      lets* [?|(?&?&?)]: IHA1.
+    + left*.
   - (* and *)
     destruct m.
     + right*. exists*. applys* Sp_and.
@@ -133,7 +135,7 @@ Hint Resolve split_ord_false split_int split_top split_bot split_typbymode split
 
 Ltac solve_false := try intro; try solve [false; eauto with falseHd].
 
-(* duotyping related lemmas *)
+(* for simplification and unification purpose *)
 Lemma flip_flip : forall m,
     flipmode (flipmode m) = m.
 Proof.
@@ -152,7 +154,7 @@ Qed.
 
 Hint Rewrite flip_flip cal_top cal_bot : core.
 
-(* subtyping *)
+(* Subtyping *)
 Hint Constructors sub : core.
 
 Lemma typ_size_lg_z : forall T, size_typ T > 0.
@@ -175,8 +177,6 @@ Proof.
   intros.
   destruct m; simpl in *; omega.
 Qed.
-
-Create HintDb sizeTypHd.
 
 Hint Resolve typ_size_choose_l typ_size_choose_r : core.
 
@@ -221,7 +221,7 @@ Proof.
 Qed.
 
 Lemma split_choose : forall m A B C D,
-    spl m (choose m A B) C D -> A=C /\ B = D.
+    spl m (choose m A B) C D -> A = C /\ B = D.
 Proof.
   intros.
   destruct m; simpl in *; inverts* H.
@@ -238,7 +238,7 @@ Lemma split_unique : forall m T A1 A2 B1 B2,
 Proof with (solve_false; auto with split_unique).
   introv. gen m.
   indTypSize (size_typ T).
-  inverts H; destruct m; inverts H0...
+  inverts H; try destruct m; inverts H0...
   Unshelve.
   econstructor. eauto.
 Qed.

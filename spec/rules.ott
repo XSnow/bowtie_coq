@@ -199,10 +199,14 @@ ordinary m Bot
 ordinary m int
 
 
-ordinary !m  A
-ordinary m B
------------------ :: arrow
-ordinary m A->B
+--------------------- :: arrowUnion
+ordinary super A->B
+
+
+ordinary super  A
+ordinary sub B
+--------------------- :: arrow
+ordinary sub A->B
 
 
 ordinary m A
@@ -227,15 +231,15 @@ by
 split m [A m B] A B
 
 
-split m B C D
--------------------------- :: arrow
-split m A->B A->C A->D
+split sub B C D
+---------------------------- :: arrow
+split sub A->B A->C A->D
 
 
-ordinary m D
-split !m A B C
+ordinary sub D
+split super A B C
 -------------------------- :: arrowUnion
-split m A->D B->D C->D
+split sub A->D B->D C->D
 
 
 split m A A1 A2
