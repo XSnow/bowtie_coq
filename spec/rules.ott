@@ -307,8 +307,10 @@ D <: mode :> B
 ----------------- :: orr
 D <: mode :> C
 
+ordinary mode A -> C
 ordinary !mode A -> C
 ordinary mode B -> D
+ordinary !mode B -> D
 A <: !mode :> B
 C <: mode :> D
 ------------------------ :: arr
