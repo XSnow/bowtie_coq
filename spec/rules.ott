@@ -23,8 +23,8 @@ typ, A, B, C, D, char {{ tex \mathsf{Char} }}, bool {{ tex \mathsf{Bool} }} % , 
   | A \/ B            ::   :: or           {{ com union }}
   | ( A )             :: S :: paren        {{ coq [[A]] }}
 %  | { l : A }         ::   :: rcd          {{ com record }}
-  | | mode |          :: S :: topbot       {{ coq (typbymode [[mode]]) }}
-  | [ A mode B ]      :: S :: choose       {{ coq (choose [[mode]] [[A]] [[B]]) }}
+  | | mode |          :: S :: topbot       {{ coq (typbymode[[mode]]) }}
+  | [ A mode B ]      :: S :: choose       {{ coq (choose[[mode]][[A]][[B]]) }}
 
 
 mode {{ tex \Diamond }}, m {{ tex \Diamond }}
@@ -307,10 +307,8 @@ D <: mode :> B
 ----------------- :: orr
 D <: mode :> C
 
-ordinary mode A -> C
-ordinary !mode A -> C
-ordinary mode B -> D
-ordinary !mode B -> D
+ordinary sub A -> C
+ordinary sub B -> D
 A <: !mode :> B
 C <: mode :> D
 ------------------------ :: arr
