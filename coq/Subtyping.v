@@ -302,29 +302,25 @@ Ltac flip m:=
 
 
 Lemma rev : forall A m B,
-    sub A m B -> sub B (flipmode m) A.
+    sub B (flipmode m) A -> sub A m B.
 Proof.
   intros.
-  induction H; try solve [flip mode5; constructor*].
-  - flip mode5.
-    applys* S_orl.
-  - flip mode5.
-    applys* S_orr.
-  - flip mode5.
-    applys* S_andl.
-  - flip mode5.
-    applys* S_andr.
-  - flip mode5.
-    applys* S_and.
-  - flip mode5.
-    applys* S_or.
+  inductions H; auto_unify;
+    try solve [constructor*];
+    try solve [destruct m; simpl in *; constructor*].
+  - applys* S_orl.
+  - applys* S_orr.
+  - forwards*: IHsub m.
+  - forwards*: IHsub m.
+  - applys* S_and.
+  - applys* S_or.
 Qed.
 
 Lemma rev2 : forall A B,
     A <: B <-> B :> A.
 Proof.
   split; intro H;
-    apply rev in H; simpl in H; auto.
+    apply rev; simpl; auto.
 Qed.
 
 Hint Immediate rev rev2 : core.
@@ -733,42 +729,43 @@ Qed.
  *)
 
 Lemma arrow : forall A B C D,
-    B <: D -> C <: A -> (t_arrow A B) <: (t_arrow C D).
+   A :> C -> B <: D -> (t_arrow A B) <: (t_arrow C D).
 Proof with (simpl in *; auto_unify; aauto).
   introv s.
   indTypSize (size_typ (t_arrow A B) + size_typ (t_arrow C D)).
   lets [Hi2|(?&?&Hi2)]: ord_or_split m_sub (t_arrow C D).
   lets [Hi1|(?&?&Hi1)]: ord_or_split m_sub (t_arrow A B).
-  - applys~ S_arr.
+  - applys~ S_arr...
   - (* subtype splittable ; supertype ordinary *)
     inverts keep Hi1.
     + (* split return type B *)
-      apply rev in s...
+      apply rev2 in H...
+      forwards [?|?]: splu_inv H... inverts~ Hi2.
+      * applys~ S_andl Hi1.
+        applys IH... eomg2. applys~ rev2.
+      * applys~ S_andr Hi1.
+        applys IH... eomg2. applys~ rev2.
+    + (* splitu input type A *)
+      apply rev2 in s...
       forwards [?|?]: splu_inv s... inverts~ Hi2.
       * applys~ S_andl Hi1.
         applys IH... applys~ rev2. eomg2.
       * applys~ S_andr Hi1.
         applys IH... applys~ rev2. eomg2.
-    + (* splitu input type A *)
-      forwards [?|?]: splu_inv H... inverts~ Hi2.
-      * applys~ S_andl Hi1.
-        applys IH... eomg2.
-      * applys~ S_andr Hi1.
-        applys IH... eomg2.
   - (* supertype splittable *)
     inverts keep Hi2.
     + (* split return type *)
       applys~ S_and Hi2.
+      * applys IH... eomg2. apply rev2 in H. apply rev2.
+        applys orl_trans...
+      * applys IH... eomg2. apply rev2 in H. apply rev2.
+        applys orr_trans...
+    + (* split input type *)
+      applys~ S_and Hi2; clear Hi2.
       * applys IH... apply rev2 in s. apply rev2.
         applys orl_trans... eomg2.
       * applys IH... apply rev2 in s. apply rev2.
-        applys orr_trans s... eomg2.
-    + (* split input type *)
-      applys~ S_and Hi2; clear Hi2.
-      * applys IH... eomg2.
-        applys orl_trans...
-      * applys IH... eomg2.
-        applys orr_trans...
+        applys orr_trans... eomg2.
 Qed.
 
 Lemma split_instance1: forall A B,
@@ -894,7 +891,7 @@ Proof with eauto.
     + eauto.
 Qed.
 
-Hint Resolve osub_symm_and osub_symm_or osub_distAnd : core.
+Hint Resolve osub_spl osub_symm_and osub_symm_or osub_distAnd : core.
 
 
 Lemma osub_and: forall m A B C,
@@ -906,36 +903,37 @@ Proof with intuition.
   - eauto.
   - forwards: osub_spl H0. eauto.
   - applys OS_trans (choose (flipmode m) (choose m A1 A2) B).
-  - applys OS_trans (t_or B A)...
-    applys OS_trans (t_and (t_or B1 A) (t_or B2 A))...
+    applys OS_distOr. eauto.
+  - applys OS_trans (choose (flipmode m) B A)...
+    applys OS_trans (choose m (choose (flipmode m) B1 A) (choose (flipmode m) B2 A))...
     applys OS_and.
-    applys OS_trans (t_or A B1)...
-    applys OS_trans (t_or A B2)...
-    applys* OS_trans (t_or (t_and B1 B2) A).
-    + introv H.
-      induction H.
-  - applys OS_refl.
-  - clear osub_and osub_or.
-    applys* OS_trans (t_and (t_or A1 A2) B).
-  - clear osub_and osub_or.
-    applys OS_trans (t_and B A)...
-    applys* OS_trans (t_and (t_or B1 B2) A).
+    applys OS_trans (choose (flipmode m) A B1)...
+    applys OS_trans (choose (flipmode m) A B2)...
+    applys* OS_trans (choose (flipmode m) (choose m B1 B2) A).
 Qed.
 
-Hint Resolve osub_spl osub_splu osub_and osub_or: core.
+Hint Resolve osub_spl osub_and: core.
 
-Theorem dsub_eq: forall A B,
-    osub A B <-> sub A B.
-Proof with (aauto; eauto).
+Theorem dsub_eq: forall A m B,
+    osub A m B <-> sub A m B.
+Proof with (simpl in *; aauto).
   split; introv H.
   - induction* H.
-  -
-    induction~ H.
+    + destruct mode5.
+      * simpl in *. eauto.
+      * apply rev2. apply rev2 in IHosub1. apply rev2 in IHosub2.
+        simpl in *. eauto.
+  - induction~ H.
     + (* andl *)
-      forwards (?&?): osub_spl H0. applys OS_trans H2...
+      forwards (?&?): osub_spl H. applys OS_trans H1...
     + (* andr *)
-      forwards (?&?): osub_spl H0. applys OS_trans H3...
-    + applys OS_trans IHsub...
-    + applys OS_trans IHsub...
-    + applys OS_trans (t_and B C)...
+      forwards (?&?): osub_spl H. applys OS_trans H2...
+    + applys OS_trans IHsub... forwards*: osub_spl H...
+    + applys OS_trans IHsub... forwards*: osub_spl H...
+    + applys OS_trans (choose (flipmode mode5) B C)...
+      forwards Hf: osub_and H. apply OS_flip in Hf.
+      eauto. eauto.
+    + applys OS_trans (choose mode5 B C)...
+      forwards Hf: osub_and H.
+      eauto. eauto.
 Qed.
