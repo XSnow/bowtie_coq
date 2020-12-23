@@ -150,7 +150,7 @@
 
 \newcommand{\ottdruleOSXXdistOr}[1]{\ottdrule[#1]{%
 }{
- \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \, \mid \,  \ottnt{B}  \ottsym{)}  \, \& \,  \ottsym{(}  \ottnt{A_{{\mathrm{2}}}}  \, \mid \,  \ottnt{B}  \ottsym{)}    <    \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \, \& \,  \ottnt{A_{{\mathrm{2}}}}  \ottsym{)}  \, \mid \,  \ottnt{B} }{%
+ \ottsym{[}  \ottsym{[}  \ottnt{A_{{\mathrm{1}}}} \,  \overline{ \Diamond }  \, \ottnt{B}  \ottsym{]} \, \Diamond \, \ottsym{[}  \ottnt{A_{{\mathrm{2}}}} \,  \overline{ \Diamond }  \, \ottnt{B}  \ottsym{]}  \ottsym{]}   \Diamond   \ottsym{[}  \ottsym{[}  \ottnt{A_{{\mathrm{1}}}} \, \Diamond \, \ottnt{A_{{\mathrm{2}}}}  \ottsym{]} \,  \overline{ \Diamond }  \, \ottnt{B}  \ottsym{]} }{%
 {\ottdrulename{OS\_distOr}}{}%
 }}
 
@@ -357,10 +357,8 @@
 
 
 \newcommand{\ottdruleSXXarr}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{A}  \rightarrow  \ottnt{C} ~\mathsf{Ordinary}_{ \Diamond } }%
-\ottpremise{ \ottnt{A}  \rightarrow  \ottnt{C} ~\mathsf{Ordinary}_{  \overline{ \Diamond }  } }%
-\ottpremise{ \ottnt{B}  \rightarrow  \ottnt{D} ~\mathsf{Ordinary}_{ \Diamond } }%
-\ottpremise{ \ottnt{B}  \rightarrow  \ottnt{D} ~\mathsf{Ordinary}_{  \overline{ \Diamond }  } }%
+\ottpremise{ \ottnt{A}  \rightarrow  \ottnt{C} ~\mathsf{Ordinary}_{  <  } }%
+\ottpremise{ \ottnt{B}  \rightarrow  \ottnt{D} ~\mathsf{Ordinary}_{  <  } }%
 \ottpremise{ \ottnt{A}  :  \overline{ \Diamond }  :  \ottnt{B} }%
 \ottpremise{ \ottnt{C}  : \Diamond :  \ottnt{D} }%
 }{

@@ -849,13 +849,9 @@ Lemma osub_spl: forall m A B C,
     spl m A B C -> osub A m B /\ osub A m C.
 Proof with intuition.
   introv H.
-    induction H...
-  - applys* OS_or.
-  - applys* OS_or.
-  - applys* OS_or.
-  - applys* OS_or.
+    induction H; try intuition;
+      applys OS_flip; flip m; applys* OS_and.
 Qed.
-
 
 Lemma osub_symm_and: forall m A B,
     osub (choose m A B) m (choose m B A).
@@ -871,24 +867,13 @@ Proof.
   apply OS_flip. applys* osub_symm_and.
 Qed.
 
-
-Lemma osub_distAnd: forall A B1 B2,
-    osub (t_and (t_or B1 B2) A) m_sub (t_or (t_and B1 A) (t_and B2 A)).
+Lemma osub_distAnd: forall m A B1 B2,
+    osub (choose m (choose (flipmode m) B1 B2) A) m (choose (flipmode m) (choose m B1 A) (choose m B2 A)).
 Proof with eauto.
   introv.
-  applys OS_trans.
-  2:{ applys OS_distOr. }
-  - applys OS_and.
-    + applys OS_trans (t_or (t_and B2 A) B1).
-      2: { apply OS_flip. simpl. lets: osub_symm_and m_super. simpl in H. applys H. }
-      * applys OS_trans.
-        2: { applys OS_distOr. }
-        ** applys OS_and. lets H: OS_andl (t_or B1 B2) m_sub A.
-           simpl in H. applys OS_trans H.
-           lets: osub_symm_or m_sub. simpl in H0. applys H0.
-           applys OS_trans. lets: OS_andr m_sub. simpl in H. apply H.
-           lets: OS_orl m_sub. simpl in H. apply H.
-    + eauto.
+  applys OS_flip.
+  flip m.
+  applys OS_distOr.
 Qed.
 
 Hint Resolve osub_spl osub_symm_and osub_symm_or osub_distAnd : core.
@@ -903,13 +888,14 @@ Proof with intuition.
   - eauto.
   - forwards: osub_spl H0. eauto.
   - applys OS_trans (choose (flipmode m) (choose m A1 A2) B).
-    applys OS_distOr. eauto.
+    applys OS_distOr. apply OS_flip. flip m. eauto.
   - applys OS_trans (choose (flipmode m) B A)...
     applys OS_trans (choose m (choose (flipmode m) B1 A) (choose (flipmode m) B2 A))...
     applys OS_and.
     applys OS_trans (choose (flipmode m) A B1)...
     applys OS_trans (choose (flipmode m) A B2)...
-    applys* OS_trans (choose (flipmode m) (choose m B1 B2) A).
+    applys OS_trans (choose (flipmode m) (choose m B1 B2) A);
+    apply OS_flip; flip m; eauto.
 Qed.
 
 Hint Resolve osub_spl osub_and: core.
@@ -923,6 +909,12 @@ Proof with (simpl in *; aauto).
       * simpl in *. eauto.
       * apply rev2. apply rev2 in IHosub1. apply rev2 in IHosub2.
         simpl in *. eauto.
+    + destruct mode5.
+      * eauto.
+      * applys S_or; eauto; apply rev; eauto.
+    + destruct mode5.
+      * eauto.
+      * applys S_or; eauto; apply rev; eauto.
   - induction~ H.
     + (* andl *)
       forwards (?&?): osub_spl H. applys OS_trans H1...
@@ -932,7 +924,7 @@ Proof with (simpl in *; aauto).
     + applys OS_trans IHsub... forwards*: osub_spl H...
     + applys OS_trans (choose (flipmode mode5) B C)...
       forwards Hf: osub_and H. apply OS_flip in Hf.
-      eauto. eauto.
+      eauto. applys OS_flip. flip mode5. eauto.
     + applys OS_trans (choose mode5 B C)...
       forwards Hf: osub_and H.
       eauto. eauto.
