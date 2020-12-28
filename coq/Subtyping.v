@@ -5,8 +5,28 @@ Require Import rules_inf.
 Require Import Omega.
 
 
-(* ordinary & splittable types *)
+(* Types are Either Ordinary or Splittable *)
 Hint Constructors ord spl : core.
+
+Lemma split_instance1: forall A B,
+    spl m_sub (t_and A B) A B.
+Proof.
+  intros.
+  lets: Sp_and m_sub A B.
+  simpl in H.
+  auto.
+Qed.
+
+Lemma split_instance2: forall A B,
+    spl m_super (t_or A B) A B.
+Proof.
+  intros.
+  lets: Sp_and m_super A B.
+  simpl in H.
+  auto.
+Qed.
+
+Hint Resolve split_instance1 split_instance2 : core.
 
 Lemma ord_or_split: forall m A,
     ord m A \/ exists B C, spl m A B C.
@@ -20,7 +40,7 @@ Proof.
     + left*.
   - (* and *)
     destruct m.
-    + right*. exists*. applys* Sp_and.
+    + right*.
     + lets [?|(?&?&?)]: IHA1 m_super;
         lets [?|(?&?&?)]: IHA2 m_super.
       left. constructor*.
@@ -35,7 +55,7 @@ Proof.
       right*. exists*. applys* Sp_orr.
       right*. exists*. applys* Sp_orl.
       right*. exists*. applys* Sp_orl.
-    + right*. exists*. applys* Sp_and.
+    + right*.
 Qed.
 
 Lemma choose_false_int: forall m A B,
@@ -140,6 +160,25 @@ Qed.
 
 Hint Resolve split_ord_false split_int split_top split_bot split_typbymode split_typbyflippedmode: falseHd.
 
+
+Lemma split_keep_ord_l : forall m A B C,
+    ord (flipmode m) A -> spl m A B C -> ord (flipmode m) B.
+Proof.
+  introv Hord Hspl.
+  inductions Hspl; try destruct m; inverts* Hord.
+Qed.
+
+Lemma split_keep_ord_r : forall m A B C,
+    ord (flipmode m) A -> spl m A B C -> ord (flipmode m) C.
+Proof.
+  introv Hord Hspl.
+  inductions Hspl; try destruct m; inverts* Hord.
+Qed.
+
+Hint Resolve split_keep_ord_l split_keep_ord_r : core.
+
+
+(* About Flipping *)
 Lemma flip_eqv_false : forall m,
     m = flipmode m -> False.
 Proof.
@@ -150,6 +189,17 @@ Qed.
 Hint Resolve flip_eqv_false : falseHd.
 
 Ltac solve_false := try intro; try solve [false; eauto with falseHd].
+
+Lemma flip_rev : forall m1 m2,
+    m1 = flipmode m2 -> m2 = flipmode m1.
+Proof.
+  intros.
+  destruct m2; subst; eauto.
+Qed.
+
+(* flip m and remember it as m' *)
+Ltac flip m:=
+  remember (flipmode m) as m' eqn:Heqm'; apply flip_rev in Heqm'; subst.
 
 (* for simplification and unification purpose *)
 Lemma flip_flip : forall m,
@@ -196,13 +246,9 @@ Qed.
 
 Hint Resolve typ_size_choose_l typ_size_choose_r : core.
 
-Ltac eomg :=
-  pose proof (typ_size_lg_z);
-  simpl in *; try omega.
-
 Lemma split_decrease_size: forall m A B C,
     spl m A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A.
-Proof with eomg.
+Proof with (pose proof (typ_size_lg_z); simpl in *; try omega).
   - introv H.
     induction* H...
     destruct m; eauto...
@@ -215,7 +261,7 @@ Ltac spl_size :=
     (lets (?&?): split_decrease_size H; clear H)
   end.
 
-(* enhanced eomg with split_decrease_size *)
+(* enhanced omega with split_decrease_size *)
 Ltac eomg2 :=
   pose proof (typ_size_lg_z);
   try spl_size; simpl in *; try omega.
@@ -228,7 +274,7 @@ Ltac indTypSize s :=
     intros; match goal with | [ H : _ < 0 |- _ ] => inverts H end
   | intros ].
 
-(* split/u is unique *)
+(* Splitting types is deterministic *)
 Lemma choose_unique : forall m1 m2 A B C D,
     choose m1 A B = choose m2 C D -> m1 = m2 /\ A = C /\ B = D.
 Proof.
@@ -286,20 +332,6 @@ Ltac aauto := try eassumption.
 
 Notation "A <: B" := (sub A m_sub B) (at level 80, right associativity).
 Notation "A :> B" := (sub A m_super B) (at level 80, right associativity).
-
-
-Lemma flip_rev : forall m1 m2,
-    m1 = flipmode m2 -> m2 = flipmode m1.
-Proof.
-  intros.
-  destruct m2; subst; eauto.
-Qed.
-
-
-(* flip m and remember it as m' *)
-Ltac flip m:=
-  remember (flipmode m) as m' eqn:Heqm'; apply flip_rev in Heqm'; subst.
-
 
 Lemma rev : forall A m B,
     sub B (flipmode m) A -> sub A m B.
@@ -359,23 +391,6 @@ Proof with (auto_unify; simpl in *; auto with refl).
 Qed.
 
 Hint Resolve refl : core.
-
-Lemma split_keep_ord_l : forall m A B C,
-    ord (flipmode m) A -> spl m A B C -> ord (flipmode m) B.
-Proof.
-  introv Hord Hspl.
-  inductions Hspl; try destruct m; inverts* Hord.
-Qed.
-
-Lemma split_keep_ord_r : forall m A B C,
-    ord (flipmode m) A -> spl m A B C -> ord (flipmode m) C.
-Proof.
-  introv Hord Hspl.
-  inductions Hspl; try destruct m; inverts* Hord.
-Qed.
-
-Hint Resolve split_keep_ord_l split_keep_ord_r : core.
-
 
 Lemma orl_trans : forall m A A1 A2 B,
     spl (flipmode m) A A1 A2 -> sub A m B -> sub A1 m B.
@@ -658,75 +673,8 @@ Proof  with (aauto; simpl in *; auto_unify).
   eauto.
 Qed.
 
-Lemma split_two_way : forall m T A1 A2 B1 B2,
-    spl m T A1 A2 -> spl (flipmode m) T B1 B2 ->
-    sub A1 (flipmode m) B1 /\ sub A1 (flipmode m) B2 /\ sub B1 m A2 /\ sub B2 m A2.
-Proof with (aauto; simpl in *; auto_unify).
-  introv Hsp1 Hsp2.
-  - inverts Hsp1.
-    +  (* m:=sub A1:=I1\/C1 A2:=I2\/C2 B1:=I1&(I2\/C2) B2:=C1&(I2\/C2) *)
-      inverts Hsp2...
-      * repeat split.
-        ** applys S_orl... eauto. forwards*: split_sub_l H1.
-        ** applys S_orl... eauto. forwards*: split_sub_r H1.
-        ** applys* split_sub_r.
-        ** applys* split_sub_r.
-      * repeat split.
-        ** applys* split_sub_flip_l.
-        ** applys* split_sub_flip_l.
-        ** applys S_andr... eauto. flip m. applys split_sub_flip_l H2...
-        ** applys S_andr... eauto. flip m. applys split_sub_flip_r H2...
-    + (* arrow for sub only *)
-      inverts Hsp2...
-    + (* arrow for sub only *)
-      inverts Hsp2...
-    +
-      inverts Hsp2...
-      * repeat split.
-        ** applys S_orl... eauto. applys* split_sub_l.
-        ** applys* split_sub_r.
-        ** applys S_orl... eauto. applys* split_sub_r.
-        ** flip m. applys* split_sub_flip_r.
-    + (* T = A\/B *)
-      inverts Hsp2...
-      * repeat split.
-        ** applys* split_sub_l.
-        ** applys S_orl... eauto. applys* split_sub_r.
-        ** flip m. applys* split_sub_flip_l.
-        ** applys S_orr... eauto. applys* split_sub_r.
-Qed.
-
-
 Hint Resolve split_sub_l split_sub_r split_sub_flip_l split_sub_flip_r : core.
 
-(*
-Lemma split_subord_inv : forall A B C D,
-    spl A B C -> ord D -> sub A D -> sub B D \/ sub C D.
-Proof with (aauto; eauto).
-  introv Hspl Hord Hs. gen B C.
-  induction Hs; intros; unify; intuition.
-  - forwards [?|?]: IHHs...
-  - forwards [?|?]: IHHs...
-    (* counter-example resolved in this version *)
-    (* counter-example: A&B <: A&B \/ C *)
-Qed.
-
-Lemma splitu_ordusub_inv : forall A B C D,
-    splu A B C -> ordu D -> sub D A -> sub D B \/ sub D C.
-Proof with (aauto; eauto).
-  introv Hspl Hord Hs. gen B C.
-  induction Hs; intros; unify; intuition.
-  - forwards [?|?]: IHHs...
-  - forwards [?|?]: IHHs...
-  - (* spl D and splu D *)
-    inverts Hspl; unify.
-    + inverts H.
-      * forwards [?|?]: H0... forwards [?|?]: H1...
-      * forwards [?|?]: H0... forwards [?|?]: H1...
-    + forwards [?|?]: H0...
-    + forwards [?|?]: H1...
-Qed.
- *)
 
 Lemma arrow : forall A B C D,
    A :> C -> B <: D -> (t_arrow A B) <: (t_arrow C D).
@@ -767,26 +715,6 @@ Proof with (simpl in *; auto_unify; aauto).
       * applys IH... apply rev2 in s. apply rev2.
         applys orr_trans... eomg2.
 Qed.
-
-Lemma split_instance1: forall A B,
-    spl m_sub (t_and A B) A B.
-Proof.
-  intros.
-  lets: Sp_and m_sub A B.
-  simpl in H.
-  auto.
-Qed.
-
-Lemma split_instance2: forall A B,
-    spl m_super (t_or A B) A B.
-Proof.
-  intros.
-  lets: Sp_and m_super A B.
-  simpl in H.
-  auto.
-Qed.
-
-Hint Resolve split_instance1 split_instance2 : core.
 
 Lemma distArrU: forall A B C,
     (t_and (t_arrow A C) (t_arrow B C)) <: (t_arrow (t_or A B) C).
