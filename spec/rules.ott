@@ -23,7 +23,15 @@ typ, A, B, C, D, char {{ tex \mathsf{Char} }}, bool {{ tex \mathsf{Bool} }} % , 
   | A \/ B            ::   :: or           {{ com union }}
   | ( A )             :: S :: paren        {{ coq [[A]] }}
 %  | { l : A }         ::   :: rcd          {{ com record }}
+  | | mode |          :: S :: topbot       {{ coq (typbymode[[mode]]) }}
+  | [ A mode B ]      :: S :: choose       {{ coq (choose[[mode]][[A]][[B]]) }}
 
+
+mode {{ tex \Diamond }}, m {{ tex \Diamond }}
+  :: 'm_'             ::=
+  | sub               ::   :: sub          {{ tex < }}
+  | super             ::   :: super        {{ tex > }}
+  | ! mode            :: S :: flip         {{ tex \overline{[[mode]]} }} {{ coq (flipmode [[mode]]) }}
 
 parsing
   t_or <= t_and
@@ -66,185 +74,131 @@ formula :: 'formula_' ::=
     {{ tex [[l1]] \neq [[l2]] }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+embed
+{{ coq
+
+Definition flipmode (m: mode) :=
+  match m with
+  | m_sub => m_super
+  | m_super => m_sub
+  end.
+  
+Definition typbymode (m: mode) :=
+  match m with
+  | m_sub => t_top
+  | m_super => t_bot
+  end.
+  
+Definition choose (m: mode) (A: typ) (B: typ) :=
+  match m with
+  | m_sub => t_and A B
+  | m_super => t_or A B
+  end.
+
+}}
+
 defns
 OSubtyping :: '' ::=
 
 defn
-A < B  :: :: osub :: OS_
+A < mode > B  :: :: osub :: OS_
 {{ com Original BCD Declarative Subtyping - Top-Like + Unions }}
-{{ tex [[A]] \leq [[B]] }}
+{{ tex [[A]] [[mode]] [[B]] }}
 by
 
 
 ---------------------- :: refl
-A < A
+A < mode > A
 
 
-A < B
-B < C
+A < mode >  B
+B < mode > C
 --------------- :: trans
-A < C
+A < mode > C
 
 
---------------- :: top
-A < Top
+------------------ :: top
+A < mode > |mode|
 
 
-%--------------------------- :: topArr
-%Top < Top -> Top
-
-
-%------------------------------- :: topRcd
-%Top < { l : Top }
-
-
---------------- :: bot
-Bot < A
-
-
-%--------------------------- :: botArr
-%Bot < A -> Bot
-
-
-%------------------------------- :: botRcd
-%{ l : Bot } < Bot
-
-
-B < A
-C < D
+A < ! mode > B
+C < mode >  D
 ------------------------ :: arr
-A -> C < B -> D
+A -> C < mode > B -> D
 
 
-A < B
-A < C
---------------- :: and
-A < B & C
+A < mode > B
+A < mode > C
+---------------------- :: and
+A < mode > [B mode C]
 
 
 ------------------------- :: andl
-A & B < A
+[A mode B] < mode > A
 
 
------------------ :: andr
-A & B < B
+------------------------- :: andr
+[A mode B] < mode > B
 
 
-A < C
-B < C
---------------- :: or
-A \/ B < C
+--------------------------------------- :: distArr
+(A -> B) & (A -> C) < mode > A -> B & C
 
 
-------------------------- :: orl
-A < A \/ B
+--------------------------------------- :: distArrU
+(A -> C) & (B -> C) < mode > A \/ B -> C
 
 
------------------ :: orr
-B < A \/ B
+%-------------------------------------- :: distAnd
+%(B1 \/ B2) & A < (B1 & A) \/ (B2 & A)
 
 
--------------------------------------- :: distArr
-(A -> B) & (A -> C) < A -> B & C
+-------------------------------------------------------------------- :: distOr
+[[A1 !mode B] mode [A2 !mode B]] < mode > [[A1 mode A2] !mode B]
 
 
--------------------------------------- :: distArrU
-(A -> C) & (B -> C) < A \/ B -> C
-
-
--------------------------------------- :: distAnd
-A & (B1 \/ B2) < (A & B1) \/ (A & B2)
-
-
--------------------------------------- :: distOr
-(A \/ B1) & (A \/ B2) < A \/ (B1 & B2)
-
-
-
-%A < B
-%-------------------------------------------- :: rcd
-%{ l : A } < { l : B }
-
-
-%--------------------------------------------------- :: distRcd
-%{ l : A } & { l : B } < { l : A & B }
-
-
+B  < ! mode > A
+------------------------- :: flip
+A  < mode > B
 
 
 defns
 OrdinaryType :: '' ::=
 
 defn
-ordinary A :: :: ord :: O_
+ordinary m A :: :: ord :: O_
 {{ com Ordinary Types }}
-{{ tex [[A]]~\mathsf{Ordinary} }}
+{{ tex [[A]]~\mathsf{Ordinary}_{[[m]]} }}
 by
 
 
 ---------------- :: top
-ordinary Top
+ordinary m Top
 
 
 ---------------- :: bot
-ordinary Bot
+ordinary m Bot
 
 
 ---------------- :: int
-ordinary int
+ordinary m int
 
 
-ordinaryU A
-ordinary B
----------------- :: arrow
-ordinary A->B
+--------------------- :: arrowUnion
+ordinary super A->B
 
 
-ordinary A
-ordinary B
----------------- :: or
-ordinary A\/B
+ordinary super  A
+ordinary sub B
+--------------------- :: arrow
+ordinary sub A->B
 
 
-%ordinary B
-%---------------- :: rcd
-%ordinary {l:B}
-
-
-defn
-ordinaryU A :: :: ordu :: OU_
-{{ com Ordinary Types (for unions) }}
-{{ tex [[A]]~\mathsf{OrdinaryU} }}
-by
-
-
----------------- :: top
-ordinaryU Top
-
-
----------------- :: bot
-ordinaryU Bot
-
-
----------------- :: int
-ordinaryU int
-
-
----------------- :: arrow
-ordinaryU A->B
-
-
-% (A1\/A2)&(B1\/B2) ~= (A1&(B1\/B2)) \/ (A2&(B1\/B2))
-
-ordinaryU A
-ordinaryU B
----------------- :: and
-ordinaryU A&B
-
-
-%ordinaryU B
-%---------------- :: rcd
-%ordinaryU {l:B}
+ordinary m A
+ordinary m B
+--------------------- :: or
+ordinary m [A !m B]
 
 
 
@@ -252,76 +206,37 @@ defns
 SplitType :: '' ::=
 
 defn
-split A B C :: :: spl :: Sp_
+split m A B C :: :: spl :: Sp_
 {{ com Splittable Types }}
-{{ tex [[B]] \mathbin{\lhd} [[A]] \mathbin{\rhd} [[C]] }}
+{{ tex [[B]] \mathbin{\lhd}_{[[m]]} [[A]] \mathbin{\rhd}_{[[m]]} [[C]] }}
+% {{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
 by
 
 
-----------------:: and
-split A&B A B
+-----------------------:: and
+split m [A m B] A B
 
 
-split B C D
--------------------------- :: arrow
-split A->B A->C A->D
+split sub B C D
+---------------------------- :: arrow
+split sub A->B A->C A->D
 
 
-%split B C D
-%-------------------------- :: rcd
-%split {l:B} {l:C} {l:D}
-
-
-ordinary D
-splitU A B C
+ordinary sub D
+split super A B C
 -------------------------- :: arrowUnion
-split A->D B->D C->D
+split sub A->D B->D C->D
 
 
-split A A1 A2
--------------------------- :: orl
-split A\/B A1\/B A2\/B
+split m A A1 A2
+--------------------------------------- :: orl
+split m [A !m B] [A1 !m B] [A2 !m B]
 
 
-ordinary A
-split B B1 B2
--------------------------- :: orr
-split A\/B A\/B1 A\/B2
-
-
-
-defn
-splitU A B C :: :: splu :: SpU_
-{{ com Split Union Types }}
-{{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
-by
-
-
---------------------:: or
-splitU A\/B A B
-
-
-%splitU B C D
-%--------------------------- :: arrow
-%splitU A->B A->C A->D
-
-
-%splitU B C D
-%-------------------------- :: rcd
-%splitU {l:B} {l:C} {l:D}
-
-
-% (A1\/A2)&(B1\/B2) ~= (A1&(B1\/B2)) \/ (A2&(B1\/B2))
-
-splitU A A1 A2
--------------------------- :: andl
-splitU A&B A1&B A2&B
-
-
-ordinaryU A
-splitU B B1 B2
--------------------------- :: andr
-splitU A&B A&B1 A&B2
+ordinary m A
+split m B B1 B2
+--------------------------------------- :: orr
+split m [A !m B] [A !m B1] [A !m B2]
 
 
 
@@ -329,79 +244,73 @@ defns
 Subtyping :: '' ::=
 
 defn
-A <: B  :: :: sub :: S_
+A <: mode :> B  :: :: sub :: S_
 {{ com Algorithmic Subtyping }}
+{{ tex [[A]] :[[mode]]: [[B]] }}
 by
 
 
 ---------------------- :: int
-int <: int
+int <: mode :> int
 
 
---------------- :: top
-A <: Top
+---------------------- :: top
+A <: mode :> |mode|
 
 
---------------- :: bot
-Bot <: A
+---------------------- :: bot
+|!mode| <: mode :> A
 
 
-ordinary C
-split D A B
-A <: C
+%ordinary !mode D
+%ordinary mode C
+split mode D A B
+A <: mode :> C
 ------------------------- :: andl
-D <: C
+D <: mode :> C
 
 
-ordinary C
-split D A B
-B <: C
+%ordinary !mode D
+%ordinary mode C
+split mode D A B
+B <: mode :> C
 ----------------- :: andr
-D <: C
+D <: mode :> C
 
 
-% A1\/A2 & B <: B
-% seems can be covered by other rules?
-
-% splitu A A1 A2
-% A1 <: B
-% A2 <: B
-% ----------------- :: or
-% A <: B
+%ordinary !mode D
+%ordinary mode C
+split !mode C A B
+D <: mode :> A
+------------------------- :: orl
+D <: mode :> C
 
 
-ordinary A\/B
-A <: D
-B <: D
------------------ :: or
-A\/B <: D
+%ordinary !mode D
+%ordinary mode C
+split !mode C A B
+D <: mode :> B
+----------------- :: orr
+D <: mode :> C
 
-
-ordinary B\/C
-A <: B
---------------- :: orl
-A <: B \/ C
-
-
-ordinary B\/C
-A <: C
---------------- :: orr
-A <: B \/ C
-
-
-ordinary A -> C
-ordinary B -> D
-B <: A
-C <: D
+ordinary sub A -> C
+ordinary sub B -> D
+A <: !mode :> B
+C <: mode :> D
 ------------------------ :: arr
-A -> C <: B -> D
+A -> C <: mode :> B -> D
 
 
-%% when the right type can be split in the intersection way,
-%% both parts have to be supertypes of the left one
+% ordinary mode D
+split !mode A B C
+B <: mode :> D
+C <: mode :> D
+--------------- :: or
+A <: mode :> D
 
-split D B C
-A <: B
-A <: C
+
+split mode D B C
+A <: mode :> B
+A <: mode :> C
 --------------- :: and
-A <: D
+A <: mode :> D

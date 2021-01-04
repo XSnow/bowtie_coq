@@ -16,3 +16,5 @@ coq/syntax_ott.v
 
 pdf/*.mng
 pdf/*.pdf
+
+pdf/ott-rules.tex
