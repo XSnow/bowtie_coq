@@ -314,3 +314,322 @@ A <: mode :> B
 A <: mode :> C
 --------------- :: and
 A <: mode :> D
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% Duotyping rules above %
+%
+%
+% Subtyping rules below %
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+defns
+DSub :: '' ::=
+
+defn
+A < B  :: :: declarative_subtyping :: DS_
+{{ com Declarative Subtyping }}
+{{ tex [[A]] \leq [[B]] }}
+by
+
+
+---------------------- :: refl
+A < A
+
+
+A < B
+B < C
+--------------- :: trans
+A < C
+
+
+--------------- :: top
+A < Top
+
+
+--------------- :: bot
+Bot < A
+
+
+B < A
+C < D
+------------------------ :: arrow
+A -> C < B -> D
+
+
+A < B
+A < C
+--------------- :: and
+A < B & C
+
+
+------------------------- :: andl
+A & B < A
+
+
+----------------- :: andr
+A & B < B
+
+
+A < C
+B < C
+--------------- :: or
+A \/ B < C
+
+
+------------------------- :: orl
+A < A \/ B
+
+
+----------------- :: orr
+B < A \/ B
+
+
+-------------------------------------- :: distArr
+(A -> B1) & (A -> B2) < A -> B1 & B2
+
+
+-------------------------------------- :: distArrRev
+ A -> B1 & B2 < (A -> B1) & (A -> B2)
+
+
+-------------------------------------- :: distArrU
+(A1 -> B) & (A2 -> B) < A1 \/ A2 -> B
+
+
+-------------------------------------- :: distArrURev
+A1 \/ A2 -> B < (A1 -> B) & (A2 -> B)
+
+
+-------------------------------------- :: distOr
+(A1 \/ B) & (A2 \/ B) < (A1 & A2) \/ B
+
+
+-------------------------------------- :: distAnd
+(A1 \/ A2) & B < (A1 & B) \/ (A2 & B)
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%
+%Single Mode
+%Algorithmic Subtyping
+%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+Ordinary :: '' ::=
+
+defn
+ordinary A :: :: single_ord :: SO_
+{{ com Ordinary Types }}
+{{ tex [[A]]~\mathsf{Ordinary} }}
+by
+
+
+---------------- :: top
+ordinary Top
+
+
+---------------- :: bot
+ordinary Bot
+
+
+---------------- :: int
+ordinary int
+
+
+ordinaryU A
+ordinary B
+---------------- :: arrow
+ordinary A->B
+
+
+ordinary A
+ordinary B
+---------------- :: or
+ordinary A\/B
+
+
+%ordinary B
+%---------------- :: rcd
+%ordinary {l:B}
+
+
+defn
+ordinaryU A :: :: ordu :: OU_
+{{ com Ordinary Types (for unions) }}
+{{ tex [[A]]~\mathsf{OrdinaryU} }}
+by
+
+
+---------------- :: top
+ordinaryU Top
+
+
+---------------- :: bot
+ordinaryU Bot
+
+
+---------------- :: int
+ordinaryU int
+
+
+---------------- :: arrow
+ordinaryU A->B
+
+
+% (A1\/A2)&(B1\/B2) ~= (A1&(B1\/B2)) \/ (A2&(B1\/B2))
+
+ordinaryU A
+ordinaryU B
+---------------- :: and
+ordinaryU A&B
+
+
+%ordinaryU B
+%---------------- :: rcd
+%ordinaryU {l:B}
+
+
+
+defns
+Split :: '' ::=
+
+defn
+split A B C :: :: single_spl :: SSp_
+{{ com Splittable Types }}
+{{ tex [[B]] \mathbin{\lhd} [[A]] \mathbin{\rhd} [[C]] }}
+by
+
+
+----------------:: and
+split A&B A B
+
+
+split B C D
+-------------------------- :: arrow
+split A->B A->C A->D
+
+
+%split B C D
+%-------------------------- :: rcd
+%split {l:B} {l:C} {l:D}
+
+
+ordinary D
+splitU A B C
+-------------------------- :: arrowUnion
+split A->D B->D C->D
+
+
+split A A1 A2
+-------------------------- :: orl
+split A\/B A1\/B A2\/B
+
+
+ordinary A
+split B B1 B2
+-------------------------- :: orr
+split A\/B A\/B1 A\/B2
+
+
+defn
+splitU A B C :: :: splu :: SpU_
+{{ com Split Union Types }}
+{{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
+by
+
+
+--------------------:: or
+splitU A\/B A B
+
+
+%splitU B C D
+%--------------------------- :: arrow
+%splitU A->B A->C A->D
+
+
+%splitU B C D
+%-------------------------- :: rcd
+%splitU {l:B} {l:C} {l:D}
+
+
+% (A1\/A2)&(B1\/B2) ~= (A1&(B1\/B2)) \/ (A2&(B1\/B2))
+
+splitU A A1 A2
+-------------------------- :: andl
+splitU A&B A1&B A2&B
+
+
+ordinaryU A
+splitU B B1 B2
+-------------------------- :: andr
+splitU A&B A&B1 A&B2
+
+
+
+defns
+SSub :: '' ::=
+
+defn
+A <: B  :: :: singlemode_sub :: SS_
+{{ com Algorithmic Subtyping }}
+by
+
+
+---------------------- :: int
+int <: int
+
+
+---------------------- :: top
+A <: Top
+
+
+---------------------- :: bot
+Bot <:  A
+
+
+split D A B
+A <: C
+------------------------- :: andl
+D <: C
+
+
+split D A B
+B <: C
+----------------- :: andr
+D <: C
+
+
+splitU C A B
+D <: A
+------------------------- :: orl
+D <: C
+
+
+splitU C A B
+D <: B
+----------------- :: orr
+D <: C
+
+
+ordinary A -> C
+ordinary B -> D
+B <: A
+C <: D
+------------------------ :: arrow
+A -> C <: B -> D
+
+
+split D B C
+A <: B
+A <: C
+--------------- :: and
+A <: D
+
+
+splitU A B C
+B <: D
+C <: D
+--------------- :: or
+A <: D
