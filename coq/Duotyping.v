@@ -930,7 +930,7 @@ Proof.
   intros.  apply split_sub_r in H. eauto.
 Qed.
 
-Hint Resolve andl_trans andl_trans : core.
+Hint Resolve andl_trans andr_trans : core.
 
 Lemma rev_2 : forall A m B,
     sub A m B -> sub B (flipmode m) A.
