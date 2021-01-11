@@ -918,19 +918,19 @@ Qed.
 
 Hint Resolve sub_1 sub_2 sub_3 sub_4 ord_1 ord_2 spl_1 spl_2 spl_3 spl_4 : core.
 
-Lemma and_inv_1 : forall m A B C T,
+Lemma andl_trans : forall m A B C T,
     spl m C A B -> sub T m C -> sub T m A.
 Proof.
   intros. apply split_sub_l in H. eauto.
 Qed.
 
-Lemma and_inv_2 : forall m A B C T,
+Lemma andr_trans : forall m A B C T,
     spl m C A B -> sub T m C -> sub T m B.
 Proof.
   intros.  apply split_sub_r in H. eauto.
 Qed.
 
-Hint Resolve and_inv_1 and_inv_2 : core.
+Hint Resolve andl_trans andl_trans : core.
 
 Lemma rev_2 : forall A m B,
     sub A m B -> sub B (flipmode m) A.
@@ -1021,3 +1021,4 @@ Qed.
 (* add try solve in eomg2 *)
 (* mode in arrow_inv *)
 (* better encode of aux functions *)
+(* move rev_2 to top *)
