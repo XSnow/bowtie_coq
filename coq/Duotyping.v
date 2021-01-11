@@ -392,6 +392,15 @@ Qed.
 
 Hint Resolve refl : core.
 
+Lemma split_iso: forall m A B C,
+    spl m A B C -> sub A m (choose m B C) /\ sub (choose m B C) m A.
+Proof with eauto.
+  introv H.
+  split.
+  - applys S_and...
+  - applys S_and H. applys~ S_andl. applys~ S_andr.
+Qed.
+
 Lemma orl_trans : forall m A A1 A2 B,
     spl (flipmode m) A A1 A2 -> sub A m B -> sub A1 m B.
 Proof with (auto_unify; aauto; try solve eomg2).
@@ -630,17 +639,6 @@ Qed.
 
 Hint Immediate trans : core.
 
-
-(* how could they be isomophic before splitu is removed? *)
-Lemma split_iso: forall m A B C,
-    spl m A B C -> sub A m (choose m B C) /\ sub (choose m B C) m A.
-Proof with eauto.
-  introv H.
-  split.
-  - applys S_and...
-  - applys S_and H. applys~ S_andl. applys~ S_andr.
-Qed.
-
 Lemma split_sub_l : forall m T A B,
     spl m T A B -> sub T m A.
 Proof  with (aauto; simpl in *; auto_unify).
@@ -857,3 +855,169 @@ Proof with (simpl in *; aauto).
       forwards Hf: osub_and H.
       eauto. eauto.
 Qed.
+
+Lemma sub_1 : forall A,
+    sub A m_sub t_top.
+Proof.
+  intros. forwards*: S_top.
+Qed.
+
+Lemma sub_2 : forall A,
+    sub A m_super t_bot.
+Proof.
+  intros. forwards*: S_top.
+Qed.
+
+Lemma sub_3 : forall A,
+    sub t_bot m_sub A.
+Proof.
+  intros. forwards*: S_bot.
+Qed.
+
+Lemma sub_4 : forall A,
+    sub t_top m_super A.
+Proof.
+  intros. forwards*: S_bot.
+Qed.
+
+Lemma ord_1 : forall A B,
+    ord m_sub A -> ord m_sub B -> ord m_sub (t_or A B).
+Proof.
+  intros. forwards*: O_or A B.
+Qed.
+
+Lemma ord_2 : forall A B,
+    ord m_super A -> ord m_super B -> ord m_super (t_and A B).
+Proof.
+  intros. forwards*: O_or A B.
+Qed.
+
+Lemma spl_1 : forall A A1 A2 B,
+    spl m_sub A A1 A2 -> spl m_sub (t_or A B) (t_or A1 B) (t_or A2 B).
+Proof.
+  intros. forwards*: Sp_orl A B.
+Qed.
+
+Lemma spl_2 : forall A A1 A2 B,
+    spl m_super A A1 A2 -> spl m_super (t_and A B) (t_and A1 B) (t_and A2 B).
+Proof.
+  intros. forwards*: Sp_orl A B.
+Qed.
+
+Lemma spl_3 : forall A B B1 B2,
+    ord m_sub A -> spl m_sub B B1 B2 -> spl m_sub (t_or A B) (t_or A B1) (t_or A B2).
+Proof.
+  intros. forwards*: Sp_orr A B.
+Qed.
+
+Lemma spl_4 : forall A B B1 B2,
+    ord m_super A -> spl m_super B B1 B2 -> spl m_super (t_and A B) (t_and A B1) (t_and A B2).
+Proof.
+  intros. forwards*: Sp_orr A B.
+Qed.
+
+Hint Resolve sub_1 sub_2 sub_3 sub_4 ord_1 ord_2 spl_1 spl_2 spl_3 spl_4 : core.
+
+Lemma and_inv_1 : forall m A B C T,
+    spl m C A B -> sub T m C -> sub T m A.
+Proof.
+  intros. apply split_sub_l in H. eauto.
+Qed.
+
+Lemma and_inv_2 : forall m A B C T,
+    spl m C A B -> sub T m C -> sub T m B.
+Proof.
+  intros.  apply split_sub_r in H. eauto.
+Qed.
+
+Hint Resolve and_inv_1 and_inv_2 : core.
+
+Lemma rev_2 : forall A m B,
+    sub A m B -> sub B (flipmode m) A.
+Proof.
+  intros. flip m. applys* rev.
+Qed.
+
+
+Lemma spl_inv : forall m A B C T,
+    ord m T -> spl m C A B -> sub C m T -> sub A m T \/ sub B m T.
+Proof.
+  intros.
+  flip m. apply rev in H1.
+  forwards [Hr|Hr]: splu_inv H H0 H1;
+    apply rev_2 in Hr; jauto.
+Qed.
+
+Lemma arrow_inv : forall A B C D,
+   (t_arrow A B) <: (t_arrow C D) -> (A :> C) /\ (B <: D).
+Proof with (simpl in *; auto_unify; jauto).
+  introv s.
+  indTypSize (size_typ (t_arrow A B) + size_typ (t_arrow C D)).
+  lets [Hi2|(?&?&Hi2)]: ord_or_split m_sub (t_arrow C D).
+  lets [Hi1|(?&?&Hi1)]: ord_or_split m_sub (t_arrow A B).
+  - inverts s...
+  - inverts keep Hi1;
+      forwards~ [?|?]: spl_inv Hi1 s;
+      forwards(IH1&IH2): IH H; try solve [eomg2];
+        split; try eassumption.
+    + applys~ S_andl H1.
+    + applys~ S_andr H1.
+    + applys~ S_andl H2.
+    + applys~ S_andr H2.
+  - (* uses and_inv_1 and_inv_2 *)
+    assert (t_arrow A B <: x) by eauto.
+    assert (t_arrow A B <: x0) by eauto.
+    inverts keep Hi2;
+      forwards (?&?): IH H; try solve [eomg2];
+      forwards (?&?): IH H0; try solve [eomg2];
+      eauto.
+Qed.
+
+Theorem decidability : forall m A B,
+    sub A m B \/ not (sub A m B).
+Proof with (simpl in *; solve_false; jauto).
+  introv. gen m.
+  indTypSize (size_typ A + size_typ B).
+  lets [HAu|(?&?&HAu)]: ord_or_split (flipmode m) A.
+  - (* ordinary > A *)
+    lets [HBi|(?&?&HBi)]: ord_or_split m B.
+    + (* ord < B *)
+      lets [HAi|(?&?&HAi)]: ord_or_split m A.
+      * (* ordinary < A *)
+        lets [HBu|(?&?&HBu)]: ord_or_split (flipmode m) B.
+        ** (* ord > B *)
+          destruct m; inverts HAu; inverts HAi;
+            inverts HBu; inverts HBi; auto with falseHd;
+              try solve [right; intros HF; inverts HF; auto_unify].
+          *** (* arrow *)
+            forwards [IH1|IH1] : IH A0 A m_super; try solve [eomg2];
+              forwards [IH2|IH2] : IH B0 B1 m_sub; try solve [eomg2];
+                try solve [right; intros HF; forwards* (?&?): arrow_inv HF]; eauto.
+          *** (* arrow *)
+            forwards [IH1|IH1] : IH A0 A m_sub; try solve [eomg2];
+              forwards [IH2|IH2] : IH B0 B1 m_super; try solve [eomg2];
+                try solve [right; intros HF; apply rev2 in HF; forwards* (?&?): arrow_inv HF].
+            left. apply rev2. eauto.
+        ** (* spl > B *)
+          forwards [IHB1|IHB1] : IH A x m; try solve [eomg2]...
+          forwards [IHB2|IHB2] : IH A x0 m; try solve [eomg2]...
+          right. intro HF. forwards*: splu_inv HF.
+      * (* spl < A *)
+        forwards [IHA1|IHA1] : IH x B m; try solve [eomg2]...
+        forwards [IHA2|IHA2] : IH x0 B m; try solve [eomg2]...
+        right. intro HF. forwards*: spl_inv HF.
+    + (* spl < B *)
+      forwards [IHB1|IHB1] : IH A x m; try solve [eomg2].
+      * forwards [IHB2|IHB2] : IH A x0 m; try solve [eomg2]...
+      * right...
+  - (* spl > A *)
+    forwards [IHA1|IHA1] : IH x B m; try solve [eomg2].
+    + forwards [IHA2|IHA2] : IH x0 B m; try solve [eomg2]...
+    + right...
+Qed.
+
+
+(* potential improvements *)
+(* add try solve in eomg2 *)
+(* mode in arrow_inv *)
+(* better encode of aux functions *)

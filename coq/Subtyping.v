@@ -5,9 +5,9 @@ Require Import Duotyping.
 Hint Constructors declarative_subtyping : core.
 
 Theorem decl_subtyping_sound_duotyping : forall A B,
-    declarative_subtyping A B -> osub A m_sub B.
+    declarative_subtyping A B -> osub A m_sub B /\ osub B m_super A.
 Proof.
-  introv Hs. induction Hs; eauto 4.
+  introv Hs; split; induction Hs; [auto|apply OS_flip]; eauto 4.
   + (* or *)
     apply OS_flip. simpl.
     eauto.
@@ -63,9 +63,9 @@ Qed.
 Hint Resolve split_sound splitu_sound : core.
 
 Theorem algo_subtyping_sound_duotyping : forall A B,
-    singlemode_sub A B -> sub A m_sub B.
+    singlemode_sub A B -> sub A m_sub B /\ sub B m_super A.
 Proof.
-  introv Hs. induction Hs; eauto 3.
+  introv Hs; split; induction Hs; eauto 3.
   + forwards*: S_top.
   + apply rev. forwards*: S_top.
 Qed.
