@@ -71,17 +71,17 @@ check m _ t
 check m t _
   | select (flipmode m) == t
   = True                                                                        -- S-bot
-check _ TInt TInt    = True                                                     -- S-int
+check _ TInt TInt = True                                                        -- S-int
 check m a b                                                                     -- S-and
   | Just (b1, b2) <- split m b
   = (check m a b1) && (check m a b2)
 check m a b                                                                     -- S-or
   | Just (a1, a2) <- split (flipmode m) a
   = (check m a1 b) && (check m a2 b)
-check m a b                                                                     -- S-orl S-orr
+check m a b                                                                     -- S-andl S-andr
   | Just (a1, a2) <- split m a
   = (check m a1 b) || (check m a2 b)
-check m a b                                                                     -- S-andl S-andr
+check m a b                                                                     -- S-orl S-orr
   | Just (b1, b2) <- split (flipmode m) b
   = (check m a b1) || (check m a b2)     
 check m (TArrow a1 a2) (TArrow b1 b2)                                           -- S-arr
