@@ -161,21 +161,35 @@ Qed.
 Hint Resolve split_ord_false split_int split_top split_bot split_typbymode split_typbyflippedmode: falseHd.
 
 
-Lemma split_keep_ord_l : forall m A B C,
+Lemma split_keep_ord_f_l : forall m A B C,
     ord (flipmode m) A -> spl m A B C -> ord (flipmode m) B.
 Proof.
   introv Hord Hspl.
   inductions Hspl; try destruct m; inverts* Hord.
 Qed.
 
-Lemma split_keep_ord_r : forall m A B C,
+Lemma split_keep_ord_f_r : forall m A B C,
     ord (flipmode m) A -> spl m A B C -> ord (flipmode m) C.
 Proof.
   introv Hord Hspl.
   inductions Hspl; try destruct m; inverts* Hord.
 Qed.
 
-Hint Resolve split_keep_ord_l split_keep_ord_r : core.
+Lemma split_keep_ord_l : forall m A B C,
+    ord m A -> spl (flipmode m) A B C -> ord m B.
+Proof.
+  introv Hord Hspl.
+  inductions Hspl; try destruct m; inverts* Hord.
+Qed.
+
+Lemma split_keep_ord_r : forall m A B C,
+    ord m A -> spl (flipmode m) A B C -> ord m C.
+Proof.
+  introv Hord Hspl.
+  inductions Hspl; try destruct m; inverts* Hord.
+Qed.
+
+Hint Resolve split_keep_ord_l split_keep_ord_r split_keep_ord_f_l split_keep_ord_f_r : core.
 
 
 (* About Flipping *)
@@ -198,7 +212,7 @@ Proof.
 Qed.
 
 (* flip m and remember it as m' *)
-Ltac flip m:=
+Ltac flip m m' :=
   remember (flipmode m) as m' eqn:Heqm'; apply flip_rev in Heqm'; subst.
 
 (* for simplification and unification purpose *)
@@ -379,8 +393,8 @@ Proof with (auto_unify; simpl in *; auto with refl).
     applys S_or; aauto.
     applys S_orl Hu...
     applys S_orr Hu...
-  (* flip m. applys* split_sub_flip_l.
-    flip m. applys* split_sub_flip_r. *)
+  (* flip m m'. applys* split_sub_flip_l.
+    flip m m'. applys* split_sub_flip_r. *)
   - (* spl A *)
     applys~ S_and Hi...
     applys S_andl Hi...
@@ -412,8 +426,8 @@ Proof with (auto_unify; aauto; try solve eomg2).
       inverts H...
       * applys S_andl... applys IH H0... eauto. destruct m; eomg2.
       * applys IH H0... eauto. destruct m; eomg2.
-    + flip m. simpl in H. inverts H.
-    + flip m. simpl in H. inverts H.
+    + flip m m'. simpl in H. inverts H.
+    + flip m m'. simpl in H. inverts H.
     + auto_unify. applys S_andl. eauto.
       applys IH H1... destruct m; eomg2.
     + auto_unify. applys~ S_andl.
@@ -421,22 +435,22 @@ Proof with (auto_unify; aauto; try solve eomg2).
     + inverts H...
       * applys S_andr... applys IH H0... eauto. destruct m; eomg2.
       * applys IH H0... eauto. destruct m; eomg2.
-    + flip m. simpl in H. inverts H.
-    + flip m. simpl in H. inverts H.
+    + flip m m'. simpl in H. inverts H.
+    + flip m m'. simpl in H. inverts H.
     + auto_unify. applys~ S_andr.
     + auto_unify. applys S_andr. eauto.
       applys IH H2... destruct m; eomg2.
   - inverts keep Hspl...
     + applys S_orl... applys IH H0... eauto. destruct m; eomg2.
-    + flip m. simpl in *. applys* S_orl. applys* IH H0... eomg2.
-    + flip m. simpl in *. applys* S_orl. applys* IH H0... eomg2.
+    + flip m m'. simpl in *. applys* S_orl. applys* IH H0... eomg2.
+    + flip m m'. simpl in *. applys* S_orl. applys* IH H0... eomg2.
     + applys S_orl. eauto.
       applys IH Hspl... destruct m; eomg2.
     + applys* S_orl. applys* IH H0... eomg2.
   - inverts keep Hspl...
     + applys S_orr... applys IH H0... eauto. destruct m; eomg2.
-    + flip m. simpl in *. applys* S_orr. applys* IH H0... eomg2.
-    + flip m. simpl in *. applys* S_orr. applys* IH H0... eomg2.
+    + flip m m'. simpl in *. applys* S_orr. applys* IH H0... eomg2.
+    + flip m m'. simpl in *. applys* S_orr. applys* IH H0... eomg2.
     + applys S_orr. eauto.
       applys IH Hspl... destruct m; eomg2.
     + applys* S_orr. applys* IH H0... eomg2.
@@ -455,8 +469,8 @@ Proof with (auto_unify; aauto; try solve eomg2).
       inverts H...
       * applys IH H0... eauto. destruct m; eomg2.
       * applys S_andl... applys IH H0... eauto. destruct m; eomg2.
-    + flip m. simpl in H. inverts H.
-    + flip m. simpl in H. inverts H.
+    + flip m m'. simpl in H. inverts H.
+    + flip m m'. simpl in H. inverts H.
     + auto_unify. applys S_andl. eauto.
       applys IH H1... destruct m; eomg2.
     + auto_unify. applys~ S_andl.
@@ -464,22 +478,22 @@ Proof with (auto_unify; aauto; try solve eomg2).
     + inverts H...
       * applys IH H0... eauto. destruct m; eomg2.
       * applys S_andr... applys IH H0... eauto. destruct m; eomg2.
-    + flip m. simpl in H. inverts H.
-    + flip m. simpl in H. inverts H.
+    + flip m m'. simpl in H. inverts H.
+    + flip m m'. simpl in H. inverts H.
     + auto_unify. applys~ S_andr.
     + auto_unify. applys S_andr. eauto.
       applys IH H2... destruct m; eomg2.
   - inverts keep Hspl...
     + applys S_orl... applys IH H0... eauto. destruct m; eomg2.
-    + flip m. simpl in *. applys* S_orl. applys* IH H0... eomg2.
-    + flip m. simpl in *. applys* S_orl. applys* IH H0... eomg2.
+    + flip m m'. simpl in *. applys* S_orl. applys* IH H0... eomg2.
+    + flip m m'. simpl in *. applys* S_orl. applys* IH H0... eomg2.
     + applys S_orl. eauto.
       applys IH Hspl... destruct m; eomg2.
     + applys* S_orl. applys* IH H0... eomg2.
   - inverts keep Hspl...
     + applys S_orr... applys IH H0... eauto. destruct m; eomg2.
-    + flip m. simpl in *. applys* S_orr. applys* IH H0... eomg2.
-    + flip m. simpl in *. applys* S_orr. applys* IH H0... eomg2.
+    + flip m m'. simpl in *. applys* S_orr. applys* IH H0... eomg2.
+    + flip m m'. simpl in *. applys* S_orr. applys* IH H0... eomg2.
     + applys S_orr. eauto.
       applys IH Hspl... destruct m; eomg2.
     + applys* S_orr. applys* IH H0... eomg2.
@@ -531,7 +545,7 @@ Proof with (auto_unify; auto).
         right*.
 Qed.
 
-(* the following two lemmas should be equivalent to the above two
+(* the following two lemmas should be equivalent to the above two *)
 Lemma and_inv : forall m A B T,
     ord m T -> sub (choose m A B) m T -> sub A m T \/ sub B m T.
 Proof with (auto_unify; auto).
@@ -557,21 +571,21 @@ Proof with (auto_unify; auto).
   - inverts H; try solve [destruct m; auto_unify]...
     + forwards* [?|?]: IH H1; eomg2.
     + forwards* [?|?]: IH H1; eomg2.
-    + inverts H0; try solve [inverts Hs]...
+    + flip m m'. inverts H0; try solve [inverts Hs]...
       (* analyze the derivation of spl C *)
-      * inverts Hs...
+      * flip m' m. inverts Hs...
         ** forwards Res: IH H3 H1; aauto. destruct m; eomg2.
            destruct* Res.
         ** forwards Res: IH H4 H2; aauto. destruct m; eomg2.
            destruct* Res.
-      * forwards~ [Res|Res]: or_inv H1.
-        forwards~ [Res'|Res']: or_inv H2.
-        left*.
-      * forwards~ [Res|Res]: or_inv H1.
-        forwards~ [Res'|Res']: or_inv H2.
-        right*.
+      * forwards~ [Res|Res]: and_inv H1.
+        forwards~ [Res'|Res']: and_inv H2.
+        flip m' m. left*.
+      * forwards~ [Res|Res]: and_inv H1.
+        forwards~ [Res'|Res']: and_inv H2.
+        flip m' m. right*.
 Qed.
-*)
+
 
 (* transitivity *)
 Hint Extern 0 =>
@@ -614,9 +628,9 @@ Proof with (auto_unify; aauto; auto with trans).
     (* additional ordinary constraints save this case
     + (* get splitted *)
       inverts H5...
-      * flip m. simpl in *.
+      * flip m m'. simpl in *.
         admit.
-      * flip m. simpl in *.
+      * flip m m'. simpl in *.
         admit. *)
     + applys~ S_and H3...
   - (* or *)
@@ -776,7 +790,7 @@ Lemma osub_spl: forall m A B C,
 Proof with intuition.
   introv H.
     induction H; try intuition;
-      applys OS_flip; flip m; applys* OS_and.
+      applys OS_flip; flip m m'; applys* OS_and.
 Qed.
 
 Lemma osub_symm_and: forall m A B,
@@ -798,7 +812,7 @@ Lemma osub_distAnd: forall m A B1 B2,
 Proof with eauto.
   introv.
   applys OS_flip.
-  flip m.
+  flip m m'.
   applys OS_distOr.
 Qed.
 
@@ -814,14 +828,14 @@ Proof with intuition.
   - eauto.
   - forwards: osub_spl H0. eauto.
   - applys OS_trans (choose (flipmode m) (choose m A1 A2) B).
-    applys OS_distOr. apply OS_flip. flip m. eauto.
+    applys OS_distOr. apply OS_flip. flip m m'. eauto.
   - applys OS_trans (choose (flipmode m) B A)...
     applys OS_trans (choose m (choose (flipmode m) B1 A) (choose (flipmode m) B2 A))...
     applys OS_and.
     applys OS_trans (choose (flipmode m) A B1)...
     applys OS_trans (choose (flipmode m) A B2)...
     applys OS_trans (choose (flipmode m) (choose m B1 B2) A);
-    apply OS_flip; flip m; eauto.
+    apply OS_flip; flip m m'; eauto.
 Qed.
 
 Hint Resolve osub_spl osub_and: core.
@@ -850,7 +864,7 @@ Proof with (simpl in *; aauto).
     + applys OS_trans IHsub... forwards*: osub_spl H...
     + applys OS_trans (choose (flipmode mode5) B C)...
       forwards Hf: osub_and H. apply OS_flip in Hf.
-      eauto. applys OS_flip. flip mode5. eauto.
+      eauto. applys OS_flip. flip mode5 m'. eauto.
     + applys OS_trans (choose mode5 B C)...
       forwards Hf: osub_and H.
       eauto. eauto.
@@ -935,18 +949,19 @@ Hint Resolve andl_trans andr_trans : core.
 Lemma rev_2 : forall A m B,
     sub A m B -> sub B (flipmode m) A.
 Proof.
-  intros. flip m. applys* rev.
+  intros. flip m m'. applys* rev.
 Qed.
 
-
+(* another way to prove spl_inv
 Lemma spl_inv : forall m A B C T,
     ord m T -> spl m C A B -> sub C m T -> sub A m T \/ sub B m T.
 Proof.
   intros.
-  flip m. apply rev in H1.
+  flip m m'. apply rev in H1.
   forwards [Hr|Hr]: splu_inv H H0 H1;
     apply rev_2 in Hr; jauto.
 Qed.
+*)
 
 Lemma arrow_inv : forall A B C D,
    (t_arrow A B) <: (t_arrow C D) -> (A :> C) /\ (B <: D).
@@ -1017,28 +1032,21 @@ Proof with (simpl in *; solve_false; jauto).
 Qed.
 
 (* algorithm correctness *)
-Lemma and_inv : forall A B B1 B2,
+Lemma rule_and_inv : forall m A B B1 B2,
     sub A m B -> spl m B B1 B2 -> sub A m B1 /\ sub A m B2.
 Proof.
   intros.
-  flip m. apply rev in H1.
-  forwards [Hr|Hr]: splu_inv H H0 H1;
-    apply rev_2 in Hr; jauto.
+  induction* H.
 Qed.
 
-
-Lemma or_inv : forall A A1 A2 B,
+Lemma rule_or_inv : forall m A A1 A2 B,
     sub A m B -> spl (flipmode m) A A1 A2 -> sub A1 m B /\ sub A2 m B.
 Proof.
+  intros.
+  induction* H.
+  Unshelve. eauto.
+Qed.
 
-Lemma andlr_inv : forall A B B1 B2,
-    sub A m B -> spl m A A1 A2 -> sub A1 m B \/ sub A2 m B.
-Proof.
-
-  
-Lemma orlr_inv : forall A B B1 B2,
-    sub A m B -> spl (flipmode m) B B1 B2 -> sub A m B1 \/ sub A m B2.
-Proof.
 
 (* potential improvements *)
 (* add try solve in eomg2 *)

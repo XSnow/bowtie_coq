@@ -51,15 +51,21 @@ check m _ t _
   | select m == t
   = True                                                                        -- S-top
 check _ TInt TInt _ = True                                                      -- S-int
+check m (TArrow a1 a2) (TArrow b1 b2) _                                         -- S-arr
+  = (check (flipmode m) a1 b1 False) && (check m a2 b2 False)
 check m a b _                                                                   -- S-and
   | Just (b1, b2) <- split m b
   = (check m a b1 False) && (check m a b2 False)
+-- check m a b _                                                                   -- S-or
+--  | Just (a1, a2) <- split (flipmode m) a
+--  = (check m a1 b False) && (check m a2 b False)
+check m a b False = check (flipmode m) b a True                                 -- dual for S-or
 check m a b _                                                                   -- S-orl S-orr
   | Just (a1, a2) <- split m a
   = (check m a1 b False) || (check m a2 b False)
-check m a b False = check (flipmode m) b a True                                 -- dual
-check m (TArrow a1 a2) (TArrow b1 b2) _                                         -- S-arr
-  = (check (flipmode m) a1 b1 False) && (check m a2 b2 False)
+check m a b _                                                                   -- S-andl S-andr
+  | Just (b1, b2) <- split m (flipmode m) b
+  = (check m a b1 False) || (check m a b2 False)
 check _ _ _ _ = False
 
 
