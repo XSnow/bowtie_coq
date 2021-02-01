@@ -1016,6 +1016,29 @@ Proof with (simpl in *; solve_false; jauto).
     + right...
 Qed.
 
+(* algorithm correctness *)
+Lemma and_inv : forall A B B1 B2,
+    sub A m B -> spl m B B1 B2 -> sub A m B1 /\ sub A m B2.
+Proof.
+  intros.
+  flip m. apply rev in H1.
+  forwards [Hr|Hr]: splu_inv H H0 H1;
+    apply rev_2 in Hr; jauto.
+Qed.
+
+
+Lemma or_inv : forall A A1 A2 B,
+    sub A m B -> spl (flipmode m) A A1 A2 -> sub A1 m B /\ sub A2 m B.
+Proof.
+
+Lemma andlr_inv : forall A B B1 B2,
+    sub A m B -> spl m A A1 A2 -> sub A1 m B \/ sub A2 m B.
+Proof.
+
+  
+Lemma orlr_inv : forall A B B1 B2,
+    sub A m B -> spl (flipmode m) B B1 B2 -> sub A m B1 \/ sub A m B2.
+Proof.
 
 (* potential improvements *)
 (* add try solve in eomg2 *)
