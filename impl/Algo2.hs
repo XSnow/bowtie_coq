@@ -51,8 +51,6 @@ check m _ t _
   | select m == t
   = True                                                                        -- S-top
 check _ TInt TInt _ = True                                                      -- S-int
-check m (TArrow a1 a2) (TArrow b1 b2) _                                         -- S-arr
-  = (check (flipmode m) a1 b1 False) && (check m a2 b2 False)
 check m a b _                                                                   -- S-and
   | Just (b1, b2) <- split m b
   = (check m a b1 False) && (check m a b2 False)
@@ -60,6 +58,8 @@ check m a b _                                                                   
   | Just (a1, a2) <- split m a
   = (check m a1 b False) || (check m a2 b False)
 check m a b False = check (flipmode m) b a True                                 -- dual
+check m (TArrow a1 a2) (TArrow b1 b2) _                                         -- S-arr
+  = (check (flipmode m) a1 b1 False) && (check m a2 b2 False)
 check _ _ _ _ = False
 
 
@@ -85,24 +85,24 @@ showtest MSuper a b =
 t0 = TArrow TInt TInt
 
 t1 = (TArrow (TInt) (TOp MSub TInt TInt))
-test1 = showtest MSub t1 t1             -- True
-test2 = showtest MSuper t1 t1           -- True
+test1 = showtest MSub t1 t1                                                     -- True
+test2 = showtest MSuper t1 t1                                                   -- True
 
 t2 = TArrow (TOp MSuper TInt t0) TInt
 t3 = TOp MSub (TArrow t0 TInt) (TArrow TInt TInt)
-test3 = showtest MSub t2 t3             -- True
+test3 = showtest MSub t2 t3                                                     -- True
 
-test4 = showtest MSub TBot TInt         -- True
-test5 = showtest MSuper (TArrow TInt TTop) t0   -- True
-test6 = showtest MSuper TBot TInt         -- False
-test7 = showtest MSub (TArrow TInt TTop) t0   -- False
+test4 = showtest MSub TBot TInt                                                 -- True
+test5 = showtest MSuper (TArrow TInt TTop) t0                                   -- True
+test6 = showtest MSuper TBot TInt                                               -- False
+test7 = showtest MSub (TArrow TInt TTop) t0                                     -- False
 
-test8 = showtest MSub (TOp MSub t0 TInt) (TOp MSub t0 TInt) -- True
-test9 = showtest MSuper (TOp MSub t0 TInt) (TOp MSub t0 TInt) -- True
-test10 = showtest MSub (TOp MSuper t0 TInt) (TOp MSuper t0 TInt) -- True
-test11 = showtest MSuper (TOp MSuper t0 TInt) (TOp MSuper t0 TInt) -- True
+test8 = showtest MSub (TOp MSub t0 TInt) (TOp MSub t0 TInt)                     -- True
+test9 = showtest MSuper (TOp MSub t0 TInt) (TOp MSub t0 TInt)                   -- True
+test10 = showtest MSub (TOp MSuper t0 TInt) (TOp MSuper t0 TInt)                -- True
+test11 = showtest MSuper (TOp MSuper t0 TInt) (TOp MSuper t0 TInt)              -- True
 
-test12 = showtest MSub (TOp MSub t0 TInt) t0 -- True
-test13 = showtest MSub t0 (TOp MSub t0 TInt) -- False
-test14 = showtest MSub (TOp MSuper t0 TInt) t0 -- False
-test15 = showtest MSub t0 (TOp MSuper t0 TInt) -- True
+test12 = showtest MSub (TOp MSub t0 TInt) t0                                    -- True
+test13 = showtest MSub t0 (TOp MSub t0 TInt)                                    -- False
+test14 = showtest MSub (TOp MSuper t0 TInt) t0                                  -- False
+test15 = showtest MSub t0 (TOp MSuper t0 TInt)                                  -- True
