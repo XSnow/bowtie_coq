@@ -56,16 +56,10 @@ check m (TArrow a1 a2) (TArrow b1 b2) _                                         
 check m a b _                                                                   -- S-and
   | Just (b1, b2) <- split m b
   = (check m a b1 False) && (check m a b2 False)
--- check m a b _                                                                   -- S-or
---  | Just (a1, a2) <- split (flipmode m) a
---  = (check m a1 b False) && (check m a2 b False)
-check m a b False = check (flipmode m) b a True                                 -- dual for S-or
-check m a b _                                                                   -- S-orl S-orr
+check m a b _                                                                   -- S-andl S-andr
   | Just (a1, a2) <- split m a
   = (check m a1 b False) || (check m a2 b False)
-check m a b _                                                                   -- S-andl S-andr
-  | Just (b1, b2) <- split m (flipmode m) b
-  = (check m a b1 False) || (check m a b2 False)
+check m a b False = check (flipmode m) b a True                                 -- dual
 check _ _ _ _ = False
 
 
@@ -102,3 +96,8 @@ test4 = showtest MSub TBot TInt         -- True
 test5 = showtest MSuper (TArrow TInt TTop) t0   -- True
 test6 = showtest MSuper TBot TInt         -- False
 test7 = showtest MSub (TArrow TInt TTop) t0   -- False
+
+test8 = showtest MSub (TOp MSub t0 TInt) (TOp MSub t0 TInt) -- True
+test9 = showtest MSuper (TOp MSub t0 TInt) (TOp MSub t0 TInt) -- True
+test8 = showtest MSub (TOp MSuper t0 TInt) (TOp MSuper t0 TInt) -- True
+test8 = showtest MSuper (TOp MSuper t0 TInt) (TOp MSuper t0 TInt) -- True
