@@ -250,70 +250,139 @@ A <: mode :> B  :: :: sub :: S_
 by
 
 
----------------------- :: int
+------------------------------- :: int
 int <: mode :> int
 
 
----------------------- :: top
+------------------------------- :: top
 A <: mode :> |mode|
 
 
----------------------- :: bot
+------------------------------- :: bot
 |!mode| <: mode :> A
 
 
-%ordinary !mode D
-%ordinary mode C
-split mode D A B
-A <: mode :> C
-------------------------- :: andl
-D <: mode :> C
+ordinary sub A1 -> A2
+ordinary sub B1 -> B2
+A1 <: !mode :> B1
+A2 <: mode :> B2
+------------------------------- :: arr
+A1 -> A2 <: mode :> B1 -> B2
 
 
-%ordinary !mode D
-%ordinary mode C
-split mode D A B
-B <: mode :> C
------------------ :: andr
-D <: mode :> C
-
-
-%ordinary !mode D
-%ordinary mode C
-split !mode C A B
-D <: mode :> A
-------------------------- :: orl
-D <: mode :> C
-
-
-%ordinary !mode D
-%ordinary mode C
-split !mode C A B
-D <: mode :> B
------------------ :: orr
-D <: mode :> C
-
-ordinary sub A -> C
-ordinary sub B -> D
-A <: !mode :> B
-C <: mode :> D
------------------------- :: arr
-A -> C <: mode :> B -> D
-
-
-% ordinary mode D
-split !mode A B C
-B <: mode :> D
-C <: mode :> D
---------------- :: or
-A <: mode :> D
-
-
-split mode D B C
+split mode B B1 B2
+A <: mode :> B1
+A <: mode :> B2
+------------------------------- :: and
 A <: mode :> B
-A <: mode :> C
---------------- :: and
-A <: mode :> D
+
+
+ordinary mode B
+split mode A A1 A2
+A1 <: mode :> B
+------------------------------- :: andl
+A <: mode :> B
+
+
+ordinary mode B
+split mode A A1 A2
+A2 <: mode :> B
+------------------------------- :: andr
+A <: mode :> B
+
+
+ordinary mode A
+ordinary mode B
+split !mode A A1 A2
+A1 <: mode :> B
+A2 <: mode :> B
+------------------------------- :: or
+A <: mode :> B
+
+
+ordinary mode A
+ordinary mode B
+ordinary !mode A
+split !mode B B1 B2
+A <: mode :> B1
+------------------------------- :: orl
+A <: mode :> B
+
+
+ordinary mode A
+ordinary mode B
+ordinary !mode A
+split !mode B B1 B2
+A <: mode :> B2
+------------------------------- :: orr
+A <: mode :> B
+
+
+
+defns
+LSubtyping :: '' ::=
+
+defn
+A <| mode |> B  :: :: lsub :: LS_
+{{ com Algorithmic Subtyping with Less Conditions }}
+{{ tex [[A]] :[[mode]]: [[B]] }}
+by
+
+
+------------------------------- :: int
+int <| mode |> int
+
+
+------------------------------- :: top
+A <| mode |> |mode|
+
+
+------------------------------- :: bot
+|!mode| <| mode |> A
+
+
+A1 <| !mode |> B1
+A2 <| mode |> B2
+------------------------------- :: arr
+A1 -> A2 <| mode |> B1 -> B2
+
+
+split mode B B1 B2
+A <| mode |> B1
+A <| mode |> B2
+------------------------------- :: and
+A <| mode |> B
+
+
+split mode A A1 A2
+A1 <| mode |> B
+------------------------------- :: andl
+A <| mode |> B
+
+
+split mode A A1 A2
+A2 <| mode |> B
+------------------------------- :: andr
+A <| mode |> B
+
+
+split !mode A A1 A2
+A1 <| mode |> B
+A2 <| mode |> B
+------------------------------- :: or
+A <| mode |> B
+
+
+split !mode B B1 B2
+A <| mode |> B1
+------------------------------- :: orl
+A <| mode |> B
+
+
+split !mode B B1 B2
+A <| mode |> B2
+------------------------------- :: orr
+A <| mode |> B
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
