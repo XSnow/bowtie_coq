@@ -99,5 +99,10 @@ test7 = showtest MSub (TArrow TInt TTop) t0   -- False
 
 test8 = showtest MSub (TOp MSub t0 TInt) (TOp MSub t0 TInt) -- True
 test9 = showtest MSuper (TOp MSub t0 TInt) (TOp MSub t0 TInt) -- True
-test8 = showtest MSub (TOp MSuper t0 TInt) (TOp MSuper t0 TInt) -- True
-test8 = showtest MSuper (TOp MSuper t0 TInt) (TOp MSuper t0 TInt) -- True
+test10 = showtest MSub (TOp MSuper t0 TInt) (TOp MSuper t0 TInt) -- True
+test11 = showtest MSuper (TOp MSuper t0 TInt) (TOp MSuper t0 TInt) -- True
+
+test12 = showtest MSub (TOp MSub t0 TInt) t0 -- True
+test13 = showtest MSub t0 (TOp MSub t0 TInt) -- False
+test14 = showtest MSub (TOp MSuper t0 TInt) t0 -- False
+test15 = showtest MSub t0 (TOp MSuper t0 TInt) -- True
