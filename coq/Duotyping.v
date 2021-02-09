@@ -26,36 +26,33 @@ Proof.
   auto.
 Qed.
 
-Hint Resolve split_instance1 split_instance2 : core.
+Hint Resolve split_instance1 split_instance2 : ord.
 
 Lemma ord_or_split: forall m A,
     ord m A \/ exists B C, spl m A B C.
-Proof.
-  intros. gen m. induction* A; intros.
+Proof with (eauto with ord; intros).
+  intros. gen m. induction* A...
   - (* arrow *)
-    destruct m.
-    + lets* [?|(?&?&?)]: IHA2.
+    destruct m...
+    + lets [?|(?&?&?)]: IHA2...
       (* ord A2 in A1->A2 *)
-      lets* [?|(?&?&?)]: IHA1.
-    + left*.
+      lets* [?|(?&?&?)]: IHA1...
   - (* and *)
-    destruct m.
-    + right*.
+    destruct m...
     + lets [?|(?&?&?)]: IHA1 m_super;
-        lets [?|(?&?&?)]: IHA2 m_super.
-      left. constructor*.
-      right*. exists*. applys* Sp_orr.
+        lets [?|(?&?&?)]: IHA2 m_super...
+      left. constructor...
+      right. exists... applys* Sp_orr.
       right*. exists*. applys* Sp_orl.
       right*. exists*. applys* Sp_orl.
   - (* or *)
-    destruct m.
+    destruct m...
     + lets [?|(?&?&?)]: IHA1 m_sub;
         lets [?|(?&?&?)]: IHA2 m_sub.
       left. constructor*.
       right*. exists*. applys* Sp_orr.
       right*. exists*. applys* Sp_orl.
       right*. exists*. applys* Sp_orl.
-    + right*.
 Qed.
 
 Lemma choose_false_int: forall m A B,
@@ -114,13 +111,44 @@ Proof.
   inverts H.
 Qed.
 
-Hint Resolve choose_false_int choose_false_top choose_false_bot choose_false_arrow choose_and_sub choose_or_super and_or_mismatch choose_typebymode_false: falseHd.
+Lemma ord_sub_and_false : forall A B,
+    ord m_sub (t_and A B) -> False.
+Proof.
+  intros.
+  inverts H.
+Qed.
+
+Lemma ord_super_or_false : forall A B,
+    ord m_super (t_or A B) -> False.
+Proof.
+  intros.
+  inverts H.
+Qed.
+
+Lemma ord_both_and_false : forall m A B,
+    ord m (t_and A B) -> ord (flipmode m) (t_and A B) -> False.
+Proof.
+  introv H1 H2.
+  destruct m; inverts H1; inverts H2.
+Qed.
+
+Lemma ord_both_or_false : forall m A B,
+    ord m (t_or A B) -> ord (flipmode m) (t_or A B) -> False.
+Proof.
+  introv H1 H2.
+  destruct m; inverts H1; inverts H2.
+Qed.
+
+Hint Resolve choose_false_int choose_false_top choose_false_bot
+     choose_false_arrow choose_and_sub choose_or_super and_or_mismatch
+     choose_typebymode_false ord_sub_and_false ord_super_or_false
+     ord_both_and_false ord_both_or_false : falseHd.
 
 Lemma split_ord_false : forall m A B C,
-    (spl m A B C /\ ord m A)  -> False.
+    spl m A B C -> ord m A -> False.
 Proof.
   introv. gen m B C.
-  induction A; intros m B C (s&o);
+  induction A; intros m B C s o;
     try solve [inverts* s];
     try solve [inverts* o];
     destruct m;
@@ -200,9 +228,16 @@ Proof.
   destruct m; inverts H.
 Qed.
 
-Hint Resolve flip_eqv_false : falseHd.
+Lemma flip_eqv_false_2 : forall m,
+    flipmode m = m -> False.
+Proof.
+  intros.
+  destruct m; inverts H.
+Qed.
 
-Ltac solve_false := try intro; try solve [false; eauto with falseHd].
+Hint Immediate flip_eqv_false flip_eqv_false_2 : falseHd.
+
+Ltac solve_false := try intro; try solve [false; eauto 3 with falseHd].
 
 Lemma flip_rev : forall m1 m2,
     m1 = flipmode m2 -> m2 = flipmode m1.
@@ -232,10 +267,9 @@ Proof.
   intros. eauto.
 Qed.
 
-Hint Rewrite flip_flip cal_top cal_bot : core.
+Hint Rewrite flip_flip : core.
 
 (* Subtyping *)
-Hint Constructors sub : core.
 
 Lemma typ_size_lg_z : forall T, size_typ T > 0.
 Proof.
@@ -244,21 +278,14 @@ Proof.
   inverts~ H.
 Qed.
 
-Lemma typ_size_choose_l : forall m A B,
-    size_typ A < size_typ (choose m A B).
+Lemma choose_decrease_size : forall m A B,
+    size_typ A < size_typ (choose m A B) /\ size_typ B < size_typ (choose m A B).
 Proof.
-  intros.
-  destruct m; simpl in *; omega.
+  split; intros;
+    destruct m; simpl in *; omega.
 Qed.
 
-Lemma typ_size_choose_r : forall m A B,
-    size_typ B < size_typ (choose m A B).
-Proof.
-  intros.
-  destruct m; simpl in *; omega.
-Qed.
-
-Hint Resolve typ_size_choose_l typ_size_choose_r : core.
+Hint Resolve typ_size_lg_z choose_decrease_size : core.
 
 Lemma split_decrease_size: forall m A B C,
     spl m A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A.
@@ -270,15 +297,24 @@ Proof with (pose proof (typ_size_lg_z); simpl in *; try omega).
 Qed.
 
 Ltac spl_size :=
-  repeat match goal with
-  | [ H: spl _ _ _ _ |- _ ] =>
-    (lets (?&?): split_decrease_size H; clear H)
-  end.
+  try repeat match goal with
+         | [ H: spl _ _ _ _ |- _ ] =>
+           ( lets (?&?): split_decrease_size H; clear H)
+             end;
+  try match goal with
+         | [ H: size_typ (choose ?m ?A ?B) < _ |- _ ] =>
+           ( lets (?&?): choose_decrease_size m A B)
+             end.
 
-(* enhanced omega with split_decrease_size *)
+(********************************************)
+(*                                          *)
+(*               Ltac eomg2                 *)
+(*  enhanced omega with split_decrease_size *)
+(*                                          *)
+(********************************************)
 Ltac eomg2 :=
-  pose proof (typ_size_lg_z);
-  try spl_size; simpl in *; try omega.
+  try solve [pose proof (typ_size_lg_z);
+             spl_size; simpl in *; try omega].
 
 Ltac indTypSize s :=
   assert (SizeInd: exists i, s < i) by eauto;
@@ -303,64 +339,209 @@ Proof.
   destruct m; simpl in *; inverts* H.
 Qed.
 
-Hint Extern 0 =>
-match goal with
-| [ IH: forall A, size_typ A < _ -> _, A: typ, Hsp: spl ?m ?T _  _, Hsp2: spl ?m ?T _  _ |- _ ] =>
-  (forwards (?&?): IH Hsp Hsp2; eomg2; subst~)
-end : split_unique.
+Ltac choose_unify :=
+  match goal with
+         | [ H1: choose _ _ _ = choose _ _ _ |- _ ] =>
+           (forwards (?&?&?): choose_unique H1; clear H1)
+         | [ H1: spl ?m (choose ?m _ _)  _ _ |- _ ] =>
+           (forwards (?&?): split_choose H1; clear H1)
+  end;
+  subst~.
+
+(********************************************)
+(*                                          *)
+(*          Lemma split_unique              *)
+(*                                          *)
+(********************************************)
+Ltac split_unique_autoIH :=
+  match goal with
+  | [ IH: forall A, size_typ A < _ -> _, A: typ, Hsp: spl ?m ?T _  _, Hsp2: spl ?m ?T _  _ |- _ ] =>
+    (forwards (?&?): IH Hsp Hsp2; eomg2; subst~)
+end.
 
 Lemma split_unique : forall m T A1 A2 B1 B2,
     spl m T A1 B1 -> spl m T A2 B2 -> A1 = A2 /\ B1 = B2.
-Proof with (solve_false; auto with split_unique).
+Proof with (solve_false; auto).
   introv. gen m.
   indTypSize (size_typ T).
-  inverts H; try destruct m; inverts H0...
-  Unshelve.
-  econstructor. eauto.
+  inverts H; inverts H0;
+    try choose_unify; try solve_false;
+    try split_unique_autoIH;
+    try choose_unify.
 Qed.
 
-(* replace solve_false *)
+
+(********************************************)
+(*                                          *)
+(*             Ltac auto_unify              *)
+(*                                          *)
+(*  extends choose_unify                    *)
+(*  solve_false at the end                  *)
+(*                                          *)
+(********************************************)
 Ltac auto_unify :=
-  repeat match goal with
-         | [ H1: choose _ _ _ = choose _ _ _ |- _ ] =>
-           (forwards (?&?&?): choose_unique H1;
-            subst; clear H1)
+  simpl in *;
+  try repeat choose_unify;
+  try repeat match goal with
          | [ H1: spl ?m ?A  _ _ , H2: spl ?m ?A _ _ |- _ ] =>
            (forwards (?&?): split_unique H1 H2;
             subst; clear H2)
+         end;
+  try rewrite flip_flip in *;
+  solve_false.
+
+(*
          | [ H1: spl m_sub (t_and _ _) _ _ |- _ ] =>
            inverts H1
          | [ H1: spl m_super (t_or _ _) _ _ |- _ ] =>
-           inverts H1
-         | [ H1: spl ?m (choose ?m _ _) _ _ |- _ ] =>
-           (forwards (?&?): split_choose H1;
-            subst; clear H1)
-         end;
-  try rewrite flip_flip in *;
-  try rewrite cal_top in *;
-  try rewrite cal_bot in *;
-  solve_false.
+           inverts H1 *)
 
 Ltac aauto := try eassumption.
 
+(*****************************************************************************)
+Inductive part : mode -> typ -> typ -> Prop :=
+| P_refl  : forall m A, part m A A
+| P_spl   : forall m A B C B', spl m A B C -> part m B B' -> part m A B'
+| P_spr   : forall m A B C C', spl m A B C -> part m C C' -> part m A C'
+.
 
-Notation "A <: B" := (sub A m_sub B) (at level 80, right associativity).
-Notation "A :> B" := (sub A m_super B) (at level 80, right associativity).
+Hint Constructors part : core.
+
+(*
+delete
+Lemma ord_part_inv : forall m A B A1 A2,
+    part m A B -> spl m A A1 A2 -> ord m B -> part m A1 B \/ part m A2 B.
+Proof.
+  introv Hp Hspl Ho.
+  destruct Hp; auto_unify; jauto.
+Qed.
+
+Hint Resolve ord_part_inv : core. (* useless? *) *)
+
+Lemma part_spl : forall m A B B1 B2,
+    part m A B -> spl m B B1 B2 -> part m A B1 /\ part m A B2.
+Proof.
+  introv Hp Hspl.
+  induction Hp; split*.
+Qed.
+(*
+delete
+Lemma part_spl_flip : forall m A B A1 A2,
+    part m A B ->  spl (flipmode m) A A1 A2 -> part m A1 B /\ part m A2 B.
+Proof.
+  introv Hp Hspl.
+  induction Hp; split*.
+Abort.*)
+
+Hint Resolve part_spl : core.
+
+
+Ltac sub_part_autoIH :=
+  match goal with
+  | [ IH: forall A B : typ, _ < _ -> _ |- sub ?A ?m ?B ] =>
+  (forwards (IH1&IH2): IH A B; aauto; eomg2)
+end.
+
+
+Lemma sub_part : forall m A B,
+    (part m A B -> sub A m B)
+    /\ (ord m A -> ord m B -> part (flipmode m) B A -> sub A m B).
+Proof with (aauto; try sub_part_autoIH; eauto 4).
+  introv. gen m.
+  indTypSize (size_typ A + size_typ B).
+  split.
+
+  --
+  introv Hp.
+  lets [Hi|(?&?&Hi)]: ord_or_split m B.
+  - (* ord B *)
+    inverts Hp.
+    + lets [Hu|(?&?&Hu)]: ord_or_split (flipmode m) B.
+      * destruct B; auto_unify.
+        ** econstructor.
+        ** destruct m.
+          lets: S_top t_top m_sub...
+          lets: S_bot m_super t_top...
+        ** destruct m.
+          lets: S_bot m_sub t_bot...
+          lets: S_top t_bot m_super...
+        **(* arrow *)
+          constructor...
+          destruct m; auto_unify; auto.
+          destruct m; auto_unify; auto.
+      * applys~ S_or Hu...
+    + applys S_andl...
+    + applys S_andr...
+  - (* spl B *)
+    lets~ (?&?): part_spl Hp Hi.
+    applys S_and Hi...
+
+    --
+    introv Ho1 Ho2 Hp.
+    lets [Hu|(?&?&Hu)]: ord_or_split (flipmode m) A.
+    + inverts Hp; auto_unify.
+      * (* ord B *)
+      destruct A; auto_unify.
+      ** econstructor.
+      ** destruct m.
+          lets: S_top t_top m_sub...
+          lets: S_bot m_super t_top...
+      ** destruct m.
+          lets: S_bot m_sub t_bot...
+          lets: S_top t_bot m_super...
+      ** (* arrow case, non-ord types involved *)
+        constructor...
+        destruct m; auto_unify; auto.
+        destruct m; auto_unify; auto.
+      * applys* S_orl...
+      * applys* S_orr...
+    +
+      lets~ (?&?): part_spl Hp Hu.
+      applys* S_or...
+Qed.
+
+Theorem sub_refl : forall A m, sub A m A.
+Proof.
+  introv.
+  pose proof (sub_part m A A).
+  destruct* H.
+Qed.
+
+(* delete
+Lemma s_andl_relaxed : forall (A:typ) (m:mode) (B A1 A2:typ),
+     spl m A A1 A2 -> sub A1 m B -> sub A m B.
+Proof with aauto.
+  introv Hspl Hs.
+  indTypSize (size_typ A).
+  lets [Hi|(?&?&Hi)]: ord_or_split m B.
+  - applys S_andl...
+  - applys S_and...
+    (* stuck *)
+    (* need other lemmas *)
+    (* completeness needs to be proved together *)
+Abort.
+ *)
+
+Hint Constructors lsub : core.
 
 Lemma rev : forall A m B,
-    sub B (flipmode m) A -> sub A m B.
+    lsub B (flipmode m) A <-> lsub A m B.
 Proof.
-  intros.
-  inductions H; auto_unify;
+  split; introv H.
+
+  inductions H;
     try solve [constructor*];
-    try solve [destruct m; simpl in *; constructor*].
-  - applys* S_orl.
-  - applys* S_orr.
-  - forwards*: IHsub m.
-  - forwards*: IHsub m.
-  - applys* S_and.
-  - applys* S_or.
+    try solve [auto_unify; eauto].
+
+  flip m m'.
+  inductions H;
+    try solve [constructor*];
+    try solve [auto_unify; eauto].
 Qed.
+
+
+Notation "A <: B" := (lsub A m_sub B) (at level 80, right associativity).
+Notation "A :> B" := (lsub A m_super B) (at level 80, right associativity).
 
 Lemma rev2 : forall A B,
     A <: B <-> B :> A.
@@ -372,22 +553,35 @@ Qed.
 Hint Immediate rev rev2 : core.
 
 (* reflexivity *)
-Hint Extern 0 =>
-match goal with
-| [ IH : forall A, size_typ A < _ -> _ |- sub ?A _ ?A ] => (forwards*: IH A; eomg2)
-end : refl.
 
 Lemma refl : forall A m, sub A m A.
-Proof with (auto_unify; simpl in *; auto with refl).
+Proof with (auto_unify; try solve [constructor; aauto; eauto 3];  try refl_autoIH).
   introv. gen m.
   indTypSize (size_typ A).
   lets [Hi|(?&?&Hi)]: ord_or_split m A.
   lets [Hu|(?&?&Hu)]: ord_or_split (flipmode m) A.
+  - (* ord A *)
+    destruct A; auto_unify.
+    admit. admit. admit.
+    + (* arrow *)
+      constructor; aauto; destruct m; auto_unify; auto; refl_autoIH.
   - (* ord A & ordu A *)
+    applys S_or; aauto.
+    admit. admit. (*
+    applys S_orl Hu...
+    applys S_orr Hu... *)
+  - (* spl A *)
+    applys~ S_and Hi...
+    applys S_andl Hi...
+    applys S_andr Hi...
+  -
     destruct A; destruct m...
-    + lets: S_top t_top m_sub...
+    + lets: S_bot m_super... eauto.
+    + lets: S_bot m_sub t_bot... eauto.
+    + constructor~. refl_autoIH.
+    + lets: S_top t_top m
+                  _sub...
     + lets: S_bot m_super t_top...
-    + lets: S_bot m_sub t_bot...
     + lets: S_top t_bot m_super...
   - (* ord A & splu A *)
     applys S_or; aauto.
