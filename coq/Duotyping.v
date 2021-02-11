@@ -994,6 +994,7 @@ Qed.
 
 Hint Immediate trans : core.
 
+(*
 Lemma split_sub_l : forall m T A B,
     spl m T A B -> sub T m A.
 Proof  with (aauto; simpl in *; auto_unify).
@@ -1027,47 +1028,140 @@ Proof  with (aauto; simpl in *; auto_unify).
 Qed.
 
 Hint Resolve split_sub_l split_sub_r split_sub_flip_l split_sub_flip_r : core.
+*)
 
-
-Lemma arrow : forall A B C D,
-   A :> C -> B <: D -> (t_arrow A B) <: (t_arrow C D).
-Proof with (simpl in *; auto_unify; aauto).
-  introv s.
-  indTypSize (size_typ (t_arrow A B) + size_typ (t_arrow C D)).
-  lets [Hi2|(?&?&Hi2)]: ord_or_split m_sub (t_arrow C D).
-  lets [Hi1|(?&?&Hi1)]: ord_or_split m_sub (t_arrow A B).
-  - applys~ S_arr...
-  - (* subtype splittable ; supertype ordinary *)
-    inverts keep Hi1.
-    + (* split return type B *)
-      apply rev2 in H...
-      forwards [?|?]: splu_inv H... inverts~ Hi2.
-      * applys~ S_andl Hi1.
-        applys IH... eomg2. applys~ rev2.
-      * applys~ S_andr Hi1.
-        applys IH... eomg2. applys~ rev2.
-    + (* splitu input type A *)
-      apply rev2 in s...
-      forwards [?|?]: splu_inv s... inverts~ Hi2.
-      * applys~ S_andl Hi1.
-        applys IH... applys~ rev2. eomg2.
-      * applys~ S_andr Hi1.
-        applys IH... applys~ rev2. eomg2.
-  - (* supertype splittable *)
-    inverts keep Hi2.
-    + (* split return type *)
-      applys~ S_and Hi2.
-      * applys IH... eomg2. apply rev2 in H. apply rev2.
-        applys orl_trans...
-      * applys IH... eomg2. apply rev2 in H. apply rev2.
-        applys orr_trans...
-    + (* split input type *)
-      applys~ S_and Hi2; clear Hi2.
-      * applys IH... apply rev2 in s. apply rev2.
-        applys orl_trans... eomg2.
-      * applys IH... apply rev2 in s. apply rev2.
-        applys orr_trans... eomg2.
+Lemma soundness_to_lsub : forall m A B,
+    sub A m B -> lsub A m B.
+Proof.
+  introv Hs.
+  induction Hs; try econstructor; eassumption.
 Qed.
+
+
+Lemma sub_arrow : forall m A1 A2 B1 B2,
+    sub A1 (flipmode m) B1 -> sub A2 m B2 -> sub (t_arrow A1 A2) m (t_arrow B1 B2).
+Proof with (auto_unify; aauto; auto_inv; eomg2).
+  introv Hs1 Hs2.
+  indTypSize (size_typ (t_arrow A1 A2) + size_typ (t_arrow B1 B2)).
+  lets [Hi1|(?&?&Hi1)]: ord_or_split m (t_arrow A1 A2).
+  lets [Hi2|(?&?&Hi2)]: ord_or_split m (t_arrow B1 B2).
+  lets [Hu1|(?&?&Hu1)]: ord_or_split (flipmode m) (t_arrow A1 A2).
+  lets [Hu2|(?&?&Hu2)]: ord_or_split (flipmode m) (t_arrow B1 B2).
+  - applys~ S_arr; destruct~ m.
+  - destruct m... inverts Hu2.
+    + forwards [?|?]: rule_orlr_inv Hs2 H1. inverts* Hu1.
+      applys S_orl; aauto. simpl. eauto. applys~ IH. eomg2.
+      applys S_orr; aauto. simpl. eauto. applys~ IH. eomg2.
+    + forwards [?|?]: rule_orlr_inv Hs1 H2. inverts* Hu1.
+      applys S_orl; aauto. simpl. eauto. applys~ IH. eomg2.
+      applys S_orr; aauto. simpl. eauto. applys~ IH. eomg2.
+  - destruct m... inverts Hu1.
+    + forwards (?&?): rule_or_inv Hs2 H1.
+      applys S_or; aauto. simpl; eauto.
+      applys~ IH; eomg2. applys~ IH; eomg2.
+    + forwards (?&?): rule_or_inv Hs1 H2.
+      applys S_or; aauto. simpl; eauto.
+      applys~ IH; eomg2. applys~ IH; eomg2.
+  - destruct m... inverts Hi2.
+    + forwards (?&?): rule_and_inv Hs2 H1.
+      applys S_and; aauto. simpl; eauto.
+      applys~ IH; eomg2. applys~ IH; eomg2.
+    + forwards (?&?): rule_and_inv Hs1 H2.
+      applys S_and; aauto. simpl; eauto.
+      applys~ IH; eomg2. applys~ IH; eomg2.
+  - destruct m... inverts Hi1.
+    + lets [Hi2|(?&?&Hi2)]: ord_or_split m_sub (t_arrow B1 B2).
+      * forwards~ [?|?]: rule_andlr_inv Hs2 H1. inverts~ Hi2.
+        applys S_andl; aauto. simpl. eauto. applys~ IH. eomg2.
+        applys S_andr; aauto. simpl. eauto. applys~ IH. eomg2.
+      * inverts Hi2.
+        ** forwards (?&?): rule_and_inv Hs2 H2.
+           applys S_and; aauto. simpl; eauto.
+           applys~ IH; eomg2. applys~ IH; eomg2.
+        ** forwards (?&?): rule_and_inv Hs1 H3.
+           applys S_and; aauto. simpl; eauto.
+           applys~ IH; eomg2. applys~ IH; eomg2.
+    + lets [Hi2|(?&?&Hi2)]: ord_or_split m_sub (t_arrow B1 B2).
+      * forwards~ [?|?]: rule_andlr_inv Hs1 H2. inverts~ Hi2.
+        applys S_andl; aauto. simpl. eauto. applys~ IH. eomg2.
+        applys S_andr; aauto. simpl. eauto. applys~ IH. eomg2.
+      * inverts Hi2.
+        ** forwards (?&?): rule_and_inv Hs2 H3.
+           applys S_and; aauto. simpl; eauto.
+           applys~ IH; eomg2. applys~ IH; eomg2.
+        ** forwards (?&?): rule_and_inv Hs1 H4.
+           applys S_and; aauto. simpl; eauto.
+           applys~ IH; eomg2. applys~ IH; eomg2.
+Qed.
+
+Lemma sub_orl : forall m A B B1 B2,
+    spl (flipmode m) B B1 B2 -> sub A m B1 -> sub A m B.
+Proof.
+  introv Hspl Hs.
+  indTypSize (size_typ A + size_typ B).
+  lets [Hi|(?&?&Hi)]: ord_or_split m B.
+  lets [Hi'|(?&?&Hi')]: ord_or_split m A.
+  lets [Hu|(?&?&Hu)]: ord_or_split (flipmode m) A.
+  - applys~ S_orl Hspl.
+  - applys~ sub_or Hu; applys IH Hspl; eomg2; applys trans Hs; applys* sub_part2.
+  - forwards~ [?|?]: rule_andlr_inv Hs Hi'. eauto.
+      applys~ S_andl Hi'. applys~ IH Hspl. eomg2.
+      applys~ S_andr Hi'. applys~ IH Hspl. eomg2.
+  - inverts Hspl; inverts Hi; auto_unify.
+    + applys S_and; eauto.
+      applys IH; eomg2. 2: {eauto. } applys* trans Hs.
+      applys IH; eomg2. 2: {eauto. } applys* trans Hs.
+    + applys S_and; eauto.
+      applys IH; eomg2. Focus 2. eauto. applys* trans Hs.
+      applys IH; eomg2. Focus 2. eauto. applys* trans Hs.
+    + auto_inv. applys S_and; eauto.
+      applys~ IH H; eomg2.
+    + auto_inv. applys S_and; eauto.
+      applys~ IH H0; eomg2.
+Qed.
+
+Lemma sub_orr : forall m A B B1 B2,
+    spl (flipmode m) B B1 B2 -> sub A m B2 -> sub A m B.
+Proof.
+  introv Hspl Hs.
+  indTypSize (size_typ A + size_typ B).
+  lets [Hi|(?&?&Hi)]: ord_or_split m B.
+  lets [Hi'|(?&?&Hi')]: ord_or_split m A.
+  lets [Hu|(?&?&Hu)]: ord_or_split (flipmode m) A.
+  - applys~ S_orr Hspl.
+  - applys~ sub_or Hu; applys IH Hspl; eomg2; applys trans Hs; applys* sub_part2.
+  - forwards~ [?|?]: rule_andlr_inv Hs Hi'. eauto.
+      applys~ S_andl Hi'. applys~ IH Hspl. eomg2.
+      applys~ S_andr Hi'. applys~ IH Hspl. eomg2.
+  - inverts Hspl; inverts Hi; auto_unify.
+    + applys S_and; eauto.
+      applys IH; eomg2. eauto. applys* trans Hs.
+      applys IH; eomg2. eauto. applys* trans Hs.
+    + applys S_and; eauto.
+      applys IH; eomg2. eauto. applys* trans Hs.
+      applys IH; eomg2. eauto. applys* trans Hs.
+    + auto_inv. applys S_and; eauto.
+      applys~ IH H; eomg2.
+    + auto_inv. applys S_and; eauto.
+      applys~ IH H0; eomg2.
+Qed.
+
+
+
+Lemma completeness_to_lsub : forall m A B,
+    lsub A m B -> sub A m B.
+Proof.
+  introv Hs.
+  induction Hs;
+    try solve [econstructor; eassumption].
+  - applys* sub_arrow.
+  - applys trans IHHs. applys* sub_part1.
+  - applys trans IHHs. applys* sub_part1.
+  - applys* sub_or.
+  - applys* sub_orl.
+  - applys* sub_orr.
+Qed.
+
 
 Lemma distArrU: forall A B C,
     (t_and (t_arrow A C) (t_arrow B C)) <: (t_arrow (t_or A B) C).
