@@ -107,6 +107,7 @@ Lemma choose_false_bot: forall m A B,
     choose m A B = t_bot -> False.
 Proof.
   intros.
+
   destruct m; destruct A; destruct B; simpl in H; inverts H.
 Qed.
 
@@ -1030,14 +1031,6 @@ Qed.
 Hint Resolve split_sub_l split_sub_r split_sub_flip_l split_sub_flip_r : core.
 *)
 
-Lemma soundness_to_lsub : forall m A B,
-    sub A m B -> lsub A m B.
-Proof.
-  introv Hs.
-  induction Hs; try econstructor; eassumption.
-Qed.
-
-
 Lemma sub_arrow : forall m A1 A2 B1 B2,
     sub A1 (flipmode m) B1 -> sub A2 m B2 -> sub (t_arrow A1 A2) m (t_arrow B1 B2).
 Proof with (auto_unify; aauto; auto_inv; eomg2).
@@ -1112,8 +1105,8 @@ Proof.
       applys IH; eomg2. 2: {eauto. } applys* trans Hs.
       applys IH; eomg2. 2: {eauto. } applys* trans Hs.
     + applys S_and; eauto.
-      applys IH; eomg2. Focus 2. eauto. applys* trans Hs.
-      applys IH; eomg2. Focus 2. eauto. applys* trans Hs.
+      applys IH; eomg2. 2: {eauto. } applys* trans Hs.
+      applys IH; eomg2. 2: {eauto. } applys* trans Hs.
     + auto_inv. applys S_and; eauto.
       applys~ IH H; eomg2.
     + auto_inv. applys S_and; eauto.
@@ -1148,9 +1141,12 @@ Qed.
 
 
 
-Lemma completeness_to_lsub : forall m A B,
-    lsub A m B -> sub A m B.
+Lemma lsub2sub : forall m A B,
+    lsub A m B <-> sub A m B.
 Proof.
+  split.
+
+  +
   introv Hs.
   induction Hs;
     try solve [econstructor; eassumption].
@@ -1160,11 +1156,37 @@ Proof.
   - applys* sub_or.
   - applys* sub_orl.
   - applys* sub_orr.
+
+  +
+  introv Hs.
+  induction Hs; try econstructor; eassumption.
+Qed.
+
+Lemma lsub_refl : forall m A,
+    lsub A m A.
+Proof.
+  intros. applys* lsub2sub.
+Qed.
+
+Lemma lsub_trans : forall m A B C,
+    lsub A m B -> lsub B m C -> lsub A m C.
+Proof.
+  intros. applys lsub2sub. apply lsub2sub in H. apply lsub2sub in H0.
+  eauto.
+Qed.
+
+Hint Resolve lsub_refl lsub_trans : core.
+
+Lemma sub_rev : forall A B,
+    sub A m_sub B <-> sub B m_super A.
+Proof.
+  split; intro H;
+    apply lsub2sub; apply lsub2sub in H; apply rev; simpl; auto.
 Qed.
 
 
 Lemma distArrU: forall A B C,
-    (t_and (t_arrow A C) (t_arrow B C)) <: (t_arrow (t_or A B) C).
+    sub (t_and (t_arrow A C) (t_arrow B C)) m_sub (t_arrow (t_or A B) C).
 Proof with (auto_unify; aauto).
   introv.
   indTypSize (size_typ C).
@@ -1176,9 +1198,8 @@ Proof with (auto_unify; aauto).
     applys S_and. eauto.
     + applys trans Hs1. applys* S_and.
     + applys trans Hs2. applys* S_and.
-      Unshelve.
-      constructor. eauto.
 Qed.
+
 
 Lemma symm_and: forall m A B,
     sub (choose m A B) m (choose m B A).
@@ -1191,7 +1212,7 @@ Lemma symm_or: forall m A B,
     sub (choose (flipmode m) A B) m (choose (flipmode m) B A).
 Proof.
   introv.
-  applys* S_or.
+  applys* sub_or. applys* sub_orr. applys* sub_orl.
 Qed.
 
 Hint Resolve symm_and symm_or : core.
@@ -1207,7 +1228,7 @@ Proof with eauto.
   applys S_and...
 Qed.
 *)
-
+(*
 Lemma distOr: forall A1 A2 B,
     sub (t_and (t_or A1 B) (t_or A2 B)) m_sub (t_or (t_and A1 A2) B).
 Proof with eauto.
@@ -1216,6 +1237,7 @@ Proof with eauto.
 Qed.
 
 Hint Resolve arrow distArrU distOr : core.
+*)
 
 (* declarative subtyping equivalence *)
 Hint Constructors osub : core.
@@ -1275,11 +1297,34 @@ Qed.
 
 Hint Resolve osub_spl osub_and: core.
 
-Theorem dsub_eq: forall A m B,
+
+Theorem osub2sub: forall A m B,
     osub A m B <-> sub A m B.
 Proof with (simpl in *; aauto).
   split; introv H.
   - induction* H.
+    + destruct mode5; eauto.
+    + applys~ sub_arrow.
+    + applys lsub2sub. apply <- lsub2sub in IHosub1. apply <- lsub2sub in IHosub2.
+      econstructor; auto.
+    + forwards* (?&?): split_iso m_sub (t_arrow A (t_and B C)).
+      destruct~ mode5. applys~ sub_rev.
+    + destruct~ mode5.
+      * applys~ distArrU.
+      * applys lsub2sub. applys* LS_or.
+    + flip mode5 m. applys sub_or; auto_unify.
+      admit.
+
+      applys sub_orl. auto_unify.
+      applys Sp_orl. eauto; simpl. lsub2sub.
+        econstructor; auto.
+.
+    +
+
+      ; applys lsub2sub.
+      * econstructor; eauto.
+      *
+    +
     + destruct mode5.
       * simpl in *. eauto.
       * apply rev2. apply rev2 in IHosub1. apply rev2 in IHosub2.
