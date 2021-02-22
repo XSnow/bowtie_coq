@@ -26,7 +26,43 @@ Proof.
   auto.
 Qed.
 
-Hint Resolve split_instance1 split_instance2 : core.
+Lemma split_instance3: forall A A1 A2 B,
+    spl m_sub A A1 A2 -> spl m_sub (t_or A B) (t_or A1 B) (t_or A2 B).
+Proof.
+  intros.
+  lets: Sp_orl m_sub A B A1 A2.
+  simpl in *.
+  auto.
+Qed.
+
+Lemma split_instance4: forall A A1 A2 B,
+    spl m_super A A1 A2 -> spl m_super (t_and A B) (t_and A1 B) (t_and A2 B).
+Proof.
+  intros.
+  lets: Sp_orl m_super A B A1 A2.
+  simpl in *.
+  auto.
+Qed.
+
+Lemma split_instance5: forall A B B1 B2,
+    ord m_sub A -> spl m_sub B B1 B2 -> spl m_sub (t_or A B) (t_or A B1) (t_or A B2).
+Proof.
+  intros.
+  lets: Sp_orr m_sub A B B1 B2.
+  simpl in *.
+  auto.
+Qed.
+
+Lemma split_instance6: forall  A B B1 B2,
+    ord m_super A -> spl m_super B B1 B2 -> spl m_super (t_and A B) (t_and A B1) (t_and A B2).
+Proof.
+  intros.
+  lets: Sp_orr m_super A B B1 B2.
+  simpl in *.
+  auto.
+Qed.
+
+Hint Resolve split_instance1 split_instance2 split_instance3 split_instance4 split_instance5 split_instance6: core.
 
 Lemma sub_instance1: forall A,
     sub t_bot m_sub A.
@@ -76,17 +112,11 @@ Proof with (eauto; intros).
     + lets [?|(?&?&?)]: IHA1 m_super;
         lets [?|(?&?&?)]: IHA2 m_super...
       left. constructor...
-      right. exists... applys* Sp_orr.
-      right*. exists*. applys* Sp_orl.
-      right*. exists*. applys* Sp_orl.
   - (* or *)
     destruct m...
     + lets [?|(?&?&?)]: IHA1 m_sub;
-        lets [?|(?&?&?)]: IHA2 m_sub.
-      left. constructor*.
-      right*. exists*. applys* Sp_orr.
-      right*. exists*. applys* Sp_orl.
-      right*. exists*. applys* Sp_orl.
+        lets [?|(?&?&?)]: IHA2 m_sub...
+      left. constructor*...
 Qed.
 
 Lemma choose_false_int: forall m A B,
@@ -561,7 +591,6 @@ Proof.
   introv H.
   split; applys* S_and.
 Qed.
-
 
 (* delete
 Lemma s_andl_relaxed : forall (A:typ) (m:mode) (B A1 A2:typ),
@@ -1177,13 +1206,21 @@ Qed.
 
 Hint Resolve lsub_refl lsub_trans : core.
 
-Lemma sub_rev : forall A B,
+Lemma sub_rev : forall A m B,
+    sub B (flipmode m) A <-> sub A m B.
+Proof.
+  split; intro H;
+    apply lsub2sub; apply lsub2sub in H; apply rev; simpl; auto.
+Qed.
+
+Lemma sub_rev2 : forall A B,
     sub A m_sub B <-> sub B m_super A.
 Proof.
   split; intro H;
     apply lsub2sub; apply lsub2sub in H; apply rev; simpl; auto.
 Qed.
 
+Hint Resolve sub_rev sub_rev2 : core.
 
 Lemma distArrU: forall A B C,
     sub (t_and (t_arrow A C) (t_arrow B C)) m_sub (t_arrow (t_or A B) C).
@@ -1219,10 +1256,10 @@ Hint Resolve symm_and symm_or : core.
 
 (*
 Lemma distAnd: forall A B1 B2,
-    sub (t_and A (t_or B1 B2)) m_sub (t_or (t_and A B1) (t_and A B2)).
-Proof with eauto.
+    sub (t A (t_or B1 B2)) m_sub (t_or (t_and A B1) (t_and A B2)).
+Proof.
   introv.
-  applys S_and...
+  applys* S_and.
   applys trans. applys symm_and.
   applys trans (t_or (t_and A B2) B1)...
   applys S_and...
@@ -1276,7 +1313,7 @@ Qed.
 Hint Resolve osub_spl osub_symm_and osub_symm_or osub_distAnd : core.
 
 
-Lemma osub_and: forall m A B C,
+Lemma osub_spl2: forall m A B C,
     spl m A B C -> osub (choose m B C) m A.
 Proof with intuition.
   introv H.
@@ -1295,61 +1332,50 @@ Proof with intuition.
     apply OS_flip; flip m m'; eauto.
 Qed.
 
-Hint Resolve osub_spl osub_and: core.
+Hint Resolve osub_spl osub_spl2: core.
 
 
-Theorem osub2sub: forall A m B,
-    osub A m B <-> sub A m B.
+Theorem osub2lsub: forall A m B,
+    osub A m B <-> lsub A m B.
 Proof with (simpl in *; aauto).
   split; introv H.
-  - induction* H.
-    + destruct mode5; eauto.
-    + applys~ sub_arrow.
-    + applys lsub2sub. apply <- lsub2sub in IHosub1. apply <- lsub2sub in IHosub2.
-      econstructor; auto.
-    + forwards* (?&?): split_iso m_sub (t_arrow A (t_and B C)).
-      destruct~ mode5. applys~ sub_rev.
-    + destruct~ mode5.
+  - induction H; try solve [constructor~].
+    + applys lsub_refl.
+    + applys* lsub_trans.
+    + applys* LS_and.
+    + applys* LS_andl.
+    + applys* LS_andr.
+    + apply lsub2sub. forwards* (?&?): split_iso m_sub (t_arrow A (t_and B C)).
+      destruct mode5; simpl in *; eauto.
+      applys~ sub_rev2.
+    + apply lsub2sub. destruct~ mode5.
       * applys~ distArrU.
       * applys lsub2sub. applys* LS_or.
-    + flip mode5 m. applys sub_or; auto_unify.
-      admit.
-
-      applys sub_orl. auto_unify.
-      applys Sp_orl. eauto; simpl. lsub2sub.
-        econstructor; auto.
-.
-    +
-
-      ; applys lsub2sub.
-      * econstructor; eauto.
-      *
-    +
-    + destruct mode5.
-      * simpl in *. eauto.
-      * apply rev2. apply rev2 in IHosub1. apply rev2 in IHosub2.
-        simpl in *. eauto.
-    + destruct mode5.
-      * eauto.
-      * applys S_or; eauto; apply rev; eauto.
-    + destruct mode5.
-      * eauto.
-      * applys S_or; eauto; apply rev; eauto.
+    + forwards: Sp_orl mode5 (choose mode5 A1 A2) B A1 A2; eauto.
+    + applys~ rev.
   - induction~ H.
+    + (* and *)
+      applys OS_trans (choose mode5 B1 B2)...
+      applys OS_and...
+      applys osub_spl2 H.
     + (* andl *)
       forwards (?&?): osub_spl H. applys OS_trans H1...
     + (* andr *)
       forwards (?&?): osub_spl H. applys OS_trans H2...
-    + applys OS_trans IHsub... forwards*: osub_spl H...
-    + applys OS_trans IHsub... forwards*: osub_spl H...
-    + applys OS_trans (choose (flipmode mode5) B C)...
-      forwards Hf: osub_and H. apply OS_flip in Hf.
-      eauto. applys OS_flip. flip mode5 m'. eauto.
-    + applys OS_trans (choose mode5 B C)...
-      forwards Hf: osub_and H.
-      eauto. eauto.
+    +  (* or *)
+      applys OS_flip. flip mode5 m'. apply OS_flip in IHlsub1. apply OS_flip in IHlsub2.
+      applys OS_trans (choose m' A1 A2)...
+      applys OS_and...
+      applys osub_spl2 H.
+    + (* orl *)
+      applys OS_trans IHlsub.
+      applys OS_flip. flip mode5 m'. applys osub_spl H.
+    + (* orr *)
+      applys OS_trans IHlsub.
+      applys OS_flip. flip mode5 m'. applys osub_spl H.
 Qed.
 
+(* delete
 Lemma sub_1 : forall A,
     sub A m_sub t_top.
 Proof.
@@ -1431,7 +1457,7 @@ Lemma rev_2 : forall A m B,
 Proof.
   intros. flip m m'. applys* rev.
 Qed.
-
+*)
 (* another way to prove spl_inv
 Lemma spl_inv : forall m A B C T,
     ord m T -> spl m C A B -> sub C m T -> sub A m T \/ sub B m T.
@@ -1444,7 +1470,7 @@ Qed.
 *)
 
 Lemma arrow_inv : forall A B C D,
-   (t_arrow A B) <: (t_arrow C D) -> (A :> C) /\ (B <: D).
+   sub (t_arrow A B) m_sub (t_arrow C D) -> (sub A m_super C) /\ (sub B m_sub D).
 Proof with (simpl in *; auto_unify; jauto).
   introv s.
   indTypSize (size_typ (t_arrow A B) + size_typ (t_arrow C D)).
@@ -1452,20 +1478,19 @@ Proof with (simpl in *; auto_unify; jauto).
   lets [Hi1|(?&?&Hi1)]: ord_or_split m_sub (t_arrow A B).
   - inverts s...
   - inverts keep Hi1;
-      forwards~ [?|?]: spl_inv Hi1 s;
+      forwards~ [?|?]: rule_andlr_inv s Hi1;
       forwards(IH1&IH2): IH H; try solve [eomg2];
-        split; try eassumption.
+        split; try eassumption; inverts~ Hi2.
     + applys~ S_andl H1.
     + applys~ S_andr H1.
     + applys~ S_andl H2.
     + applys~ S_andr H2.
   - (* uses and_inv_1 and_inv_2 *)
-    assert (t_arrow A B <: x) by eauto.
-    assert (t_arrow A B <: x0) by eauto.
+    forwards (?&?): rule_and_inv s Hi2.
     inverts keep Hi2;
       forwards (?&?): IH H; try solve [eomg2];
-      forwards (?&?): IH H0; try solve [eomg2];
-      eauto.
+        forwards (?&?): IH H0; try solve [eomg2];
+    split~; applys S_and...
 Qed.
 
 Theorem decidability : forall m A B,
