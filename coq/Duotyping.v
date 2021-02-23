@@ -1332,7 +1332,7 @@ Proof with intuition.
     apply OS_flip; flip m m'; eauto.
 Qed.
 
-Hint Resolve osub_spl osub_spl2: core.
+(* Hint Resolve osub_spl osub_spl2: core. *)
 
 
 Theorem osub2lsub: forall A m B,
@@ -1513,44 +1513,33 @@ Proof with (simpl in *; solve_false; jauto).
             forwards [IH1|IH1] : IH A0 A m_super; try solve [eomg2];
               forwards [IH2|IH2] : IH B0 B1 m_sub; try solve [eomg2];
                 try solve [right; intros HF; forwards* (?&?): arrow_inv HF]; eauto.
+            admit.
           *** (* arrow *)
+            admit. (*
             forwards [IH1|IH1] : IH A0 A m_sub; try solve [eomg2];
               forwards [IH2|IH2] : IH B0 B1 m_super; try solve [eomg2];
                 try solve [right; intros HF; apply rev2 in HF; forwards* (?&?): arrow_inv HF].
-            left. apply rev2. eauto.
+            left. apply rev2. eauto. *)
+
         ** (* spl > B *)
           forwards [IHB1|IHB1] : IH A x m; try solve [eomg2]...
-          forwards [IHB2|IHB2] : IH A x0 m; try solve [eomg2]...
-          right. intro HF. forwards*: splu_inv HF.
+          forwards [IHB2|IHB2] : IH A x0 m; try solve [eomg2]... admit. admit.
+          right. intro HF. forwards*: rule_orlr_inv HF. admit.
       * (* spl < A *)
         forwards [IHA1|IHA1] : IH x B m; try solve [eomg2]...
         forwards [IHA2|IHA2] : IH x0 B m; try solve [eomg2]...
-        right. intro HF. forwards*: spl_inv HF.
+        right. intro HF. forwards*: rule_andlr_inv HF.  admit. admit.  admit.
     + (* spl < B *)
       forwards [IHB1|IHB1] : IH A x m; try solve [eomg2].
-      * forwards [IHB2|IHB2] : IH A x0 m; try solve [eomg2]...
-      * right...
+      * forwards [IHB2|IHB2] : IH A x0 m; try solve [eomg2]... admit. admit.
+      * right... admit.
   - (* spl > A *)
     forwards [IHA1|IHA1] : IH x B m; try solve [eomg2].
-    + forwards [IHA2|IHA2] : IH x0 B m; try solve [eomg2]...
-    + right...
+    + forwards [IHA2|IHA2] : IH x0 B m; try solve [eomg2]... admit.
+    + right... admit.
 Qed.
 
 (* algorithm correctness *)
-Lemma rule_and_inv : forall m A B B1 B2,
-    sub A m B -> spl m B B1 B2 -> sub A m B1 /\ sub A m B2.
-Proof.
-  intros.
-  induction* H.
-Qed.
-
-Lemma rule_or_inv : forall m A A1 A2 B,
-    sub A m B -> spl (flipmode m) A A1 A2 -> sub A1 m B /\ sub A2 m B.
-Proof.
-  intros.
-  induction* H.
-  Unshelve. eauto.
-Qed.
 
 
 (* potential improvements *)

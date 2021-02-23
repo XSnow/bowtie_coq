@@ -658,47 +658,57 @@ A <: Top
 Bot <:  A
 
 
-split D A B
-A <: C
-------------------------- :: andl
-D <: C
-
-
-split D A B
-B <: C
------------------ :: andr
-D <: C
-
-
-splitU C A B
-D <: A
-------------------------- :: orl
-D <: C
-
-
-splitU C A B
-D <: B
------------------ :: orr
-D <: C
-
-
-ordinary A -> C
-ordinary B -> D
-B <: A
-C <: D
+ordinary A1 -> A2
+ordinary B1 -> B2
+B1 <: A1
+A2 <: B2
 ------------------------ :: arrow
-A -> C <: B -> D
+A1 -> A2 <: B1 -> B2
 
 
-split D B C
-A <: B
-A <: C
+split B B1 B2
+A <: B1
+A <: B2
 --------------- :: and
-A <: D
+A <: B
 
 
-splitU A B C
-B <: D
-C <: D
+ordinary B
+split A A1 A2
+A1 <: B
+------------------------- :: andl
+A <: B
+
+
+ordinary B
+split A A1 A2
+A2 <: B
+------------------------- :: andr
+A <: B
+
+
+ordinary A
+ordinary B
+splitU A A1 A2
+A1 <: B
+A2 <: B
 --------------- :: or
-A <: D
+A <: B  
+
+
+ordinary A
+ordinary B
+ordinaryU A
+splitU B B1 B2
+A <: B1
+------------------------- :: orl
+A <: B
+
+
+ordinary A
+ordinary B
+ordinaryU A
+splitU B B1 B2
+A <: B2
+------------------------- :: orr
+A <: B

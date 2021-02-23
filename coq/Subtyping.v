@@ -2,15 +2,16 @@ Require Import Metalib.Metatheory.
 Require Import LibTactics.
 Require Import Duotyping.
 
-Hint Constructors declarative_subtyping : core.
+Hint Constructors declarative_subtyping osub : core.
 
 Theorem decl_subtyping_sound_duotyping : forall A B,
     declarative_subtyping A B -> osub A m_sub B /\ osub B m_super A.
 Proof.
-  introv Hs; split; induction Hs; [auto|apply OS_flip]; eauto 4.
+  introv Hs; split; induction Hs; eauto 4.
+  + (* and *)
+    apply OS_flip. simpl. applys~ OS_and.
   + (* or *)
-    apply OS_flip. simpl.
-    eauto.
+    apply OS_flip. simpl. applys~ OS_and.
 Qed.
 
 Theorem decl_subtyping_complete_duotyping : forall A B m,
@@ -35,11 +36,9 @@ with ordu_sound : forall A,
 Proof.
   - introv H.
     induction H; eauto.
-    + forwards*: O_or m_sub A B.
 
   - introv H.
     induction H; eauto.
-    + forwards*: O_or m_super A B.
 Qed.
 
 Hint Resolve ord_sound ordu_sound : core.
@@ -51,23 +50,22 @@ with splitu_sound : forall A B C,
 Proof.
   - introv H.
     induction* H.
-    + forwards*: Sp_orl m_sub A B.
-    + forwards*: Sp_orr m_sub A B.
 
   - introv H.
     induction* H.
-    + forwards*: Sp_orl m_super A B.
-    + forwards*: Sp_orr m_super A B.
 Qed.
 
 Hint Resolve split_sound splitu_sound : core.
 
+Hint Constructors sub : core.
+Hint Resolve sub_orl sub_orr sub_arrow sub_rev sub_rev2 : core.
+
 Theorem algo_subtyping_sound_duotyping : forall A B,
     singlemode_sub A B -> sub A m_sub B /\ sub B m_super A.
 Proof.
-  introv Hs; split; induction Hs; eauto 3.
-  + forwards*: S_top.
-  + apply rev. forwards*: S_top.
+  introv Hs; split; induction Hs; eauto 4.
+  + applys~ sub_arrow. applys~ sub_rev.
+  + applys~ sub_arrow. applys~ sub_rev.
 Qed.
 
 
@@ -112,17 +110,22 @@ Proof.
   introv Hs.
   induction Hs; destruct mode5;
     try destruct IHHs as [(Heq&IHHs)|(Heq&IHHs)];
-    try solve [inverts Heq]; eauto 4;
-  try forwards~ [(Heq'&Hspl)|(Heq'&Hspl)]: split_complete H;
-    try solve [inverts Heq']; eauto 4;
-    try destruct IHHs1 as [(Heq1&IHHs1)|(Heq1&IHHs1)];
+    try solve [inverts Heq]; eauto 4; (* 6 goals solved; 14 remained *)
+      try forwards~ [(Heq'&Hspl)|(Heq'&Hspl)]: split_complete H;
+      try forwards~ [(Heq'&Hspl)|(Heq'&Hspl)]: split_complete H0;
+      try solve [inverts Heq3];
+      try solve [inverts Heq']; eauto 4;
+        try destruct IHHs1 as [(Heq1&IHHs1)|(Heq1&IHHs1)];
     try solve [inverts Heq1];
     try destruct IHHs2 as [(Heq2&IHHs2)|(Heq2&IHHs2)];
     try solve [inverts Heq2];
     simpl in *;
     eauto 4;
-  forwards* [(Heq3&Hord)|(Heq3&Hord)]: ord_complete H;
+  try forwards* [(Heq3&Hord)|(Heq3&Hord)]: ord_complete H;
     try solve [inverts Heq3];
-  forwards* [(Heq4&Hord')|(Heq4&Hord')]: ord_complete H0;
-  try solve [inverts Heq4].
+  try forwards* [(Heq4&Hord')|(Heq4&Hord')]: ord_complete H0;
+    try solve [inverts Heq4];
+    eauto 4.
+  apply sub_rev2 in Hs1. apply sub_rev2 in Hs2.
+  right. split~.
 Qed.
