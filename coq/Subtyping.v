@@ -1,5 +1,6 @@
 Require Import Metalib.Metatheory.
 Require Import LibTactics.
+Require Export syntax_ott.
 Require Import Duotyping.
 
 Hint Constructors declarative_subtyping osub : core.
@@ -86,7 +87,24 @@ Proof.
     try solve [inverts Heq2]; eauto.
 Qed.
 
-Hint Resolve ord_complete : core.
+Lemma ord_complete_1 : forall A,
+    ord m_sub A -> single_ord A.
+Proof.
+  introv H.
+  forwards~ [(?&?)|(?&?)]: ord_complete H.
+  inverts H0.
+Qed.
+
+
+Lemma ord_complete_2 : forall A,
+    ord m_super A -> ordu A.
+Proof.
+  introv H.
+  forwards~ [(?&?)|(?&?)]: ord_complete H.
+  inverts H0.
+Qed.
+
+Hint Resolve ord_complete_1 ord_complete_2 : core.
 
 Lemma split_complete : forall A B C m,
     spl m A B C -> ( m = m_sub /\ single_spl A B C )
@@ -101,7 +119,48 @@ Proof.
     try solve [inverts Heq']; eauto ].
 Qed.
 
-Hint Resolve split_complete : core.
+(* alternative formulation *)
+Lemma split_complete_1 : forall A B C,
+    spl m_sub A B C -> single_spl A B C.
+Proof.
+  introv H.
+  forwards~ [(?&?)|(?&?)]: split_complete H.
+  inverts H0.
+Qed.
+
+Lemma split_complete_2: forall A B C,
+    spl m_super A B C -> splu A B C.
+Proof.
+  introv H.
+  forwards~ [(?&?)|(?&?)]: split_complete H.
+  inverts H0.
+Qed.
+
+Hint Resolve split_complete_1 split_complete_2 : core.
+
+
+Ltac rewrite_duo2sub :=
+  repeat (
+    match goal with
+         | [ H: spl m_sub _ _ _ |- _ ] =>
+           (forwards : split_complete_1 H; clear H)
+         | [ H: spl m_super _ _ _ |- _ ] =>
+           (forwards : split_complete_2 H; clear H)
+         | [ H: ord m_sub _ |- _ ] =>
+           (forwards : ord_complete_1 H; clear H)
+         | [ H: ord m_super _ |- _ ] =>
+           (forwards : ord_complete_2 H; clear H)
+         | [ H: (_/\_)\/(_/\_) |- _ ] =>
+           (destruct H as [(?&?)|(?&?)])
+         | [ H: m_sub = m_sub |- _ ] =>
+           (clear H)
+         | [ H: m_super = m_super |- _ ] =>
+           (clear H)
+         | [ H: m_sub = m_super |- _ ] =>
+           (inverts H)
+         | [ H: m_super = m_sub |- _ ] =>
+           (inverts H)
+  end; simpl in *).
 
 Theorem algo_subtyping_complete_duotyping : forall A B m,
     sub A m B -> (m = m_sub /\ singlemode_sub A B) \/
@@ -109,23 +168,8 @@ Theorem algo_subtyping_complete_duotyping : forall A B m,
 Proof.
   introv Hs.
   induction Hs; destruct mode5;
-    try destruct IHHs as [(Heq&IHHs)|(Heq&IHHs)];
-    try solve [inverts Heq]; eauto 4; (* 6 goals solved; 14 remained *)
-      try forwards~ [(Heq'&Hspl)|(Heq'&Hspl)]: split_complete H;
-      try forwards~ [(Heq'&Hspl)|(Heq'&Hspl)]: split_complete H0;
-      try solve [inverts Heq3];
-      try solve [inverts Heq']; eauto 4;
-        try destruct IHHs1 as [(Heq1&IHHs1)|(Heq1&IHHs1)];
-    try solve [inverts Heq1];
-    try destruct IHHs2 as [(Heq2&IHHs2)|(Heq2&IHHs2)];
-    try solve [inverts Heq2];
-    simpl in *;
-    eauto 4;
-  try forwards* [(Heq3&Hord)|(Heq3&Hord)]: ord_complete H;
-    try solve [inverts Heq3];
-  try forwards* [(Heq4&Hord')|(Heq4&Hord')]: ord_complete H0;
-    try solve [inverts Heq4];
-    eauto 4.
-  apply sub_rev2 in Hs1. apply sub_rev2 in Hs2.
-  right. split~.
+    rewrite_duo2sub; eauto 4;
+      right; split~.
+  (* or *) admit.
+  (* orlr ordu B *) admit. admit.
 Qed.

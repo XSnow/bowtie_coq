@@ -649,9 +649,9 @@ Qed.
 
 (* previous and_inv spl_inv *)
 Lemma rule_andlr_inv : forall m A B A1 A2,
-     ord m B -> sub A m B -> spl m A A1 A2 -> sub A1 m B \/ sub A2 m B.
+     sub A m B -> spl m A A1 A2 -> ord m B -> sub A1 m B \/ sub A2 m B.
 Proof with (auto_unify; aauto; eomg2).
-  introv Hord Hsub Hspl.
+  introv Hsub Hord Hspl.
   indTypSize (size_typ A + size_typ B).
   inverts Hsub; auto_unify; auto.
   (* arrow *)
@@ -706,9 +706,9 @@ Qed.
 
 (* previous or_inv splu_inv *)
 Lemma rule_orlr_inv : forall m A B B1 B2,
-     ord (flipmode m) A -> sub A m B -> spl (flipmode m) B B1 B2 -> sub A m B1 \/ sub A m B2.
+     sub A m B -> ord (flipmode m) A -> spl (flipmode m) B B1 B2 -> sub A m B1 \/ sub A m B2.
 Proof with (auto_unify; aauto; eomg2).
-  introv Hord Hsub Hspl.
+  introv Hsub Hord Hspl.
   indTypSize (size_typ A + size_typ B).
   inverts Hsub; try solve [destruct m; auto_unify]...
   + (* double split *)
@@ -750,9 +750,9 @@ Ltac auto_inv :=
       end;
   repeat try match goal with
          | [ Hord: ord ?m ?B, H1: sub ?A ?m ?B, H2: spl ?m ?A _ _ |- _ ] =>
-           try (forwards~ [?|?]: rule_andlr_inv Hord H1 H2; clear H1)
+           try (forwards~ [?|?]: rule_andlr_inv H1 H2 Hord; clear H1)
          | [ Hord: ord ?m ?B, H1: sub (choose ?m _ _) ?m ?B |- _ ] =>
-           try (forwards~ [?|?]: rule_andlr_inv Hord H1; clear H1)
+           try (forwards~ [?|?]: rule_andlr_inv H1 Hord; clear H1)
       end;
   repeat try match goal with
          | [ H1: sub ?A ?m ?B, H2: spl (flipmode ?m) ?A _ _ |- _ ] =>
@@ -762,9 +762,9 @@ Ltac auto_inv :=
          end;
   repeat try match goal with
          | [ Hord: ord (flipmode ?m) ?A, H1: sub ?A ?m ?B, H2: spl (flipmode ?m) ?B _ _ |- _ ] =>
-           try (forwards~ [?|?]: rule_orlr_inv Hord H1 H2; clear H1)
+           try (forwards~ [?|?]: rule_orlr_inv H1 Hord H2; clear H1)
          | [ Hord: ord ?m' ?A, H1: sub ?A ?m ?B, H2: spl ?m' ?B _ _ |- _ ] =>
-           try (forwards~ [?|?]: rule_orlr_inv Hord H1 H2; clear H1)
+           try (forwards~ [?|?]: rule_orlr_inv H1 Hord H2; clear H1)
       end.
 (*
 (* it is subsumed by Lemma rule_or_inv *)
@@ -982,7 +982,6 @@ Proof with (auto_unify; aauto; auto_inv; eomg2).
     applys IH... applys IH...
 Qed.
 
-Hint Resolve sub_or : core.
 Ltac trans_autoIH :=
   match goal with
   | [ IH: forall A B C : typ, _ , H1: sub ?A ?m ?B , H2: sub ?B ?m ?C |- sub ?A ?m ?C ] =>
@@ -1019,10 +1018,13 @@ Proof with (auto_unify; aauto; auto_inv; try solve trans_autoIH).
       * applys S_or Hu...
       * assert (sub x m C)...
         assert (sub x0 m C)...
+        applys sub_or...
   - applys S_and Hi...
 Qed.
 
 Hint Immediate trans : core.
+
+Hint Resolve sub_or : core.
 
 (*
 Lemma split_sub_l : forall m T A B,
@@ -1493,55 +1495,38 @@ Proof with (simpl in *; auto_unify; jauto).
     split~; applys S_and...
 Qed.
 
+Hint Constructors sub : core.
+
 Theorem decidability : forall m A B,
     sub A m B \/ not (sub A m B).
-Proof with (simpl in *; solve_false; jauto).
+Proof with (simpl in *; solve_false; jauto; eomg2; try solve [right; intros HF; auto_inv; inverts HF; simpl in *; solve_false]).
   introv. gen m.
   indTypSize (size_typ A + size_typ B).
-  lets [HAu|(?&?&HAu)]: ord_or_split (flipmode m) A.
-  - (* ordinary > A *)
-    lets [HBi|(?&?&HBi)]: ord_or_split m B.
-    + (* ord < B *)
-      lets [HAi|(?&?&HAi)]: ord_or_split m A.
-      * (* ordinary < A *)
-        lets [HBu|(?&?&HBu)]: ord_or_split (flipmode m) B.
-        ** (* ord > B *)
-          destruct m; inverts HAu; inverts HAi;
-            inverts HBu; inverts HBi; auto with falseHd;
-              try solve [right; intros HF; inverts HF; auto_unify].
-          *** (* arrow *)
-            forwards [IH1|IH1] : IH A0 A m_super; try solve [eomg2];
-              forwards [IH2|IH2] : IH B0 B1 m_sub; try solve [eomg2];
-                try solve [right; intros HF; forwards* (?&?): arrow_inv HF]; eauto.
-            admit.
-          *** (* arrow *)
-            admit. (*
-            forwards [IH1|IH1] : IH A0 A m_sub; try solve [eomg2];
-              forwards [IH2|IH2] : IH B0 B1 m_super; try solve [eomg2];
-                try solve [right; intros HF; apply rev2 in HF; forwards* (?&?): arrow_inv HF].
-            left. apply rev2. eauto. *)
-
-        ** (* spl > B *)
-          forwards [IHB1|IHB1] : IH A x m; try solve [eomg2]...
-          forwards [IHB2|IHB2] : IH A x0 m; try solve [eomg2]... admit. admit.
-          right. intro HF. forwards*: rule_orlr_inv HF. admit.
-      * (* spl < A *)
-        forwards [IHA1|IHA1] : IH x B m; try solve [eomg2]...
-        forwards [IHA2|IHA2] : IH x0 B m; try solve [eomg2]...
-        right. intro HF. forwards*: rule_andlr_inv HF.  admit. admit.  admit.
-    + (* spl < B *)
-      forwards [IHB1|IHB1] : IH A x m; try solve [eomg2].
-      * forwards [IHB2|IHB2] : IH A x0 m; try solve [eomg2]... admit. admit.
-      * right... admit.
-  - (* spl > A *)
-    forwards [IHA1|IHA1] : IH x B m; try solve [eomg2].
-    + forwards [IHA2|IHA2] : IH x0 B m; try solve [eomg2]... admit.
-    + right... admit.
+  lets [Hi|(?&?&Hi)]: ord_or_split m B.
+  - lets [Hi'|(?&?&Hi')]: ord_or_split m A.
+    + lets [Hu|(?&?&Hu)]: ord_or_split (flipmode m) A.
+      * lets [Hu'|(?&?&Hu')]: ord_or_split (flipmode m) B.
+        ** (* all ordinary *)
+          destruct A; destruct B; destruct m...
+          *** forwards [IHA1|IHA1] : IH A1 B1 m_super...
+              forwards [IHA2|IHA2] : IH A2 B2 m_sub...
+          *** forwards [IHA1|IHA1] : IH A1 B1 m_sub...
+              forwards [IHA2|IHA2] : IH A2 B2 m_super...
+        ** (* spl > B, S-orl/r *)
+          forwards [IHA1|IHA1] : IH A x m...
+          forwards [IHA2|IHA2] : IH A x0 m...
+      * forwards [IHA1|IHA1] : IH x B m...
+        forwards [IHA2|IHA2] : IH x0 B m...
+    + (* spl < A, S-andl/r *)
+      forwards [IHA1|IHA1] : IH x B m...
+      forwards [IHA2|IHA2] : IH x0 B m...
+  - (* spl < B, S-and *)
+    forwards [IHA1|IHA1] : IH A x m...
+    forwards [IHA2|IHA2] : IH A x0 m...
 Qed.
 
+
 (* algorithm correctness *)
-
-
 (* potential improvements *)
 (* add try solve in eomg2 *)
 (* mode in arrow_inv *)
