@@ -376,3 +376,188 @@ Proof with (solve_false; s_auto_unify; aauto; s_eomg2; auto).
   + forwards* [?|?]: IH H1...
   + forwards* [?|?]: IH H1...
 Qed.
+
+
+(********************************************)
+(*                                          *)
+(*             Ltac auto_inv                *)
+(*                                          *)
+(*  extends choose_unify                    *)
+(*  solve_false at the end                  *)
+(*                                          *)
+(********************************************)
+Ltac s_auto_inv :=
+  repeat try match goal with
+         | [ H1: singlemode_sub ?A ?B, H2: single_spl ?B _ _ |- _ ] =>
+           try (forwards~ (?&?): s_rule_and_inv H1 H2; clear H1)
+         | [ H1: singlemode_sub ?A (t_and _ _) |- _ ] =>
+           try (forwards~ (?&?): s_rule_and_inv H1; clear H1)
+      end;
+  repeat try match goal with
+         | [ Hord: single_ord ?B, H1: singlemode_sub ?A ?B, H2: single_spl ?A _ _ |- _ ] =>
+           try (forwards~ [?|?]: s_rule_andlr_inv H1 H2 Hord; clear H1)
+         | [ Hord: single_ord ?B, H1: singlemode_sub (t_and  _ _)  ?B |- _ ] =>
+           try (forwards~ [?|?]: s_rule_andlr_inv H1 Hord; clear H1)
+      end;
+  repeat try match goal with
+         | [ H1: singlemode_sub ?A ?B, H2: splu ?A _ _ |- _ ] =>
+           try (forwards~ (?&?): s_rule_or_inv H1 H2; clear H1)
+         | [ H1: singlemode_sub (t_or _ _) ?B |- _ ] =>
+           try (forwards~ (?&?): s_rule_or_inv H1; clear H1)
+         end;
+  repeat try match goal with
+         | [ Hord: ordu ?A, H1: singlemode_sub ?A ?B, H2: splu ?B _ _ |- _ ] =>
+           try (forwards~ [?|?]: s_rule_orlr_inv H1 Hord H2; clear H1)
+         | [ Hord: ord ?A, H1: singlemode_sub ?A (t_or _ _) |- _ ] =>
+           try (forwards~ [?|?]: s_rule_orlr_inv H1 Hord; clear H1)
+             end.
+
+
+Lemma singlemode_sub_or : forall A A1 A2 B,
+    splu A A1 A2 -> singlemode_sub A1 B -> singlemode_sub A2 B -> singlemode_sub A B.
+Proof with (s_auto_unify; aauto; s_auto_inv; s_eomg2).
+  introv Hsingle_spl Hs1 Hs2.
+  indTypSize (size_typ A + size_typ B).
+  lets [Hi|(?&?&Hi)]: single_ord_or_split B...
+  lets [Hi'|(?&?&Hi')]: single_ord_or_split A...
+  - applys SS_or...
+  - (* double single_split A *)
+    inverts keep Hsingle_spl; inverts keep Hi'...
+    + applys~ SS_andl Hi'... applys IH; eauto; aauto; s_eomg2.
+    + applys~ SS_andr Hi'... applys IH; eauto; aauto; s_eomg2.
+    + applys~ SS_andl Hi'... applys IH; eauto; aauto; s_eomg2.
+    + applys~ SS_andr Hi'... applys IH; eauto; aauto; s_eomg2.
+    + applys~ SS_andl Hi'... applys IH; eauto; aauto; s_eomg2.
+    + applys~ SS_andr Hi'...
+    + applys~ SS_andr Hi'...
+    + applys~ SS_andr Hi'...
+    + applys~ SS_andl Hi'...
+    + applys~ SS_andl Hi'...
+    + applys~ SS_andl Hi'...
+    + applys~ SS_andr Hi'... applys IH; eauto; aauto; s_eomg2.
+  - applys~ SS_and Hi...
+    applys IH... applys IH...
+Qed.
+
+
+Ltac s_trans_autoIH :=
+  match goal with
+  | [ IH: forall A B : typ, _ , H1: singlemode_sub ?A  ?B , H2: singlemode_sub ?B  ?C |- singlemode_sub ?A  ?C ] =>
+    (applys~ IH H1 H2; s_eomg2; auto)
+  | [ IH: forall A B : typ, _ , H1: singlemode_sub ?A  ?B  |- singlemode_sub ?A  ?C ] =>
+    (applys~ IH H1; s_eomg2; constructor~)
+  | [ IH: forall A B : typ, _ , H2: singlemode_sub ?B  ?C |- singlemode_sub ?A  ?C ] =>
+    (applys~ IH H2; s_eomg2; constructor~)
+  end.
+
+Lemma s_trans : forall A B C, singlemode_sub A B -> singlemode_sub B C -> singlemode_sub A C.
+Proof with (solve_false; s_auto_unify; aauto; s_auto_inv; try solve s_trans_autoIH).
+  introv s1 s2.
+  indTypSize (size_typ A + size_typ B + size_typ C).
+  lets [Hi|(?&?&Hi)]: single_ord_or_split C...
+  - lets [Hu|(?&?&Hu)]: ordu_or_split A...
+    + lets [Hi'|(?&?&Hi')]: single_ord_or_split B...
+      lets [Hu'|(?&?&Hu')]: ordu_or_split B...
+      lets [Hi''|(?&?&Hi'')]: single_ord_or_split A...
+      * (* double ord A B *)
+        inverts s1; s_auto_unify...
+        ** (* top *)
+          inverts~ s2...
+          *** applys~ SS_orl H2...
+          *** applys~ SS_orr H2...
+        ** (* bot *)
+          auto.
+        ** (* arrow *)
+          inverts~ s2...
+          *** applys~ SS_arrow...
+          *** applys~ SS_orl H6...
+          *** applys~ SS_orr H6...
+      * applys SS_andl...
+      * applys SS_andr...
+    + lets [Hi'|(?&?&Hi')]: single_ord_or_split A...
+      * applys SS_or Hu...
+      * assert (singlemode_sub x C)...
+        assert (singlemode_sub x0 C)...
+        applys singlemode_sub_or...
+  - applys SS_and Hi...
+Qed.
+
+Hint Immediate trans : core.
+
+
+Lemma singlemode_sub_orl : forall A B B1 B2,
+    splu B B1 B2 -> singlemode_sub A B1 -> singlemode_sub A B.
+Proof.
+  introv Hsingle_spl Hs.
+  indTypSize (size_typ A + size_typ B).
+  lets [Hi|(?&?&Hi)]: single_ord_or_split B.
+  lets [Hi'|(?&?&Hi')]: single_ord_or_split A.
+  lets [Hu|(?&?&Hu)]: ordu_or_split A.
+  - applys~ SS_orl Hsingle_spl.
+  - applys~ singlemode_sub_or Hu; applys IH Hsingle_spl; s_eomg2; applys s_trans Hs; applys* s_sub_part2.
+  - forwards~ [?|?]: s_rule_andlr_inv Hs Hi'. eauto.
+      applys~ SS_andl Hi'. applys~ IH Hsingle_spl. s_eomg2.
+      applys~ SS_andr Hi'. applys~ IH Hsingle_spl. s_eomg2.
+  - inverts Hsingle_spl; inverts Hi; solve_false; s_auto_unify.
+    + applys SS_and. eauto; aauto.
+      applys IH; s_eomg2. 2: {eauto. } applys* s_trans Hs.
+      applys IH; s_eomg2. 2: {eauto. } applys* s_trans Hs.
+    + applys SS_and. eauto; aauto.
+      applys IH; s_eomg2. 2: {eauto. } applys* s_trans Hs.
+      applys IH; s_eomg2. 2: {eauto. } applys* s_trans Hs.
+    + s_auto_inv.
+      applys SS_and. eauto.
+      applys~ IH H; s_eomg2.
+      aauto.
+    + s_auto_inv.
+      applys SS_and. eauto.
+      aauto.
+      applys~ IH H0; s_eomg2.
+Qed.
+
+
+Lemma singlemode_sub_orr : forall A B B1 B2,
+    splu B B1 B2 -> singlemode_sub A B2 -> singlemode_sub A B.
+Proof.
+  introv Hsingle_spl Hs.
+  indTypSize (size_typ A + size_typ B).
+  lets [Hi|(?&?&Hi)]: single_ord_or_split B.
+  lets [Hi'|(?&?&Hi')]: single_ord_or_split A.
+  lets [Hu|(?&?&Hu)]: ordu_or_split A.
+  - applys~ SS_orr Hsingle_spl.
+  - applys~ singlemode_sub_or Hu; applys IH Hsingle_spl; s_eomg2; applys s_trans Hs; applys* s_sub_part2.
+  - forwards~ [?|?]: s_rule_andlr_inv Hs Hi'. eauto.
+      applys~ SS_andl Hi'. applys~ IH Hsingle_spl. s_eomg2.
+      applys~ SS_andr Hi'. applys~ IH Hsingle_spl. s_eomg2.
+  - inverts Hsingle_spl; inverts Hi; solve_false; s_auto_unify.
+    + applys SS_and. eauto; aauto.
+      applys IH; s_eomg2. eauto. applys* s_trans Hs.
+      applys IH; s_eomg2. eauto. applys* s_trans Hs.
+    + applys SS_and. eauto; aauto.
+      applys IH; s_eomg2. eauto. applys* s_trans Hs.
+      applys IH; s_eomg2. eauto. applys* s_trans Hs.
+    + s_auto_inv.
+      applys SS_and. eauto.
+      applys~ IH H; s_eomg2.
+      aauto.
+    + s_auto_inv.
+      applys SS_and. eauto.
+      aauto.
+      applys~ IH H0; s_eomg2.
+Qed.
+
+
+Theorem algo_subtyping_complete_duotyping : forall A B m,
+    sub A m B -> (m = m_sub /\ singlemode_sub A B) \/
+                 (m = m_super /\ singlemode_sub B A).
+Proof.
+  introv Hs.
+  induction Hs; destruct mode5;
+    rewrite_duo2sub; eauto 4;
+      right; split~.
+  (* or *)
+  - applys~ singlemode_sub_or H0.
+  (* orr ordu B *)
+  - applys~ singlemode_sub_orl H1.
+  - applys~ singlemode_sub_orr H1.
+Qed.

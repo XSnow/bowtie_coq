@@ -161,15 +161,3 @@ Ltac rewrite_duo2sub :=
          | [ H: m_super = m_sub |- _ ] =>
            (inverts H)
   end; simpl in *).
-
-Theorem algo_subtyping_complete_duotyping : forall A B m,
-    sub A m B -> (m = m_sub /\ singlemode_sub A B) \/
-                 (m = m_super /\ singlemode_sub B A).
-Proof.
-  introv Hs.
-  induction Hs; destruct mode5;
-    rewrite_duo2sub; eauto 4;
-      right; split~.
-  (* or *) admit.
-  (* orlr ordu B *) admit. admit.
-Qed.
