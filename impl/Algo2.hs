@@ -9,6 +9,11 @@ data Type = TInt
           deriving (Eq, Show)
 
 
+-- ordinary types
+
+ordinary :: Mode -> Type -> Bool
+ordinary m t = split m t == Nothing
+
 -- split type
 
 split :: Mode -> Type -> Maybe (Type, Type)
