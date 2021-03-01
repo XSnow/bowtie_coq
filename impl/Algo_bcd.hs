@@ -28,15 +28,14 @@ splitD _ = Nothing
 -- subtyping
 
 checkSub :: Type -> Type -> Bool
-checkSub TInt TInt = True                                                          -- S-int
-checkSub _ TTop    = True                                                          -- S-top
-checkSub a b                                                                       -- S-and
+checkSub TInt TInt = True                                 -- IS-int
+checkSub _ TTop    = True                                 -- IS-top
+checkSub a b                                              -- IS-and
   | Just (b1, b2) <- splitD b
   = checkSub a b1 && checkSub a b2
-checkSub a b                                                                       -- S-andl S-andr
-  | Just (a1, a2) <- splitD a
+checkSub (TAnd a1 a2) b                                   -- IS-andl IS-andr
   = checkSub a1 b || checkSub a2 b
-checkSub (TArrow a1 a2) (TArrow b1 b2)                                             -- S-arr
+checkSub (TArrow a1 a2) (TArrow b1 b2)                    -- IS-arrow
   = checkSub b1 a1 && checkSub a2 b2
 checkSub _ _ = False
 
