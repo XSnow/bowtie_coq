@@ -1,6 +1,8 @@
 -R . Top
+Duotyping_dual.v
 Duotyping.v
 LibTactics.v
 rules_inf.v
+Subtyping_Property.v
 Subtyping.v
 syntax_ott.v

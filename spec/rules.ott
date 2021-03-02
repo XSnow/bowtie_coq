@@ -239,6 +239,60 @@ split m B B1 B2
 split m [A !m B] [A !m B1] [A !m B2]
 
 
+defns
+Duotyping_dual :: '' ::=
+
+defn
+A <|: mode :|> B  :: :: duo :: SD_
+{{ com Algorithmic Duotyping with dual }}
+{{ tex [[A]] :[[mode]]: [[B]] }}
+by
+
+
+------------------------------- :: int
+int <|: mode :|> int
+
+
+------------------------------- :: top
+A <|: mode :|> |mode|
+
+
+split mode B B1 B2
+A <|: mode :|> B1
+A <|: mode :|> B2
+------------------------------- :: and
+A <|: mode :|> B
+
+
+ordinary mode B
+split mode A A1 A2
+A1 <|: mode :|> B
+------------------------------- :: andl
+A <|: mode :|> B
+
+
+ordinary mode B
+split mode A A1 A2
+A2 <|: mode :|> B
+------------------------------- :: andr
+A <|: mode :|> B
+
+
+ordinary mode A
+ordinary mode B
+B  <|: ! mode :|> A
+------------------------- :: dual
+A  <|: mode :|> B
+
+
+ordinary sub A1 -> A2
+ordinary sub B1 -> B2
+A1 <|: !mode :|> B1
+A2 <|: mode :|> B2
+------------------------------- :: arr
+A1 -> A2 <|: mode :|> B1 -> B2
+
+
 
 defns
 Subtyping :: '' ::=

@@ -1,7 +1,7 @@
 Require Import Metalib.Metatheory.
 Require Import LibTactics.
 Require Export syntax_ott.
-Require Import rules_inf.
+Require Export rules_inf.
 Require Import Omega.
 
 
