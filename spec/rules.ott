@@ -534,6 +534,89 @@ A1 \/ A2 -> B < (A1 -> B) & (A2 -> B)
 
 
 
+defns
+DSub_or :: '' ::=
+
+defn
+A <o B  :: :: declarative_subtyping_distor :: DSO_
+{{ com Declarative Subtyping without distAnd }}
+{{ tex [[A]] \leq [[B]] }}
+by
+
+
+---------------------- :: refl
+A <o A
+
+
+A <o B
+B <o C
+--------------- :: trans
+A <o C
+
+
+--------------- :: top
+A <o Top
+
+
+--------------- :: bot
+Bot <o A
+
+
+B <o A
+C <o D
+------------------------ :: arrow
+A -> C <o B -> D
+
+
+A <o B
+A <o C
+--------------- :: and
+A <o B & C
+
+
+------------------------- :: andl
+A & B <o A
+
+
+----------------- :: andr
+A & B <o B
+
+
+A <o C
+B <o C
+--------------- :: or
+A \/ B <o C
+
+
+------------------------- :: orl
+A <o A \/ B
+
+
+----------------- :: orr
+B <o A \/ B
+
+
+-------------------------------------- :: distArr
+(A -> B1) & (A -> B2) <o A -> B1 & B2
+
+
+-------------------------------------- :: distArrRev
+ A -> B1 & B2 <o (A -> B1) & (A -> B2)
+
+
+-------------------------------------- :: distArrU
+(A1 -> B) & (A2 -> B) <o A1 \/ A2 -> B
+
+
+-------------------------------------- :: distArrURev
+A1 \/ A2 -> B <o (A1 -> B) & (A2 -> B)
+
+
+-------------------------------------- :: distOr
+(A1 \/ B) & (A2 \/ B) <o (A1 & A2) \/ B
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%
 %Single Mode
 %Algorithmic Subtyping
