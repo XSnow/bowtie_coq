@@ -1495,6 +1495,16 @@ Proof with (simpl in *; auto_unify; jauto).
     split~; applys S_and...
 Qed.
 
+Lemma arrow_inv_duo : forall m A B C D,
+   sub (t_arrow A B) m (t_arrow C D) -> (sub A (flipmode m) C) /\ (sub B m D).
+Proof.
+  intros.
+  destruct m.
+  - applys~ arrow_inv.
+  - apply sub_rev in H.
+    simpl; split; applys sub_rev; simpl; apply arrow_inv in H; jauto.
+Qed.
+
 Hint Constructors sub : core.
 
 Theorem decidability : forall m A B,
