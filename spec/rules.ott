@@ -1,13 +1,3 @@
-%%Challenge: A & ( B | C ) <: ( A & B ) | ( A & C )
-%%Workaround: ignore it.
-%%* omit record types
-
-%%--------------------------------------------------------------
-
-%%Type
-
-%%OrdinaryType   A, B, C, D ::= Int | Top | Bot | A -> B | A & B | A \/ B
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% GRAMMAR (LNgen portion)
 
@@ -299,7 +289,7 @@ Subtyping :: '' ::=
 
 defn
 A <: mode :> B  :: :: sub :: S_
-{{ com Algorithmic Subtyping }}
+{{ com Algorithmic Duotyping }}
 {{ tex [[A]] :[[mode]]: [[B]] }}
 by
 
@@ -378,7 +368,7 @@ LSubtyping :: '' ::=
 
 defn
 A <| mode |> B  :: :: lsub :: LS_
-{{ com Algorithmic Subtyping with Less Conditions }}
+{{ com Algorithmic Duotyping with Less Conditions }}
 {{ tex [[A]] :[[mode]]: [[B]] }}
 by
 
