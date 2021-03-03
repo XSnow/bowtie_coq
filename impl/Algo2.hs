@@ -1,21 +1,14 @@
 data Mode = MSub | MSuper
           deriving (Eq, Show)
           
-data Type = TInt
-          | TTop
-          | TBot
-          | TArrow Type Type
-          | TOp Mode Type Type -- MSub for and, MSuper for or
+data Type = TInt | TTop | TBot | TArrow Type Type | TOp Mode Type Type -- MSub for and, MSuper for or
           deriving (Eq, Show)
 
-
 -- ordinary types
-
 ordinary :: Mode -> Type -> Bool
 ordinary m t = split m t == Nothing
 
 -- split type
-
 split :: Mode -> Type -> Maybe (Type, Type)
 split MSub (TArrow a b)
   | Just (b1, b2) <- split MSub b
@@ -32,25 +25,19 @@ split m (TOp m' a b)
 split m (TOp m' a b)
   | Just (b1, b2) <- split m b
   = Just (TOp m' a b1, TOp m' a b2)
-  
 split _ _ = Nothing
-
 
 -- flip mode
 flipmode :: Mode -> Mode
 flipmode MSub = MSuper
 flipmode MSuper = MSub
 
-
 -- select type by mode
 select :: Mode -> Type
 select MSub   = TTop
 select MSuper = TBot
 
-
 -- subtyping
-
-
 check :: Mode -> Type -> Type -> Bool -> Bool
 check m _ t _
   | select m == t
