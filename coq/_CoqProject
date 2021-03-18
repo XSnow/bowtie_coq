@@ -1,5 +1,6 @@
 -R . Top
 LibTactics.v
+Subtyping_alone.v
 Duotyping.v
 rules_inf.v
 Subtyping.v
