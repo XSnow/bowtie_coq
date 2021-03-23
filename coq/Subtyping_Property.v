@@ -424,7 +424,7 @@ Ltac s_auto_inv :=
   repeat try match goal with
          | [ Hord: ordu ?A, H1: singlemode_sub ?A ?B, H2: splu ?B _ _ |- _ ] =>
            try (forwards~ [?|?]: s_rule_orlr_inv H1 Hord H2; clear H1)
-         | [ Hord: ord ?A, H1: singlemode_sub ?A (t_or _ _) |- _ ] =>
+         | [ Hord: ordu ?A, H1: singlemode_sub ?A (t_or _ _) |- _ ] =>
            try (forwards~ [?|?]: s_rule_orlr_inv H1 Hord; clear H1)
              end.
 
