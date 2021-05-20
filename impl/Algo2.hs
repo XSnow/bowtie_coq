@@ -10,19 +10,19 @@ ordinary m t = split m t == Nothing
 
 -- split type
 split :: Mode -> Type -> Maybe (Type, Type)
-split MSub (TArrow a b)
+split MSub (TArrow a b)                         -- Sp-arrow
   | Just (b1, b2) <- split MSub b
   = Just (TArrow a b1, TArrow a b2)
-split MSub (TArrow a b)
+split MSub (TArrow a b)                         -- Sp-arrowUnion
   | Just (a1, a2) <- split MSuper a
   = Just (TArrow a1 b, TArrow a2 b)
-split m (TOp m' a b)
+split m (TOp m' a b)                            -- Sp-and
   | m == m'
   = Just (a, b)
-split m (TOp m' a b)
+split m (TOp m' a b)                            -- Sp-orl
   | Just (a1, a2) <- split m a
   = Just (TOp m' a1 b, TOp m' a2 b)
-split m (TOp m' a b)
+split m (TOp m' a b)                            -- Sp-orr
   | Just (b1, b2) <- split m b
   = Just (TOp m' a b1, TOp m' a b2)
 split _ _ = Nothing
@@ -39,18 +39,18 @@ select MSuper = TBot
 
 -- subtyping
 check :: Mode -> Type -> Type -> Bool -> Bool
+check _ TInt TInt _ = True                                                      -- D-int
 check m _ t _
   | select m == t
-  = True                                                                        -- S-top
-check _ TInt TInt _ = True                                                      -- S-int
-check m a b _                                                                   -- S-and
+  = True                                                                        -- D-bound
+check m a b _                                                                   -- D-and
   | Just (b1, b2) <- split m b
   = (check m a b1 False) && (check m a b2 False)
-check m a b _                                                                   -- S-andl S-andr
+check m a b _                                                                   -- D-andl D-andr
   | Just (a1, a2) <- split m a
   = (check m a1 b False) || (check m a2 b False)
-check m a b False = check (flipmode m) b a True                                 -- dual
-check m (TArrow a1 a2) (TArrow b1 b2) _                                         -- S-arr
+check m a b False = check (flipmode m) b a True                                 -- D-dual
+check m (TArrow a1 a2) (TArrow b1 b2) _                                         -- D-arrow
   = (check (flipmode m) a1 b1 False) && (check m a2 b2 False)
 check _ _ _ _ = False
 

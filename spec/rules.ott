@@ -68,22 +68,22 @@ formula :: 'formula_' ::=
 embed
 {{ coq
 
-Definition flipmode (m: mode) :=
-  match m with
-  | m_sub => m_super
-  | m_super => m_sub
-  end.
-  
 Definition typbymode (m: mode) :=
   match m with
   | m_sub => t_top
   | m_super => t_bot
   end.
-  
+
 Definition choose (m: mode) (A: typ) (B: typ) :=
   match m with
   | m_sub => t_and A B
   | m_super => t_or A B
+  end.
+
+Definition flipmode (m: mode) :=
+  match m with
+  | m_sub => m_super
+  | m_super => m_sub
   end.
 
 }}

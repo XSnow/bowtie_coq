@@ -4,7 +4,7 @@ induction on the size of types *)
 
 Require Import LibTactics.
 Require Export Coq.micromega.Lia.
-Require Export syntax_ott.
+Require Export Definitions.
 
 (* The hint database contains type size related lemmas *)
 Create HintDb typSize.

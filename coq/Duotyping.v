@@ -1,6 +1,21 @@
+(** This file is around four duotyping systems:
+    1. The declarative one (fig. 7): osub A m B
+    2. The algorithmic one (fig. 8): duo A m B
+    3. The algorithmic duotyping with no dual rule: sub A m B
+    4. The one has no ordinary-type conditions: lsub A m B
+
+   During the development, most of the proof is done on (3).
+   We show that the four systems are equivalent:
+   (1) <-> (4) Lemma osub2lsub
+   (4) <-> (3) Lemma lsub2sub
+   (2) <-> (3) Lemma duotyping_dual_eqv_to_duotyping_no_dual
+   Then we conclude:
+   (2) <-> (1) Theorem duo2osub
+ *)
+
 Require Import LibTactics.
 Require Import TypeSize.
-Require Export syntax_ott.
+Require Export Definitions.
 
 
 #[export] Hint Constructors ord spl : core.
@@ -482,6 +497,7 @@ Proof with (try eassumption; try sub_part_autoIH; eauto 4).
       applys* S_or...
 Qed.
 
+(* Theorem 4.6 reflexivity of the algorithmic duotyping *)
 Theorem sub_refl : forall A m, sub A m A.
 Proof.
   introv.
@@ -904,6 +920,7 @@ Qed.
 
 #[export] Hint Resolve lsub_refl lsub_trans : core.
 
+(* prove that the dual rule is derivable in system (3) *)
 Lemma sub_rev : forall A m B,
     sub B (flipmode m) A <-> sub A m B.
 Proof.
@@ -1115,8 +1132,44 @@ Proof with (simpl in *; solve_false; jauto; elia; try solve [right; intros HF; a
 Qed.
 
 
-(* algorithm correctness *)
-(* potential improvements *)
-(* mode in arrow_inv *)
-(* better encode of aux functions *)
-(* move rev_2 to top *)
+(************************************************************)
+#[local] Hint Constructors duo : core.
+
+Lemma duotyping_dual_eqv_to_duotyping_no_dual : forall m A B,
+    duo A m B <-> sub A m B.
+Proof.
+  split; introv H.
+  - induction~ H; try solve [econstructor; try eassumption; auto].
+    + applys~ sub_rev.
+  -
+    gen m. indTypSize (size_typ A + size_typ B).
+    inverts~ H; try solve [econstructor; try eassumption; applys IH; elia; auto].
+    + (* bot *)
+      lets [Hi1|(?&?&Hi1)]: ord_or_split m B.
+      * applys~ SD_dual.
+        destruct~ m.
+      * applys SD_and; try eassumption; applys IH; elia; auto.
+    + (* or *)
+      applys~ SD_dual.
+      applys SD_and H2; applys IH; elia; auto; applys~ sub_rev.
+    + (* orl *)
+      applys~ SD_dual.
+      applys SD_andl H3; try eassumption; applys IH; elia; auto; applys~ sub_rev.
+    + (* orr *)
+      applys~ SD_dual.
+      applys SD_andr H3; try eassumption; applys IH; elia; auto; applys~ sub_rev.
+Qed.
+
+(* Theorem 4.5 Soundness and Completeness of Algorithmic Duotyping *)
+(* A ♢a B if and only if A ♢ B *)
+Theorem duo2osub : forall m A B,
+    duo A m B <-> osub A m B.
+Proof.
+  split; introv H.
+  - applys osub2lsub.
+    applys lsub2sub.
+    applys~ duotyping_dual_eqv_to_duotyping_no_dual.
+  - applys duotyping_dual_eqv_to_duotyping_no_dual.
+    applys lsub2sub.
+    applys~ osub2lsub.
+Qed.

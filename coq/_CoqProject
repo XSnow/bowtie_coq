@@ -1,11 +1,9 @@
 -R . Top
-Duotyping_dual.v
+Definitions.v
+DistAnd.v
+DistSubtyping.v
 Duotyping.v
+Equivalence.v
 LibTactics.v
-old_syntax.v
-rules_inf.v
-Subtyping_alone.v
-Subtyping_Property.v
 Subtyping.v
-syntax_ott.v
 TypeSize.v

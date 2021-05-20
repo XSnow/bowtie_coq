@@ -6,10 +6,12 @@
 (*****************************************************)
 
 Require Import LibTactics.
-Require Import syntax_ott.
+Require Import Definitions.
 
 #[local]
  Hint Constructors declarative_subtyping_distor : core.
+(** declarative_subtyping_distor is the declarative subtyping (Fig. 4) minus
+DS-distAnd. It is only used here. *)
 
 Lemma distor_symm_or : forall A1 A2,
     declarative_subtyping_distor (t_or A1 A2) (t_or A2 A1).
