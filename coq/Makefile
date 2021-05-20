@@ -11,7 +11,7 @@ SYNTAX=syntax
 TARGET=rules
 OTTFILE=rules
 
-FILES     = $(SYNTAX)_ott $(TARGET)_inf
+FILES     = $(SYNTAX)_ott
 VFILES   = $(foreach i, $(FILES), $(i).v)
 VOFILES  = $(foreach i, $(FILES), $(i).vo)
 
@@ -37,12 +37,7 @@ $(SYNTAX)_ott.v: $(OTT_LOC)/$(OTTFILE).ott
 		exit 1; \
 	fi >&2
 
-
-$(TARGET)_inf.v: $(SYNTAX)_ott.v
-	lngen --coq $(TARGET)_inf.v --coq-ott $(SYNTAX)_ott $(OTT_LOC)/$(TARGET).ott
-
-
-$(COQMKFILENAME): Makefile $(SYNTAX)_ott.v $(TARGET)_inf.v
+$(COQMKFILENAME): Makefile $(SYNTAX)_ott.v
 	{ echo "-R . $(LIBNAME)" ; ls *.v ; } > _CoqProject && coq_makefile -arg '-w -variable-collision,-meta-collision,-require-in-module' -f _CoqProject -o $(COQMKFILENAME)
 
 

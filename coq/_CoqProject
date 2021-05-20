@@ -1,9 +1,11 @@
 -R . Top
-LibTactics.v
-Subtyping_alone.v
-Duotyping.v
-rules_inf.v
-Subtyping.v
-Subtyping_Property.v
-syntax_ott.v
 Duotyping_dual.v
+Duotyping.v
+LibTactics.v
+old_syntax.v
+rules_inf.v
+Subtyping_alone.v
+Subtyping_Property.v
+Subtyping.v
+syntax_ott.v
+TypeSize.v

@@ -1,19 +1,25 @@
-Require Import Metalib.Metatheory.
+(** This file contains lemmas and theorems around the declarative and
+    algorithmic subtyping formalization.
+    They are very similar to those in Duotyping.v (which are covered by
+    the paper) and they are not included in the paper.
+
+   Lemma singlemode_sub_or, Lemma s_sub_orl, and Lemma s_sub_orr are
+   used in Subtyping.v
+ *)
 Require Import LibTactics.
 Require Import syntax_ott.
-Require Import rules_inf.
-Require Import Omega.
+Require Import TypeSize.
 
 
 Create HintDb AllHb.
 Create HintDb MulHb.
 Create HintDb FalseHd.
 
-Hint Resolve SO_top SO_bot SO_int OU_top OU_bot OU_int OU_arrow SSp_and SpU_or : core.
-Hint Resolve SS_int SS_top SS_bot : MulHb.
+#[local] Hint Resolve SO_top SO_bot SO_int OU_top OU_bot OU_int OU_arrow SSp_and SpU_or : core.
+#[local] Hint Resolve SS_int SS_top SS_bot : MulHb.
 
 (* Types are Either Ordinary or Splittable *)
-Hint Constructors single_ord ordu single_spl splu : AllHd.
+#[local] Hint Constructors single_ord ordu single_spl splu : AllHd.
 
 Lemma ordu_or_split: forall A,
     ordu A \/ exists B C, splu A B C.
@@ -91,7 +97,7 @@ Proof.
   applys splu_ord_false; eassumption.
 Qed.
 
-Hint Resolve ordu_or_split and_or_mismatch single_ord_and_false
+#[local] Hint Resolve ordu_or_split and_or_mismatch single_ord_and_false
      ordu_or_false single_spl_ord_false splu_ord_false : FalseHd.
 
 
@@ -124,7 +130,7 @@ Proof.
   inductions Hspl; try destruct m; inverts* Hord.
 Qed.
 
-Hint Resolve single_spl_keep_ordu_l single_spl_keep_ordu_r
+#[local] Hint Resolve single_spl_keep_ordu_l single_spl_keep_ordu_r
      splu_keep_ord_l splu_keep_ord_r : AllHd.
 
 
@@ -136,18 +142,18 @@ Proof.
   inverts~ H.
 Qed.
 
-Hint Resolve typ_size_lg_z : core.
+#[local] Hint Resolve typ_size_lg_z : core.
 
 Lemma splu_decrease_size: forall A B C,
     splu A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A.
-Proof with (pose proof (typ_size_lg_z); simpl in *; try omega).
+Proof with (pose proof (typ_size_lg_z); simpl in *; try lia).
   introv H.
   induction H; simpl in *; eauto...
 Qed.
 
 Lemma single_spl_decrease_size: forall A B C,
     single_spl A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A.
-Proof with (pose proof (typ_size_lg_z); simpl in *; try omega).
+Proof with (pose proof (typ_size_lg_z); simpl in *; try lia).
   introv H.
   induction H; simpl in *; eauto...
   forwards (?&?): splu_decrease_size H0...
@@ -163,13 +169,13 @@ Ltac s_spl_size :=
 
 (********************************************)
 (*                                          *)
-(*               Ltac eomg2                 *)
-(*  enhanced omega with split_decrease_size *)
+(*               Ltac elia                 *)
+(*  enhanced lia with split_decrease_size *)
 (*                                          *)
 (********************************************)
-Ltac s_eomg2 :=
+Ltac s_elia :=
   try solve [pose proof (typ_size_lg_z);
-             s_spl_size; simpl in *; try omega].
+             s_spl_size; simpl in *; try lia].
 
 Ltac indTypSize s :=
   assert (SizeInd: exists i, s < i) by eauto;
@@ -240,8 +246,8 @@ Inductive u_part : typ -> typ -> Prop :=
 | UP_spr   : forall A B C C', splu  A B C -> u_part C C' -> u_part A C'
 .
 
-Hint Constructors single_part u_part : AllHd.
-Hint Resolve SP_refl UP_refl : MulHd.
+#[local] Hint Constructors single_part u_part : AllHd.
+#[local] Hint Resolve SP_refl UP_refl : MulHd.
 
 Lemma single_part_spl : forall A B B1 B2,
     single_part A B -> single_spl B B1 B2 -> single_part A B1 /\ single_part A B2.
@@ -259,14 +265,14 @@ Proof with (eauto with AllHb).
     eauto with AllHd.
 Qed.
 
-Hint Resolve single_part_spl u_part_spl : AllHd.
+#[local] Hint Resolve single_part_spl u_part_spl : AllHd.
 
-Hint Constructors singlemode_sub : AllHd.
+#[local] Hint Constructors singlemode_sub : AllHd.
 
 Ltac s_sub_part_autoIH :=
   match goal with
   | [ IH: forall A B : typ, _ < _ -> _ |- singlemode_sub ?A ?B ] =>
-  (forwards (IH1&IH2): IH A B; auto 4 with *; eauto 4 with AllHd; s_eomg2)
+  (forwards (IH1&IH2): IH A B; auto 4 with *; eauto 4 with AllHd; s_elia)
 end.
 
 Lemma s_sub_part : forall A B,
@@ -331,8 +337,8 @@ Proof.
   destruct* H.
 Qed.
 
-Hint Resolve s_sub_refl : MulHd.
-Hint Resolve s_sub_part1 s_sub_part2 : AllHd.
+#[local] Hint Resolve s_sub_refl : MulHd.
+#[local] Hint Resolve s_sub_part1 s_sub_part2 : AllHd.
 
 (* algorithm correctness *)
 Lemma s_rule_and_inv : forall A B B1 B2,
@@ -355,7 +361,7 @@ Qed.
 Lemma s_rule_or_inv : forall A A1 A2 B,
     singlemode_sub A B -> splu A A1 A2 ->
     singlemode_sub A1 B /\ singlemode_sub A2 B.
-Proof with (s_auto_unify; try eassumption; s_eomg2; eauto 4 with AllHd).
+Proof with (s_auto_unify; try eassumption; s_elia; eauto 4 with AllHd).
   introv Hsub Hspl.
   indTypSize (size_typ A + size_typ B).
    lets [Hi|(?&?&Hi)]: single_ord_or_split B.
@@ -378,7 +384,7 @@ Qed.
 Lemma s_rule_orlr_inv : forall A B B1 B2,
     singlemode_sub A B -> ordu A -> splu B B1 B2 ->
     singlemode_sub A B1 \/ singlemode_sub A B2.
-Proof with (solve_false; s_auto_unify; try eassumption; s_eomg2; eauto 3 with AllHd).
+Proof with (solve_false; s_auto_unify; try eassumption; s_elia; eauto 3 with AllHd).
   introv Hsub Hord Hspl.
   indTypSize (size_typ A + size_typ B).
   inverts Hsub...
@@ -431,7 +437,7 @@ Ltac s_auto_inv :=
 
 Lemma singlemode_sub_or : forall A A1 A2 B,
     splu A A1 A2 -> singlemode_sub A1 B -> singlemode_sub A2 B -> singlemode_sub A B.
-Proof with (s_auto_unify; try eassumption; s_auto_inv; s_eomg2).
+Proof with (s_auto_unify; try eassumption; s_auto_inv; s_elia).
   introv Hsingle_spl Hs1 Hs2.
   indTypSize (size_typ A + size_typ B).
   lets [Hi|(?&?&Hi)]: single_ord_or_split B...
@@ -439,32 +445,32 @@ Proof with (s_auto_unify; try eassumption; s_auto_inv; s_eomg2).
   - applys SS_or...
   - (* double single_split A *)
     inverts keep Hsingle_spl; inverts keep Hi'...
-    + applys~ SS_andl Hi'... applys IH; eauto; try eassumption; s_eomg2.
-    + applys~ SS_andr Hi'... applys IH; eauto; try eassumption; s_eomg2.
-    + applys~ SS_andl Hi'... applys IH; eauto; try eassumption; s_eomg2.
-    + applys~ SS_andr Hi'... applys IH; eauto; try eassumption; s_eomg2.
-    + applys~ SS_andl Hi'... applys IH; eauto; try eassumption; s_eomg2.
+    + applys~ SS_andl Hi'... applys IH; eauto; try eassumption; s_elia.
+    + applys~ SS_andr Hi'... applys IH; eauto; try eassumption; s_elia.
+    + applys~ SS_andl Hi'... applys IH; eauto; try eassumption; s_elia.
+    + applys~ SS_andr Hi'... applys IH; eauto; try eassumption; s_elia.
+    + applys~ SS_andl Hi'... applys IH; eauto; try eassumption; s_elia.
     + applys~ SS_andr Hi'...
     + applys~ SS_andr Hi'...
     + applys~ SS_andr Hi'...
     + applys~ SS_andl Hi'...
     + applys~ SS_andl Hi'...
     + applys~ SS_andl Hi'...
-    + applys~ SS_andr Hi'... applys IH; eauto; try eassumption; s_eomg2.
+    + applys~ SS_andr Hi'... applys IH; eauto; try eassumption; s_elia.
   - applys~ SS_and Hi...
     applys IH... applys IH...
 Qed.
 
-Hint Resolve singlemode_sub_or : AllHd.
+#[local] Hint Resolve singlemode_sub_or : AllHd.
 
 Ltac s_trans_autoIH :=
   match goal with
   | [ IH: forall A B : typ, _ , H1: singlemode_sub ?A  ?B , H2: singlemode_sub ?B  ?C |- singlemode_sub ?A  ?C ] =>
-    (applys~ IH H1 H2; s_eomg2; auto)
+    (applys~ IH H1 H2; s_elia; auto)
   | [ IH: forall A B : typ, _ , H1: singlemode_sub ?A  ?B  |- singlemode_sub ?A  ?C ] =>
-    (applys~ IH H1; s_eomg2; constructor~)
+    (applys~ IH H1; s_elia; constructor~)
   | [ IH: forall A B : typ, _ , H2: singlemode_sub ?B  ?C |- singlemode_sub ?A  ?C ] =>
-    (applys~ IH H2; s_eomg2; constructor~)
+    (applys~ IH H2; s_elia; constructor~)
   end.
 
 Lemma s_trans : forall A B C, singlemode_sub A B -> singlemode_sub B C -> singlemode_sub A C.
@@ -497,11 +503,11 @@ Proof with (solve_false; s_auto_unify; try eassumption; auto with *; s_auto_inv;
   - applys SS_and Hi...
 Qed.
 
-Hint Resolve s_trans : AllHd.
+#[local] Hint Resolve s_trans : AllHd.
 
 Lemma s_sub_arrow : forall A1 A2 B1 B2,
     singlemode_sub B1 A1 -> singlemode_sub A2 B2 -> singlemode_sub (t_arrow A1 A2) (t_arrow B1 B2).
-Proof with (try eassumption; s_auto_unify; s_auto_inv; solve_false; s_eomg2; try solve [constructor; auto with AllHb]).
+Proof with (try eassumption; s_auto_unify; s_auto_inv; solve_false; s_elia; try solve [constructor; auto with AllHb]).
   introv Hs1 Hs2.
   indTypSize (size_typ (t_arrow A1 A2) + size_typ (t_arrow B1 B2)).
   lets [Hi1|(?&?&Hi1)]: single_ord_or_split (t_arrow A1 A2)...
@@ -512,42 +518,42 @@ Proof with (try eassumption; s_auto_unify; s_auto_inv; solve_false; s_eomg2; try
     + forwards (?&?): s_rule_and_inv Hs2 H3...
       applys SS_and.
       econstructor; try eassumption.
-      applys~ IH. s_eomg2.
-      applys~ IH. s_eomg2.
+      applys~ IH. s_elia.
+      applys~ IH. s_elia.
     + forwards (?&?): s_rule_or_inv Hs1 H4.
       applys SS_and. applys SSp_arrowUnion; try eassumption.
-      applys~ IH; s_eomg2. applys~ IH; s_eomg2.
+      applys~ IH; s_elia. applys~ IH; s_elia.
   - inverts Hi1.
     + lets [Hi2|(?&?&Hi2)]: single_ord_or_split (t_arrow B1 B2).
       * forwards~ [?|?]: s_rule_andlr_inv Hs2 H3. inverts~ Hi2.
         applys SS_andl; try eassumption.
         econstructor. apply H3.
-        applys~ IH. s_eomg2.
+        applys~ IH. s_elia.
         applys SS_andr; try eassumption.
         econstructor. apply H3.
-        applys~ IH. s_eomg2.
+        applys~ IH. s_elia.
       * inverts Hi2.
         ** forwards (?&?): s_rule_and_inv Hs2 H4.
            applys SS_and. econstructor; try eassumption.
-           applys~ IH; s_eomg2. applys~ IH; s_eomg2.
+           applys~ IH; s_elia. applys~ IH; s_elia.
         ** forwards (?&?): s_rule_or_inv Hs1 H5.
            applys SS_and. applys SSp_arrowUnion; try eassumption.
-           applys~ IH; s_eomg2. applys~ IH; s_eomg2.
+           applys~ IH; s_elia. applys~ IH; s_elia.
     + lets [Hi2|(?&?&Hi2)]: single_ord_or_split (t_arrow B1 B2).
       * forwards~ [?|?]: s_rule_orlr_inv Hs1 H4. inverts~ Hi2.
         1: { applys SS_andl; try eassumption.
         applys SSp_arrowUnion; try eassumption.
-        applys~ IH. s_eomg2. }
+        applys~ IH. s_elia. }
         1: { applys SS_andr; try eassumption.
         applys SSp_arrowUnion; try eassumption.
-        applys~ IH. s_eomg2. }
+        applys~ IH. s_elia. }
       * inverts Hi2.
         ** forwards (?&?): s_rule_and_inv Hs2 H5.
            applys SS_and. econstructor; try eassumption.
-           applys~ IH; s_eomg2. applys~ IH; s_eomg2.
+           applys~ IH; s_elia. applys~ IH; s_elia.
         ** forwards (?&?): s_rule_or_inv Hs1 H6.
            applys SS_and. applys SSp_arrowUnion; try eassumption.
-           applys~ IH; s_eomg2. applys~ IH; s_eomg2.
+           applys~ IH; s_elia. applys~ IH; s_elia.
 Qed.
 
 Lemma s_sub_orl : forall A B B1 B2,
@@ -559,25 +565,25 @@ Proof with (eauto 3 with AllHd).
   lets [Hi'|(?&?&Hi')]: single_ord_or_split A.
   lets [Hu|(?&?&Hu)]: ordu_or_split A.
   - applys~ SS_orl Hsingle_spl.
-  - applys~ singlemode_sub_or Hu; applys IH Hsingle_spl; s_eomg2; applys s_trans Hs; applys s_sub_part2...
+  - applys~ singlemode_sub_or Hu; applys IH Hsingle_spl; s_elia; applys s_trans Hs; applys s_sub_part2...
   - forwards~ [?|?]: s_rule_andlr_inv Hs Hi'...
-      applys~ SS_andl Hi'. applys~ IH Hsingle_spl. s_eomg2.
-      applys~ SS_andr Hi'. applys~ IH Hsingle_spl. s_eomg2.
+      applys~ SS_andl Hi'. applys~ IH Hsingle_spl. s_elia.
+      applys~ SS_andr Hi'. applys~ IH Hsingle_spl. s_elia.
   - inverts Hsingle_spl; inverts Hi; solve_false; s_auto_unify.
     + applys SS_and...
-      applys IH; s_eomg2. 2: {eauto. } applys s_trans Hs...
-      applys IH; s_eomg2. 2: {eauto. } applys s_trans Hs...
+      applys IH; s_elia. 2: {eauto. } applys s_trans Hs...
+      applys IH; s_elia. 2: {eauto. } applys s_trans Hs...
     + applys SS_and...
-      applys IH; s_eomg2. 2: {eauto. } applys s_trans Hs...
-      applys IH; s_eomg2. 2: {eauto. } applys s_trans Hs...
+      applys IH; s_elia. 2: {eauto. } applys s_trans Hs...
+      applys IH; s_elia. 2: {eauto. } applys s_trans Hs...
     + s_auto_inv.
       applys SS_and. eauto.
-      applys~ IH H; s_eomg2.
+      applys~ IH H; s_elia.
       try eassumption.
     + s_auto_inv.
       applys SS_and. eauto.
       try eassumption.
-      applys~ IH H0; s_eomg2.
+      applys~ IH H0; s_elia.
 Qed.
 
 Lemma s_sub_orr : forall A B B1 B2,
@@ -589,25 +595,25 @@ Proof with (eauto 3 with AllHd).
   lets [Hi'|(?&?&Hi')]: single_ord_or_split A.
   lets [Hu|(?&?&Hu)]: ordu_or_split A.
   - applys~ SS_orr Hsingle_spl.
-  - applys~ singlemode_sub_or Hu; applys IH Hsingle_spl; s_eomg2; applys s_trans Hs; applys s_sub_part2...
+  - applys~ singlemode_sub_or Hu; applys IH Hsingle_spl; s_elia; applys s_trans Hs; applys s_sub_part2...
   - forwards~ [?|?]: s_rule_andlr_inv Hs Hi'...
-      applys~ SS_andl Hi'. applys~ IH Hsingle_spl. s_eomg2.
-      applys~ SS_andr Hi'. applys~ IH Hsingle_spl. s_eomg2.
+      applys~ SS_andl Hi'. applys~ IH Hsingle_spl. s_elia.
+      applys~ SS_andr Hi'. applys~ IH Hsingle_spl. s_elia.
   - inverts Hsingle_spl; inverts Hi; solve_false; s_auto_unify.
     + applys SS_and...
-      applys IH; s_eomg2. eauto. applys s_trans Hs...
-      applys IH; s_eomg2. eauto. applys s_trans Hs...
+      applys IH; s_elia. eauto. applys s_trans Hs...
+      applys IH; s_elia. eauto. applys s_trans Hs...
     + applys SS_and...
-      applys IH; s_eomg2. eauto. applys s_trans Hs...
-      applys IH; s_eomg2. eauto. applys s_trans Hs...
+      applys IH; s_elia. eauto. applys s_trans Hs...
+      applys IH; s_elia. eauto. applys s_trans Hs...
     + s_auto_inv.
       applys SS_and. eauto.
-      applys~ IH H; s_eomg2.
+      applys~ IH H; s_elia.
       try eassumption.
     + s_auto_inv.
       applys SS_and. eauto.
       try eassumption.
-      applys~ IH H0; s_eomg2.
+      applys~ IH H0; s_elia.
 Qed.
 
 Lemma s_sub_distArrU: forall A B C,
@@ -618,14 +624,14 @@ Proof with (s_auto_unify; try eassumption).
   lets [Hi1|(?&?&Hi1)]: single_ord_or_split C.
   - applys SS_and; eauto with *.
   - (* split C x x0 *)
-    forwards Hs1: IH A B x. s_eomg2.
-    forwards Hs2: IH A B x0. s_eomg2.
+    forwards Hs1: IH A B x. s_elia.
+    forwards Hs2: IH A B x0. s_elia.
     applys SS_and. eauto with *.
     + applys s_trans Hs1. applys SS_and; eauto with *.
     + applys s_trans Hs2. applys SS_and; eauto with *.
 Qed.
 
-Hint Resolve s_sub_arrow s_sub_orl s_sub_orr s_sub_distArrU : AllHd.
+#[local] Hint Resolve s_sub_arrow s_sub_orl s_sub_orr s_sub_distArrU : AllHd.
 
 Lemma arrow_inv : forall A B C D,
     singlemode_sub (t_arrow A B) (t_arrow C D) -> (singlemode_sub C A) /\ (singlemode_sub B D).
@@ -637,19 +643,19 @@ Proof with (simpl in *; solve_false; s_auto_unify; try eassumption; s_auto_inv; 
   - inverts s...
   - inverts keep Hi1;
       forwards~ [?|?]: s_rule_andlr_inv s Hi1;
-      forwards(IH1&IH2): IH H; try solve [s_eomg2];
+      forwards(IH1&IH2): IH H; try solve [s_elia];
         split; try eassumption; inverts~ Hi2...
   - (* uses and_inv_1 and_inv_2 *)
     forwards (?&?): s_rule_and_inv s Hi2.
     inverts keep Hi2;
-      forwards (?&?): IH H; try solve [s_eomg2];
-        forwards (?&?): IH H0; try solve [s_eomg2];
+      forwards (?&?): IH H; try solve [s_elia];
+        forwards (?&?): IH H0; try solve [s_elia];
           split...
 Qed.
 
 Theorem decidability : forall A B,
     singlemode_sub A B \/ not (singlemode_sub A B).
-Proof with (simpl in *; solve_false; jauto; s_eomg2; try solve [right; intros HF; s_auto_inv; inverts HF; simpl in *; solve_false]; eauto 3 with AllHd).
+Proof with (simpl in *; solve_false; jauto; s_elia; try solve [right; intros HF; s_auto_inv; inverts HF; simpl in *; solve_false]; eauto 3 with AllHd).
   introv.
   indTypSize (size_typ A + size_typ B).
   lets [Hi|(?&?&Hi)]: single_ord_or_split B.
@@ -673,8 +679,8 @@ Proof with (simpl in *; solve_false; jauto; s_eomg2; try solve [right; intros HF
     forwards [IHA2|IHA2] : IH A x0...
 Qed.
 
-Hint Constructors declarative_subtyping : AllHb.
-Hint Resolve s_sub_refl : core.
+#[local] Hint Constructors declarative_subtyping : AllHb.
+#[local] Hint Resolve s_sub_refl : core.
 
 Lemma dsub_splu: forall A B C,
     splu A B C -> declarative_subtyping B A /\ declarative_subtyping C A.
@@ -690,7 +696,7 @@ Proof with intuition.
   induction H; try forwards: dsub_splu H0; try intuition; eauto 4 with AllHb.
 Qed.
 
-Hint Resolve dsub_splu dsub_spl : AllDb.
+#[local] Hint Resolve dsub_splu dsub_spl : AllDb.
 
 Lemma dsub_symm_and: forall A B,
     declarative_subtyping (t_and A B) (t_and B A).
@@ -706,7 +712,7 @@ Proof.
   applys DS_or; eauto with *.
 Qed.
 
-Hint Resolve dsub_symm_and dsub_symm_or : AllHd.
+#[local] Hint Resolve dsub_symm_and dsub_symm_or : AllHd.
 
 Lemma dsub_or: forall A B C,
     splu A B C -> declarative_subtyping A (t_or B C).
@@ -745,7 +751,7 @@ Proof with (eauto 3 with AllHb).
     applys DS_trans (t_or A B2)...
 Qed.
 
-Hint Resolve dsub_and dsub_or : AllHd.
+#[local] Hint Resolve dsub_and dsub_or : AllHd.
 
 Theorem dsub2asub: forall A B,
     declarative_subtyping A B <-> singlemode_sub A B.
@@ -781,60 +787,4 @@ Proof with (simpl in *; try eassumption; eauto 3 with *).
       forwards (?&?): dsub_splu H2. applys DS_trans IHsinglemode_sub...
     + (* orr *)
       forwards (?&?): dsub_splu H2. applys DS_trans IHsinglemode_sub...
-Qed.
-
-
-Lemma int_sub_bot_false :
-  singlemode_sub t_int t_bot -> False.
-Proof.
-  introv H.
-  inverts H; solve_false.
-Qed.
-
-
-(************************************************************)
-Require Import Subtyping.
-
-Theorem algo_subtyping_complete_duotyping : forall A B m,
-    sub A m B -> (m = m_sub /\ singlemode_sub A B) \/
-                 (m = m_super /\ singlemode_sub B A).
-Proof.
-  introv Hs.
-  induction Hs; destruct mode5;
-    rewrite_duo2sub; eauto 4;
-      right; split~.
-  (* or *)
-  - applys~ singlemode_sub_or H0.
-  (* orr ordu B *)
-  - applys~ s_sub_orl H1.
-  - applys~ s_sub_orr H1.
-Qed.
-
-(************************************************************)
-(* Prove distand is not necessary *)
-Hint Constructors declarative_subtyping_distor : core.
-Lemma distor_symm_or : forall A1 A2,
-    declarative_subtyping_distor (t_or A1 A2) (t_or A2 A1).
-Proof.
-  introv.
-  applys~ DSO_or.
-Qed.
-
-Theorem distor_eqv_distand : forall A1 A2 B,
-    declarative_subtyping_distor (t_and (t_or A1 A2) B) (t_or (t_and A1 B) (t_and A2 B)).
-Proof.
-  introv.
-  applys DSO_trans.
-  2: { applys DSO_distOr. }
-  applys DSO_and.
-  1: { applys DSO_trans (t_or (t_and A2 B) A1).
-       applys DSO_trans.
-       2: { applys DSO_distOr. }
-       applys~ DSO_and.
-       1: { applys DSO_trans. applys~ DSO_andl. applys~ DSO_or.
-       }
-       2: { applys~ DSO_or. }
-       applys DSO_trans. applys~ DSO_andr. applys~ DSO_orl.
-  }
-  applys DSO_trans. applys~ DSO_andr. applys~ DSO_orl.
 Qed.

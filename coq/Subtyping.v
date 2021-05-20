@@ -1,20 +1,11 @@
-Require Import Metalib.Metatheory.
 Require Import LibTactics.
 Require Export syntax_ott.
 Require Import Duotyping.
 
-Hint Constructors declarative_subtyping osub : core.
+#[export] Hint Constructors declarative_subtyping osub : core.
 
-Theorem decl_subtyping_sound_duotyping : forall A B,
-    declarative_subtyping A B -> osub A m_sub B /\ osub B m_super A.
-Proof.
-  introv Hs; split; induction Hs; eauto 4.
-  + (* and *)
-    apply OS_flip. simpl. applys~ OS_and.
-  + (* or *)
-    apply OS_flip. simpl. applys~ OS_and.
-Qed.
-
+(* Theorem 4.2 Equivalence of declarative systems *)
+(* part 1 *)
 Theorem decl_subtyping_complete_duotyping : forall A B m,
     osub A m B -> (m = m_sub /\ declarative_subtyping A B) \/
                   (m = m_super /\ declarative_subtyping B A).
@@ -30,54 +21,43 @@ Proof.
     eauto 4.
 Qed.
 
-Lemma ord_sound : forall A,
-    single_ord A -> ord m_sub A
-with ordu_sound : forall A,
-    ( ordu A -> ord m_super A ).
-Proof.
-  - introv H.
-    induction H; eauto.
-
-  - introv H.
-    induction H; eauto.
-Qed.
-
-Hint Resolve ord_sound ordu_sound : core.
-
-Lemma split_sound : forall A B C,
-    single_spl A B C -> spl m_sub A B C
-with splitu_sound : forall A B C,
-    splu A B C -> spl m_super A B C.
-Proof.
-  - introv H.
-    induction* H.
-
-  - introv H.
-    induction* H.
-Qed.
-
-Hint Resolve split_sound splitu_sound : core.
-
-Hint Constructors sub : core.
-Hint Resolve sub_orl sub_orr sub_arrow sub_rev sub_rev2 : core.
-
-Theorem algo_subtyping_sound_duotyping : forall A B,
-    singlemode_sub A B -> sub A m_sub B /\ sub B m_super A.
+(* Theorem 4.2 Equivalence of the declarative systems *)
+(* part 2 *)
+Theorem decl_subtyping_sound_duotyping : forall A B,
+    declarative_subtyping A B -> osub A m_sub B /\ osub B m_super A.
 Proof.
   introv Hs; split; induction Hs; eauto 4.
-  + applys~ sub_arrow. applys~ sub_rev.
-  + applys~ sub_arrow. applys~ sub_rev.
+  + (* and *)
+    apply OS_flip. simpl. applys~ OS_and.
+  + (* or *)
+    apply OS_flip. simpl. applys~ OS_and.
 Qed.
 
+(* Lemma 4.3 Equivalence of ordinary and splittable types *)
+(* part 1 and part 2 -> *)
+(* ord_sound: A circle only if A< *)
+(* ordu_sound: A black_circle only if A> *)
+Lemma ord_sound : forall A, single_ord A -> ord m_sub A
+with ordu_sound : forall A, ordu A -> ord m_super A.
+Proof.
+  - introv H.
+    induction H; eauto.
 
-(* algo: completeness *)
-(* algorithmic duotyping -> algorithmic subtyping *)
+  - introv H.
+    induction H; eauto.
+Qed.
 
-Hint Constructors single_ord ordu single_spl splu singlemode_sub : core.
+#[export] Hint Resolve ord_sound ordu_sound : core.
 
+#[export] Hint Constructors single_ord ordu single_spl splu singlemode_sub : core.
+
+
+(* Lemma 4.3 Equivalence of ordinary and splittable types *)
+(* part 1 and part 2 <- *)
+(* ord_complete_1: A circle if A< *)
+(* ord_complete_2: A black_circle if A> *)
 Lemma ord_complete : forall A m,
-    ord m A -> ( m = m_sub /\ single_ord A )
-                \/ ( m = m_super /\ ordu A ).
+    ord m A -> ( m = m_sub /\ single_ord A ) \/ ( m = m_super /\ ordu A ).
 Proof.
   introv H.
   induction H; try destruct m; eauto;
@@ -95,7 +75,6 @@ Proof.
   inverts H0.
 Qed.
 
-
 Lemma ord_complete_2 : forall A,
     ord m_super A -> ordu A.
 Proof.
@@ -104,7 +83,40 @@ Proof.
   inverts H0.
 Qed.
 
-Hint Resolve ord_complete_1 ord_complete_2 : core.
+#[export] Hint Resolve ord_complete_1 ord_complete_2 : core.
+
+(* Lemma 4.3 Equivalence of ordinary and splittable types *)
+(* part 3 and part 4 -> *)
+
+(* split_sound: A is disjunctive splittable (Fig. 5) -> *)
+(* A is splittable under subtyping mode (Fig. 8) *)
+
+(* splitu_sound: A is conjunctive splittable (Fig. 5) -> *)
+(* A is splittable under supertyping mode (Fig. 8) *)
+
+Lemma split_sound : forall A B C,
+    single_spl A B C -> spl m_sub A B C
+with splitu_sound : forall A B C,
+    splu A B C -> spl m_super A B C.
+Proof.
+  - introv H. clear split_sound.
+    induction* H.
+
+  - introv H. clear splitu_sound.
+    induction* H.
+Qed.
+
+#[export] Hint Resolve split_sound splitu_sound : core.
+
+
+(* Lemma 4.3 Equivalence of ordinary and splittable types *)
+(* part 3 and part 4 <- *)
+
+(* split_complete_1: A is splittable under subtyping mode (Fig. 8) -> *)
+(* A is disjunctive splittable (Fig. 5) *)
+
+(* split_complete_2: A is splittable under supertyping mode (Fig. 8) -> *)
+(* A is conjunctive splittable (Fig. 5) *)
 
 Lemma split_complete : forall A B C m,
     spl m A B C -> ( m = m_sub /\ single_spl A B C )
@@ -119,7 +131,6 @@ Proof.
     try solve [inverts Heq']; eauto ].
 Qed.
 
-(* alternative formulation *)
 Lemma split_complete_1 : forall A B C,
     spl m_sub A B C -> single_spl A B C.
 Proof.
@@ -136,7 +147,21 @@ Proof.
   inverts H0.
 Qed.
 
-Hint Resolve split_complete_1 split_complete_2 : core.
+#[export] Hint Resolve split_complete_1 split_complete_2 : core.
+
+#[export] Hint Constructors sub : core.
+#[export] Hint Resolve sub_orl sub_orr sub_arrow sub_rev sub_rev2 : core.
+
+
+(* Theorem 4.4 Equivalence of the algorithmic systems *)
+(* part 2: algorithmic subtyping -> algorithmic duotyping *)
+Theorem algo_subtyping_sound_duotyping : forall A B,
+    singlemode_sub A B -> sub A m_sub B /\ sub B m_super A.
+Proof.
+  introv Hs; split; induction Hs; eauto 4.
+  + applys~ sub_arrow. applys~ sub_rev.
+  + applys~ sub_arrow. applys~ sub_rev.
+Qed.
 
 
 Ltac rewrite_duo2sub :=
@@ -161,3 +186,24 @@ Ltac rewrite_duo2sub :=
          | [ H: m_super = m_sub |- _ ] =>
            (inverts H)
   end; simpl in *).
+
+
+(************************************************************)
+Require Import Subtyping_Property.
+
+(* Theorem 4.4 Equivalence of the algorithmic systems *)
+(* part 2: algorithmic duotyping -> algorithmic subtyping *)
+Theorem algo_subtyping_complete_duotyping : forall A B m,
+    sub A m B -> (m = m_sub /\ singlemode_sub A B) \/
+                 (m = m_super /\ singlemode_sub B A).
+Proof.
+  introv Hs.
+  induction Hs; destruct mode5;
+    rewrite_duo2sub; eauto 4;
+      right; split~.
+  (* or *)
+  - applys~ singlemode_sub_or H0.
+  (* orr ordu B *)
+  - applys~ s_sub_orl H1.
+  - applys~ s_sub_orr H1.
+Qed.
