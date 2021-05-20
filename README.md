@@ -1,6 +1,6 @@
 # Distributing Intersection and Union Types with Splits and Duality (Artifact)
 
-- [impl/](./impl) for the Haskell implementation (The one discussed in the paper is  [impl/Algo2.hs](./impl/Algo2.hs).
+- [impl/](./impl) for the Haskell implementation
 - [coq/](./coq) for the Coq formalization
 - [spec/](./spec) for the Ott specification (that is used to generate the syntax
 definition in Coq)
