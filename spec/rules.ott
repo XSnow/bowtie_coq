@@ -247,19 +247,12 @@ split B B1 B2
 split A\/B A\/B1 A\/B2
 
 
-splitU A A1 A2
-split B B1 B2
--------------------------- :: arrow
-split A->B A1->B1 A2->B2
-
-
 ordinaryU A
 split B B1 B2
 -------------------------- :: arrowI
 split A->B A->B1 A->B2
 
 
-ordinary B
 splitU A A1 A2
 -------------------------- :: arrowU
 split A->B A1->B A2->B
