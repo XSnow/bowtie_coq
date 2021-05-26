@@ -15,7 +15,6 @@ coq/_CoqProject
 coq/rules_inf.v
 coq/syntax_ott.v
 
-pdf/*.mng
-pdf/*.pdf
-
-pdf/ott-rules.tex
+doc/*.mng
+doc/*.pdf
+doc/ott-rules.tex

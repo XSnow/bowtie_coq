@@ -9,7 +9,7 @@ typ, A, B, C, D, char {{ tex \mathsf{Char} }}, bool {{ tex \mathsf{Bool} }} % , 
   | Top               ::   :: top          {{ com top type }} {{ tex \mathsf{Top} }}
   | Bot               ::   :: bot          {{ com bottom type }} {{ tex \mathsf{Bot} }}
   | A -> B            ::   :: arrow        {{ com function types }}
-  | A & B             ::   :: and          {{ com intersection }}
+  | A /\ B            ::   :: and          {{ com intersection }}
   | A \/ B            ::   :: or           {{ com union }}
   | ( A )             :: S :: paren        {{ coq [[A]] }}
 %  | { l : A }         ::   :: rcd          {{ com record }}
@@ -37,13 +37,12 @@ grammar
 
 terminals :: 'terminals_' ::=
   | ->               ::  :: arrow      {{ tex \rightarrow }}
-  | &                ::  :: and        {{ tex \, \& \, }}
+  | /\                ::  :: and        {{ tex \, \/\ \, }}
   | \/               ::  :: or         {{ tex \, \mid \, }}
   | ,                ::  :: break      {{ tex , }}
   | <:b              ::  :: subb       {{ tex <: }}
   | <::              ::  :: subd       {{ tex <: }}
   | ||-              ::  :: turnstileb {{ tex \vdash }}
-  | |-&              ::  :: wfCombined {{ tex \vdash_{\&} }}
   | <|               ::  :: triangleL  {{ tex \mathbin{\lhd} }}
   | |>               ::  :: triangleR  {{ tex \mathbin{\rhd} }}
 
@@ -131,15 +130,15 @@ A -> C < B -> D
 A < B
 A < C
 --------------- :: and
-A < B & C
+A < B /\ C
 
 
 ------------------------- :: andl
-A & B < A
+A /\ B < A
 
 
 ----------------- :: andr
-A & B < B
+A /\ B < B
 
 
 A < C
@@ -156,112 +155,21 @@ A < A \/ B
 B < A \/ B
 
 
--------------------------------------- :: distArr
-(A -> B1) & (A -> B2) < A -> B1 & B2
-
-
--------------------------------------- :: distArrRev
- A -> B1 & B2 < (A -> B1) & (A -> B2)
-
-
--------------------------------------- :: distArrU
-(A1 -> B) & (A2 -> B) < A1 \/ A2 -> B
-
-
--------------------------------------- :: distArrURev
-A1 \/ A2 -> B < (A1 -> B) & (A2 -> B)
-
-
 -------------------------------------- :: distOr
-(A1 \/ B) & (A2 \/ B) < (A1 & A2) \/ B
+(A1 \/ B) /\ (A2 \/ B) < (A1 /\ A2) \/ B
 
 
+% omittable
 -------------------------------------- :: distAnd
-(A1 \/ A2) & B < (A1 & B) \/ (A2 & B)
+(A1 \/ A2) /\ B < (A1 /\ B) \/ (A2 /\ B)
 
 
-
-defns
-DSub_or :: '' ::=
-
-defn
-A <o B  :: :: declarative_subtyping_distor :: DSO_
-{{ com Declarative Subtyping without distAnd }}
-{{ tex [[A]] \leq [[B]] }}
-by
+---------------------------------------------------- :: distArrI
+(A1 -> B1) /\ (A2 -> B2) < (A1 \/ A2) -> (B1 /\ B2)
 
 
----------------------- :: refl
-A <o A
-
-
-A <o B
-B <o C
---------------- :: trans
-A <o C
-
-
---------------- :: top
-A <o Top
-
-
---------------- :: bot
-Bot <o A
-
-
-B <o A
-C <o D
------------------------- :: arrow
-A -> C <o B -> D
-
-
-A <o B
-A <o C
---------------- :: and
-A <o B & C
-
-
-------------------------- :: andl
-A & B <o A
-
-
------------------ :: andr
-A & B <o B
-
-
-A <o C
-B <o C
---------------- :: or
-A \/ B <o C
-
-
-------------------------- :: orl
-A <o A \/ B
-
-
------------------ :: orr
-B <o A \/ B
-
-
--------------------------------------- :: distArr
-(A -> B1) & (A -> B2) <o A -> B1 & B2
-
-
--------------------------------------- :: distArrRev
- A -> B1 & B2 <o (A -> B1) & (A -> B2)
-
-
--------------------------------------- :: distArrU
-(A1 -> B) & (A2 -> B) <o A1 \/ A2 -> B
-
-
--------------------------------------- :: distArrURev
-A1 \/ A2 -> B <o (A1 -> B) & (A2 -> B)
-
-
--------------------------------------- :: distOr
-(A1 \/ B) & (A2 \/ B) <o (A1 & A2) \/ B
-
+---------------------------------------------------- :: distArrU
+(A1 /\ A2) -> (B1 \/ B2) < (A1 -> B1) \/ (A2 -> B2)
 
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -272,8 +180,8 @@ defns
 Ordinary :: '' ::=
 
 defn
-ordinary A :: :: single_ord :: SO_
-{{ com Ordinary Types }}
+ordinary A :: :: ordi :: OI_
+{{ com ordinary types w.r.t. intersection types}}
 {{ tex [[A]]~\mathsf{Ordinary} }}
 by
 
@@ -309,7 +217,7 @@ ordinary A\/B
 
 defn
 ordinaryU A :: :: ordu :: OU_
-{{ com Ordinary Types (for unions) }}
+{{ com ordinary types w.r.t unions }}
 {{ tex [[A]]~\mathsf{OrdinaryU} }}
 by
 
@@ -326,21 +234,16 @@ ordinaryU Bot
 ordinaryU int
 
 
+ordinary A
+ordinaryU B
 ---------------- :: arrow
 ordinaryU A->B
 
 
-% (A1\/A2)&(B1\/B2) ~= (A1&(B1\/B2)) \/ (A2&(B1\/B2))
-
 ordinaryU A
 ordinaryU B
 ---------------- :: and
-ordinaryU A&B
-
-
-%ordinaryU B
-%---------------- :: rcd
-%ordinaryU {l:B}
+ordinaryU A/\B
 
 
 
@@ -348,30 +251,14 @@ defns
 Split :: '' ::=
 
 defn
-split A B C :: :: single_spl :: SSp_
-{{ com Splittable Types }}
+split A B C :: :: spli :: SpI_
+{{ com Splittable Types w.r.t intersections }}
 {{ tex [[B]] \mathbin{\lhd} [[A]] \mathbin{\rhd} [[C]] }}
 by
 
 
 ----------------:: and
-split A&B A B
-
-
-split B C D
--------------------------- :: arrow
-split A->B A->C A->D
-
-
-%split B C D
-%-------------------------- :: rcd
-%split {l:B} {l:C} {l:D}
-
-
-ordinary D
-splitU A B C
--------------------------- :: arrowUnion
-split A->D B->D C->D
+split A/\B A B
 
 
 split A A1 A2
@@ -385,6 +272,30 @@ split B B1 B2
 split A\/B A\/B1 A\/B2
 
 
+splitU A A1 A2
+split B B1 B2
+-------------------------- :: arrow
+split A->B A1->B1 A2->B2
+
+
+ordinaryU A
+split B B1 B2
+-------------------------- :: arrowI
+split A->B A->B1 A->B2
+
+
+ordinary B
+splitU A A1 A2
+-------------------------- :: arrowU
+split A->B A1->B A2->B
+
+
+%split B C D
+%-------------------------- :: rcd
+%split {l:B} {l:C} {l:D}
+
+
+
 defn
 splitU A B C :: :: splu :: SpU_
 {{ com Split Union Types }}
@@ -396,9 +307,33 @@ by
 splitU A\/B A B
 
 
-%splitU B C D
-%--------------------------- :: arrow
-%splitU A->B A->C A->D
+splitU A A1 A2
+-------------------------- :: andl
+splitU A/\B A1/\B A2/\B
+
+
+ordinaryU A
+splitU B B1 B2
+-------------------------- :: andr
+splitU A/\B A/\B1 A/\B2
+
+
+split A A1 A2
+splitU B B1 B2
+--------------------------- :: arrow
+splitU A->B A1->B1 A2->B2
+
+
+ordinary A
+splitU B B1 B2
+-------------------------- :: arrowI
+splitU A->B A->B1 A->B2
+
+
+ordinaryU B
+split A A1 A2
+-------------------------- :: arrowU
+splitU A->B A1->B A2->B
 
 
 %splitU B C D
@@ -406,25 +341,12 @@ splitU A\/B A B
 %splitU {l:B} {l:C} {l:D}
 
 
-% (A1\/A2)&(B1\/B2) ~= (A1&(B1\/B2)) \/ (A2&(B1\/B2))
-
-splitU A A1 A2
--------------------------- :: andl
-splitU A&B A1&B A2&B
-
-
-ordinaryU A
-splitU B B1 B2
--------------------------- :: andr
-splitU A&B A&B1 A&B2
-
-
 
 defns
-SSub :: '' ::=
+ASub :: '' ::=
 
 defn
-A <: B  :: :: singlemode_sub :: SS_
+A <: B  :: :: algorithmic_sub :: AS_
 {{ com Algorithmic Subtyping }}
 by
 
@@ -441,8 +363,6 @@ A <: Top
 Bot <:  A
 
 
-ordinary A1 -> A2
-ordinary B1 -> B2
 B1 <: A1
 A2 <: B2
 ------------------------ :: arrow
@@ -456,22 +376,18 @@ A <: B2
 A <: B
 
 
-ordinary B
 split A A1 A2
 A1 <: B
 ------------------------- :: andl
 A <: B
 
 
-ordinary B
 split A A1 A2
 A2 <: B
 ------------------------- :: andr
 A <: B
 
 
-ordinary A
-ordinary B
 splitU A A1 A2
 A1 <: B
 A2 <: B
@@ -479,365 +395,13 @@ A2 <: B
 A <: B  
 
 
-ordinary A
-ordinary B
-ordinaryU A
 splitU B B1 B2
 A <: B1
 ------------------------- :: orl
 A <: B
 
 
-ordinary A
-ordinary B
-ordinaryU A
 splitU B B1 B2
 A <: B2
 ------------------------- :: orr
 A <: B
-
-
-
-%%%%%%%%%%%%%%%%%%%
-% Duotyping rules %
-%%%%%%%%%%%%%%%%%%%
-
-defns
-OSubtyping :: '' ::=
-
-defn
-A < mode > B  :: :: osub :: OS_
-{{ com Original BCD Declarative Subtyping - Top-Like + Unions }}
-{{ tex [[A]] [[mode]] [[B]] }}
-by
-
-
----------------------- :: refl
-A < mode > A
-
-
-A < mode >  B
-B < mode > C
---------------- :: trans
-A < mode > C
-
-
------------------- :: top
-A < mode > |mode|
-
-
-A < ! mode > B
-C < mode >  D
------------------------- :: arr
-A -> C < mode > B -> D
-
-
-A < mode > B
-A < mode > C
----------------------- :: and
-A < mode > [B mode C]
-
-
-------------------------- :: andl
-[A mode B] < mode > A
-
-
-------------------------- :: andr
-[A mode B] < mode > B
-
-
---------------------------------------- :: distArr
-(A -> B) & (A -> C) < mode > A -> B & C
-
-
---------------------------------------- :: distArrU
-(A -> C) & (B -> C) < mode > A \/ B -> C
-
-
-%-------------------------------------- :: distAnd
-%(B1 \/ B2) & A < (B1 & A) \/ (B2 & A)
-
-
--------------------------------------------------------------------- :: distOr
-[[A1 !mode B] mode [A2 !mode B]] < mode > [[A1 mode A2] !mode B]
-
-
-B  < ! mode > A
-------------------------- :: flip
-A  < mode > B
-
-
-defns
-OrdinaryType :: '' ::=
-
-defn
-ordinary m A :: :: ord :: O_
-{{ com Ordinary Types }}
-{{ tex [[A]]~\mathsf{Ordinary}_{[[m]]} }}
-by
-
-
----------------- :: top
-ordinary m Top
-
-
----------------- :: bot
-ordinary m Bot
-
-
----------------- :: int
-ordinary m int
-
-
---------------------- :: arrowUnion
-ordinary super A->B
-
-
-ordinary super  A
-ordinary sub B
---------------------- :: arrow
-ordinary sub A->B
-
-
-ordinary m A
-ordinary m B
---------------------- :: or
-ordinary m [A !m B]
-
-
-
-defns
-SplitType :: '' ::=
-
-defn
-split m A B C :: :: spl :: Sp_
-{{ com Splittable Types }}
-{{ tex [[B]] \mathbin{\lhd}_{[[m]]} [[A]] \mathbin{\rhd}_{[[m]]} [[C]] }}
-% {{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
-by
-
-
------------------------:: and
-split m [A m B] A B
-
-
-split sub B C D
----------------------------- :: arrow
-split sub A->B A->C A->D
-
-
-ordinary sub D
-split super A B C
--------------------------- :: arrowUnion
-split sub A->D B->D C->D
-
-
-split m A A1 A2
---------------------------------------- :: orl
-split m [A !m B] [A1 !m B] [A2 !m B]
-
-
-ordinary m A
-split m B B1 B2
---------------------------------------- :: orr
-split m [A !m B] [A !m B1] [A !m B2]
-
-
-defns
-Duotyping_dual :: '' ::=
-
-defn
-A <|: mode :|> B  :: :: duo :: SD_
-{{ com Algorithmic Duotyping with dual }}
-{{ tex [[A]] :[[mode]]: [[B]] }}
-by
-
-
-------------------------------- :: int
-int <|: mode :|> int
-
-
-------------------------------- :: top
-A <|: mode :|> |mode|
-
-
-split mode B B1 B2
-A <|: mode :|> B1
-A <|: mode :|> B2
-------------------------------- :: and
-A <|: mode :|> B
-
-
-ordinary mode B
-split mode A A1 A2
-A1 <|: mode :|> B
-------------------------------- :: andl
-A <|: mode :|> B
-
-
-ordinary mode B
-split mode A A1 A2
-A2 <|: mode :|> B
-------------------------------- :: andr
-A <|: mode :|> B
-
-
-ordinary mode A
-ordinary mode B
-B  <|: ! mode :|> A
-------------------------- :: dual
-A  <|: mode :|> B
-
-
-ordinary sub A1 -> A2
-ordinary sub B1 -> B2
-A1 <|: !mode :|> B1
-A2 <|: mode :|> B2
-------------------------------- :: arr
-A1 -> A2 <|: mode :|> B1 -> B2
-
-
-
-defns
-Subtyping :: '' ::=
-
-defn
-A <: mode :> B  :: :: sub :: S_
-{{ com Algorithmic Duotyping }}
-{{ tex [[A]] :[[mode]]: [[B]] }}
-by
-
-
-------------------------------- :: int
-int <: mode :> int
-
-
-------------------------------- :: top
-A <: mode :> |mode|
-
-
-------------------------------- :: bot
-|!mode| <: mode :> A
-
-
-ordinary sub A1 -> A2
-ordinary sub B1 -> B2
-A1 <: !mode :> B1
-A2 <: mode :> B2
-------------------------------- :: arr
-A1 -> A2 <: mode :> B1 -> B2
-
-
-split mode B B1 B2
-A <: mode :> B1
-A <: mode :> B2
-------------------------------- :: and
-A <: mode :> B
-
-
-ordinary mode B
-split mode A A1 A2
-A1 <: mode :> B
-------------------------------- :: andl
-A <: mode :> B
-
-
-ordinary mode B
-split mode A A1 A2
-A2 <: mode :> B
-------------------------------- :: andr
-A <: mode :> B
-
-
-ordinary mode A
-ordinary mode B
-split !mode A A1 A2
-A1 <: mode :> B
-A2 <: mode :> B
-------------------------------- :: or
-A <: mode :> B
-
-
-ordinary mode A
-ordinary mode B
-ordinary !mode A
-split !mode B B1 B2
-A <: mode :> B1
-------------------------------- :: orl
-A <: mode :> B
-
-
-ordinary mode A
-ordinary mode B
-ordinary !mode A
-split !mode B B1 B2
-A <: mode :> B2
-------------------------------- :: orr
-A <: mode :> B
-
-
-
-defns
-LSubtyping :: '' ::=
-
-defn
-A <| mode |> B  :: :: lsub :: LS_
-{{ com Algorithmic Duotyping with Less Conditions }}
-{{ tex [[A]] :[[mode]]: [[B]] }}
-by
-
-
-------------------------------- :: int
-int <| mode |> int
-
-
-------------------------------- :: top
-A <| mode |> |mode|
-
-
-------------------------------- :: bot
-|!mode| <| mode |> A
-
-
-A1 <| !mode |> B1
-A2 <| mode |> B2
-------------------------------- :: arr
-A1 -> A2 <| mode |> B1 -> B2
-
-
-split mode B B1 B2
-A <| mode |> B1
-A <| mode |> B2
-------------------------------- :: and
-A <| mode |> B
-
-
-split mode A A1 A2
-A1 <| mode |> B
-------------------------------- :: andl
-A <| mode |> B
-
-
-split mode A A1 A2
-A2 <| mode |> B
-------------------------------- :: andr
-A <| mode |> B
-
-
-split !mode A A1 A2
-A1 <| mode |> B
-A2 <| mode |> B
-------------------------------- :: or
-A <| mode |> B
-
-
-split !mode B B1 B2
-A <| mode |> B1
-------------------------------- :: orl
-A <| mode |> B
-
-
-split !mode B B1 B2
-A <| mode |> B2
-------------------------------- :: orr
-A <| mode |> B
