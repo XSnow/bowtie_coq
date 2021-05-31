@@ -17,26 +17,6 @@ Inductive typ : Set :=  (*r types *)
 Inductive mode : Set := 
  | m_sub : mode
  | m_super : mode.
-
-Definition typbymode (m: mode) :=
-  match m with
-  | m_sub => t_top
-  | m_super => t_bot
-  end.
-
-Definition choose (m: mode) (A: typ) (B: typ) :=
-  match m with
-  | m_sub => t_and A B
-  | m_super => t_or A B
-  end.
-
-Definition flipmode (m: mode) :=
-  match m with
-  | m_sub => m_super
-  | m_super => m_sub
-  end.
-
-
 (** definitions *)
 
 (* defns DSub *)
@@ -75,9 +55,11 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
      declarative_subtyping (t_and  (t_or A1 B)   (t_or A2 B) ) (t_or  (t_and A1 A2)  B)
  | DS_distAnd : forall (A1 A2 B:typ),
      declarative_subtyping (t_and  (t_or A1 A2)  B) (t_or  (t_and A1 B)   (t_and A2 B) )
- | DS_distArrI : forall (A1 B1 A2 B2:typ),
-     declarative_subtyping (t_and  (t_arrow A1 B1)   (t_arrow A2 B2) ) (t_arrow  (t_or A1 A2)   (t_and B1 B2) )
- | DS_distArrU : forall (A1 A2 B1 B2:typ),
+ | DS_distArrI : forall (A B1 B2:typ),
+     declarative_subtyping (t_and  (t_arrow A B1)   (t_arrow A B2) ) (t_arrow A (t_and B1 B2))
+ | DS_distArrU : forall (A1 B A2:typ),
+     declarative_subtyping (t_and  (t_arrow A1 B)   (t_arrow A2 B) ) (t_arrow (t_or A1 A2) B)
+ | DS_distArr : forall (A1 A2 B1 B2:typ),
      declarative_subtyping (t_arrow  (t_and A1 A2)   (t_or B1 B2) ) (t_or  (t_arrow A1 B1)   (t_arrow A2 B2) ).
 (** definitions *)
 
@@ -125,16 +107,11 @@ Inductive spli : typ -> typ -> typ -> Prop :=    (* defn spli *)
      ordi A ->
      spli B B1 B2 ->
      spli (t_or A B) (t_or A B1) (t_or A B2)
- | SpI_arrow : forall (A B A1 B1 A2 B2:typ),
-     splu A A1 A2 ->
-     spli B B1 B2 ->
-     spli (t_arrow A B) (t_arrow A1 B1) (t_arrow A2 B2)
  | SpI_arrowI : forall (A B B1 B2:typ),
      ordu A ->
      spli B B1 B2 ->
      spli (t_arrow A B) (t_arrow A B1) (t_arrow A B2)
  | SpI_arrowU : forall (A B A1 A2:typ),
-     ordi B ->
      splu A A1 A2 ->
      spli (t_arrow A B) (t_arrow A1 B) (t_arrow A2 B)
 with splu : typ -> typ -> typ -> Prop :=    (* defn splu *)

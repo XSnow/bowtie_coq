@@ -27,16 +27,6 @@ Qed.
 
 #[export] Hint Resolve size_typ_min : typSize.
 
-
-Lemma typ_size_lg_z : forall T, size_typ T > 0.
-Proof.
-  introv.
-  pose proof (size_typ_min) T.
-  inverts~ H.
-Qed.
-
-#[export] Hint Resolve typ_size_lg_z : typSize.
-
 Lemma choose_decrease_size : forall m A B,
     size_typ (choose m A B) = size_typ A + size_typ B + 1.
 Proof.
@@ -47,7 +37,7 @@ Hint Rewrite choose_decrease_size : typSize.
 
 Lemma split_decrease_size: forall m A B C,
     spl m A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A.
-Proof with (pose proof (typ_size_lg_z); simpl in *; try lia).
+Proof with (pose proof (size_typ_min); simpl in *; try lia).
   - introv H.
     induction H; try rewrite choose_decrease_size in *; simpl in *; eauto...
     destruct m; eauto...
@@ -68,7 +58,7 @@ Ltac spl_size :=
 (*                                          *)
 (********************************************)
 Ltac elia :=
-  try solve [pose proof (typ_size_lg_z);
+  try solve [pose proof (size_typ_min);
              spl_size; simpl in *; try lia].
 
 Ltac indTypSize s :=

@@ -4,8 +4,9 @@
 *)
 
 Require Import LibTactics.
-Require Import Coq.micromega.Lia.
+Require Export Coq.micromega.Lia.
 Require Export Definitions.
+
 
 Create HintDb AllHd.
 Create HintDb SizeHd.
@@ -127,8 +128,7 @@ Proof.
   - introv Hord Hspl. clear spli_keep_ordu.
     inductions Hspl; try inverts~ Hord; eauto.
     + split; constructor*; forwards~ (?&?): splu_keep_ordi H.
-    + split; constructor*.
-    + split; constructor*; forwards~ (?&?): splu_keep_ordi H0.
+    + split; constructor*; forwards~ (?&?): splu_keep_ordi H.
 Qed.
 
 Lemma splu_keep_ordi_l : forall A B C,
@@ -160,20 +160,12 @@ Qed.
 
 
 (* Subtyping *)
-Lemma typ_size_lg_z : forall T, size_typ T > 0.
-Proof.
-  introv.
-  pose proof (size_typ_min) T.
-  inverts~ H.
-Qed.
-
-#[local] Hint Resolve typ_size_lg_z : SizeHd.
 
 Lemma spli_decrease_size: forall A B C,
     spli A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A
 with splu_decrease_size: forall A B C,
     splu A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A.
-Proof with (pose proof (typ_size_lg_z); simpl in *; try lia).
+Proof with (pose proof (size_typ_min); simpl in *; try lia).
   - introv H. clear spli_decrease_size.
     induction H; simpl in *; try forwards: splu_decrease_size H;
       try forwards: splu_decrease_size H0; eauto...
@@ -192,12 +184,12 @@ Ltac s_spl_size :=
 
 (********************************************)
 (*                                          *)
-(*               Ltac e                 *)
+(*               Ltac elia                  *)
 (*  enhanced lia with split_decrease_size   *)
 (*                                          *)
 (********************************************)
 Ltac s_elia :=
-  try solve [pose proof (typ_size_lg_z);
+  try solve [pose proof (size_typ_min);
              s_spl_size; simpl in *; try lia].
 
 Ltac indTypSize s :=
@@ -286,8 +278,8 @@ Inductive u_part : typ -> typ -> Prop :=
 | UP_spr   : forall A B C C', splu  A B C -> u_part C C' -> u_part A C'
 .
 
-#[local] Hint Constructors i_part u_part : AllHd.
-#[local] Hint Resolve IP_refl UP_refl : AllHd.
+#[local] Hint Constructors i_part u_part : core.
+#[local] Hint Resolve IP_refl UP_refl : core.
 
 Lemma i_part_spl : forall A B B1 B2,
     i_part A B -> spli B B1 B2 -> i_part A B1 /\ i_part A B2.
@@ -305,20 +297,20 @@ Proof with (eauto with AllHd).
     eauto with AllHd.
 Qed.
 
-#[local] Hint Resolve i_part_spl u_part_spl : AllHd.
+#[local] Hint Resolve i_part_spl u_part_spl : core.
 
-#[local] Hint Constructors algorithmic_sub : AllHd.
+#[local] Hint Constructors algorithmic_sub : core.
 
-Ltac s_sub_part_autoIH :=
+Ltac sub_part_autoIH :=
   match goal with
   | [ IH: forall A B : typ, _ < _ -> _ |- algorithmic_sub ?A ?B ] =>
   (forwards (IH1&IH2): IH A B; auto 4 with *; eauto 4 with AllHd; s_elia)
 end.
 
-Lemma s_sub_part : forall A B,
+Lemma sub_part : forall A B,
     (i_part A B -> algorithmic_sub A B)
     /\ (u_part B A -> algorithmic_sub A B).
-Proof with (try eassumption; auto 4 with *; try solve [s_sub_part_autoIH]; eauto 3 with *).
+Proof with (try eassumption; auto 4 with *; try solve [sub_part_autoIH]; eauto 3 with *).
   introv.
   indTypSize (size_typ A + size_typ B).
   split.
@@ -356,51 +348,114 @@ Proof with (try eassumption; auto 4 with *; try solve [s_sub_part_autoIH]; eauto
     applys AS_or Hu...
 Qed.
 
-Theorem s_sub_refl : forall A, algorithmic_sub A A.
+Theorem sub_refl : forall A, algorithmic_sub A A.
 Proof.
   introv.
-  pose proof (s_sub_part A A).
+  pose proof (sub_part A A).
   destruct H; auto with *.
 Qed.
 
-Lemma s_sub_part1 : forall A B,
+Lemma sub_part1 : forall A B,
     i_part A B -> algorithmic_sub A B.
 Proof.
   introv.
-  pose proof (s_sub_part A B).
+  pose proof (sub_part A B).
   destruct* H.
 Qed.
 
-Lemma s_sub_part2 : forall A B,
-    ordi A -> ordi B -> u_part B A -> algorithmic_sub A B.
+Lemma sub_part2 : forall A B,
+    u_part B A -> algorithmic_sub A B.
 Proof.
   introv.
-  pose proof (s_sub_part A B).
+  pose proof (sub_part A B).
   destruct* H.
 Qed.
 
-#[local] Hint Resolve s_sub_refl : MulHd.
-#[local] Hint Resolve s_sub_part1 s_sub_part2 : AllHd.
+#[local] Hint Resolve sub_refl : MulHd.
+#[local] Hint Resolve sub_part1 sub_part2 : AllHd.
 
 (**********************************************************************)
 (* algorithm correctness *)
-Lemma s_rule_or_inv : forall A A1 A2 B,
+
+Lemma sub_or_l_inv : forall A A1 A2 B,
     algorithmic_sub A B -> splu A A1 A2 ->
     algorithmic_sub A1 B /\ algorithmic_sub A2 B
-with s_rule_and_inv : forall A B B1 B2,
+with sub_and_r_inv : forall A B B1 B2,
     algorithmic_sub A B -> spli B B1 B2 ->
-    algorithmic_sub A B1 /\ algorithmic_sub A B2.
-Proof with s_elia.
-  introv Hsub Hspl. clear s_rule_and_inv.
+    algorithmic_sub A B1 /\ algorithmic_sub A B2
+with sub_and_l_inv : forall A B A1 A2,
+    algorithmic_sub A B -> spli A A1 A2 -> ordi B ->
+    algorithmic_sub A1 B \/ algorithmic_sub A2 B
+with  sub_or_r_inv : forall A B B1 B2,
+    algorithmic_sub A B -> splu B B1 B2 -> ordu A ->
+    algorithmic_sub A B1 \/ algorithmic_sub A B2.
+Proof with (s_auto_unify; s_elia).
+  introv Hsub Hspl. clear sub_or_l_inv.
   indTypSize (size_typ A + size_typ B).
    lets [Hi|(?&?&Hi)]: ordi_or_split B.
   - inverts Hsub; solve_false; s_auto_unify; auto with AllHd.
-    + (* splu arrow *)
-      inverts Hspl. Abort.
-      forwards*: IH Hspl...
-    Focus 4.
-    + (* double split A *)
-      inverts Hspl; inverts H0...
+    + (* AS_arrow *)
+      inverts Hspl.
+      *  (*  A4->B0 <<| A0->A3 |>> A5->B3 *)
+        split;
+          applys AS_arrow; try applys sub_and_r_inv H H3;
+            forwards*: IH H0...
+      * (*  A0->B0 <<| A0->A3 |>> A0->B3 *)
+        split; applys AS_arrow; forwards*: IH H0...
+      * (*  A4->A3 <<| A0->A3 |>> A5->A3 *)
+        split; applys~ AS_arrow; try applys~ sub_and_r_inv H H6.
+    + (* AS_andl *)
+      inverts keep Hspl; inverts keep H; try solve [forwards*: IH H0; s_elia];
+        try solve [split*]...
+      (* t_arrow A5 B1 <<| t_arrow A0 B0 |>> t_arrow A6 B2 *)
+      (* t_arrow A0 B0 <| t_arrow A0 B0 |> t_arrow A0 B5 *)
+      * inverts H2; inverts H8;
+          try solve [ forwards~ (?&?): IH H0; try applys* SpU_arrow; try s_elia;
+                      split~; applys AS_andl; try applys* SpI_arrowI; eauto with AllHd; auto ].
+
+      *
+        split*.
+
+
+Lemma sub_or_inv : forall A A1 A2 B,
+    algorithmic_sub A B -> splu A A1 A2 ->
+    algorithmic_sub A1 B /\ algorithmic_sub A2 B
+with sub_and_inv : forall A B B1 B2,
+    algorithmic_sub A B -> spli B B1 B2 ->
+    algorithmic_sub A B1 /\ algorithmic_sub A B2.
+Proof with (s_auto_unify; s_elia).
+  introv Hsub Hspl. clear sub_or_inv.
+  indTypSize (size_typ A + size_typ B).
+   lets [Hi|(?&?&Hi)]: ordi_or_split B.
+  - inverts Hsub; solve_false; s_auto_unify; auto with AllHd.
+    + (* AS_arrow *)
+      inverts Hspl.
+      * (*  A4->B0 <<| A0->A3 |>> A5->B3 *)
+        split;
+          applys AS_arrow; try applys sub_and_inv H H3;
+            forwards*: IH H0...
+      * (*  A0->B0 <<| A0->A3 |>> A0->B3 *)
+        split; applys AS_arrow; forwards*: IH H0.
+      * (*  A4->A3 <<| A0->A3 |>> A5->A3 *)
+        split; applys~ AS_arrow; try applys~ sub_and_inv H H6.
+    + (* AS_andl *)
+      Admitted. (*
+      inverts Hspl; inverts H; try solve [forwards*: IH H0; s_elia];
+        try solve [split*]...
+      admit.
+      * (* ord B *)
+        inverts* H0.
+      * (*  A4->B0 <<| A0->A3 |>> A5->B3 *)
+        split.
+          applys AS_arrow. try applys sub_and_inv H H3;
+            forwards*: IH H0...
+        lets [Hi|(?&?&Hi)]: ordi_or_split B4.
+
+        split*. ; applys* AS_andl.
+      * forwards* (?&?): sub_and_inv (t_or A1 A2) A0 A2 B...
+
+      applys* IH (t_or A0 A2).
+      applys~ sub_and_inv H5.
       * forwards* (?&?): IH (t_or A1 A2) A0 A2 B...
       * forwards* (?&?): IH (t_or A1 B1) A1 B1 B...
       * forwards* (?&?): IH H2 B...
@@ -409,7 +464,7 @@ Proof with s_elia.
       * forwards* (?&?): IH (t_or A5 A2) A5 A2 B...
       * forwards* (?&?): IH (t_or A1 B2) A1 B2 B...
       * forwards* (?&?): IH H1...
-  - forwards (?&?): s_rule_and_inv Hsub Hi.
+  - forwards (?&?): sub_and_inv Hsub Hi.
     forwards (?&?): IH H...
     forwards (?&?): IH H0...
 
@@ -417,18 +472,35 @@ Proof with s_elia.
   induction H; solve_false; s_auto_unify; jauto; auto with *.
   - inverts H0.
 Qed.
+                 *)
 
-(* previous and_inv spl_inv *)
-Lemma s_rule_andlr_inv : forall A B A1 A2,
-    algorithmic_sub A B -> spli A A1 A2 -> ordi B ->
-    algorithmic_sub A1 B \/ algorithmic_sub A2 B.
+Lemma double_spl : forall A A1 A2 B1 B2,
+    spli A A1 A2 -> splu A B1 B2 -> True.
 Proof.
-  introv Hsub Hord Hspl.
+  introv Hsp1 Hsp2.
+  inverts keep Hsp1; inverts keep Hsp2.
+  - (* and *)
+(* previous and_inv spl_inv *)
+Lemma sub_andlr_inv : forall A B A1 A2,
+    algorithmic_sub A B -> spli A A1 A2 -> ordi B ->
+    algorithmic_sub A1 B \/ algorithmic_sub A2 B
+with  sub_orlr_inv : forall A B B1 B2,
+    algorithmic_sub A B -> splu B B1 B2 -> ordu A ->
+    algorithmic_sub A B1 \/ algorithmic_sub A B2.
+Proof with s_elia.
+  clear sub_andlr_inv.
+  introv Hsub Hspl Hord.
+  indTypSize (size_typ A + size_typ B).
   inverts Hsub; solve_false; s_auto_unify; auto with *.
-Qed.
+  - (* AS_arrow *) inverts Hord. inverts Hspl.
+    + (* A0->B0 <| A0->A3 |> A0->B3 *) forwards*: IH H0 H8...
+    + (* A4->A3 <| A0->A3 |> A5->A3 *) forwards*: sub_orlr_inv H H7...
+  - (* AS_andl *) inverts
 
+Admitted.
 
-Lemma s_rule_or_inv : forall A A1 A2 B,
+(*
+Lemma sub_or_inv : forall A A1 A2 B,
     algorithmic_sub A B -> splu A A1 A2 ->
     algorithmic_sub A1 B /\ algorithmic_sub A2 B.
 Proof with (s_auto_unify; try eassumption; s_elia; eauto 4 with AllHd ).
@@ -446,18 +518,19 @@ Proof with (s_auto_unify; try eassumption; s_elia; eauto 4 with AllHd ).
       * forwards* (?&?): IH (t_or A5 A2) A5 A2 B...
       * forwards* (?&?): IH (t_or A1 B2) A1 B2 B...
       * forwards* (?&?): IH H1...
-  - forwards (?&?): s_rule_and_inv Hsub Hi.
+  - forwards (?&?): sub_and_inv Hsub Hi.
     forwards (?&?): IH H...
     forwards (?&?): IH H0...
 Qed.
-
-Lemma s_rule_orlr_inv : forall A B B1 B2,
+*)
+Lemma sub_orlr_inv : forall A B B1 B2,
     algorithmic_sub A B -> ordu A -> splu B B1 B2 ->
     algorithmic_sub A B1 \/ algorithmic_sub A B2.
 Proof with (solve_false; s_auto_unify; try eassumption; s_elia; eauto 3 with AllHd).
   introv Hsub Hord Hspl.
   indTypSize (size_typ A + size_typ B).
   inverts Hsub...
+Admitted. (*
   + (* double split *)
     inverts Hspl; inverts H...
     * forwards [?|?]: IH H0...
@@ -469,7 +542,7 @@ Proof with (solve_false; s_auto_unify; try eassumption; s_elia; eauto 3 with All
   + forwards [?|?]: IH H1... eauto 4 with AllHd. eauto 4 with AllHd.
   + forwards* [?|?]: IH H1...  eauto 4 with AllHd. eauto 4 with AllHd.
 Qed.
-
+*)
 (********************************************)
 (*                                          *)
 (*             Ltac auto_inv                *)
@@ -481,30 +554,30 @@ Qed.
 Ltac s_auto_inv :=
   repeat try match goal with
          | [ H1: algorithmic_sub ?A ?B, H2: spli ?B _ _ |- _ ] =>
-           try (forwards~ (?&?): s_rule_and_inv H1 H2; clear H1)
+           try (forwards~ (?&?): sub_and_inv H1 H2; clear H1)
          | [ H1: algorithmic_sub ?A (t_and _ _) |- _ ] =>
-           try (forwards~ (?&?): s_rule_and_inv H1; clear H1)
+           try (forwards~ (?&?): sub_and_inv H1; clear H1)
       end;
   repeat try match goal with
          | [ Hord: ordi ?B, H1: algorithmic_sub ?A ?B, H2: spli ?A _ _ |- _ ] =>
-           try (forwards~ [?|?]: s_rule_andlr_inv H1 H2 Hord; clear H1)
+           try (forwards~ [?|?]: sub_andlr_inv H1 H2 Hord; clear H1)
          | [ Hord: ordi ?B, H1: algorithmic_sub (t_and  _ _)  ?B |- _ ] =>
-           try (forwards~ [?|?]: s_rule_andlr_inv H1 Hord; clear H1)
+           try (forwards~ [?|?]: sub_andlr_inv H1 Hord; clear H1)
       end;
   repeat try match goal with
          | [ H1: algorithmic_sub ?A ?B, H2: splu ?A _ _ |- _ ] =>
-           try (forwards~ (?&?): s_rule_or_inv H1 H2; clear H1)
+           try (forwards~ (?&?): sub_or_inv H1 H2; clear H1)
          | [ H1: algorithmic_sub (t_or _ _) ?B |- _ ] =>
-           try (forwards~ (?&?): s_rule_or_inv H1; clear H1)
+           try (forwards~ (?&?): sub_or_inv H1; clear H1)
          end;
   repeat try match goal with
          | [ Hord: ordu ?A, H1: algorithmic_sub ?A ?B, H2: splu ?B _ _ |- _ ] =>
-           try (forwards~ [?|?]: s_rule_orlr_inv H1 Hord H2; clear H1)
+           try (forwards~ [?|?]: sub_orlr_inv H1 Hord H2; clear H1)
          | [ Hord: ordu ?A, H1: algorithmic_sub ?A (t_or _ _) |- _ ] =>
-           try (forwards~ [?|?]: s_rule_orlr_inv H1 Hord; clear H1)
+           try (forwards~ [?|?]: sub_orlr_inv H1 Hord; clear H1)
              end.
 
-
+(* no need in this version (ord conditions removed)
 Lemma algorithmic_sub_or : forall A A1 A2 B,
     splu A A1 A2 -> algorithmic_sub A1 B -> algorithmic_sub A2 B -> algorithmic_sub A B.
 Proof with (s_auto_unify; try eassumption; s_auto_inv; s_elia).
@@ -531,7 +604,9 @@ Proof with (s_auto_unify; try eassumption; s_auto_inv; s_elia).
     applys IH... applys IH...
 Qed.
 
+
 #[local] Hint Resolve algorithmic_sub_or : AllHd.
+
 
 Ltac s_trans_autoIH :=
   match goal with
@@ -544,7 +619,7 @@ Ltac s_trans_autoIH :=
   end.
 
 Lemma s_trans : forall A B C, algorithmic_sub A B -> algorithmic_sub B C -> algorithmic_sub A C.
-Proof with (solve_false; s_auto_unify; try eassumption; auto with *; s_auto_inv; try solve s_trans_autoIH).
+Proof with (solve_false; s_auto_unify; try eassumption; auto with *; auto_inv; try solve s_trans_autoIH).
   introv s1 s2.
   indTypSize (size_typ A + size_typ B + size_typ C).
   lets [Hi|(?&?&Hi)]: ordi_or_split C...
@@ -556,26 +631,33 @@ Proof with (solve_false; s_auto_unify; try eassumption; auto with *; s_auto_inv;
         inverts s1; s_auto_unify...
         ** (* top *)
           inverts~ s2...
-          *** applys~ AS_orl H2...
-          *** applys~ AS_orr H2...
+          *** applys~ AS_orl H...
+          *** applys~ AS_orr H...
         ** (* arrow *)
           inverts~ s2...
           *** applys~ AS_arrow...
-          *** applys~ AS_orl H6...
-          *** applys~ AS_orr H6...
-      * applys AS_andl...
-      * applys AS_andr...
+          *** applys~ AS_orl H1...
+          *** applys~ AS_orr H1...
+      * applys AS_andl... (* ordu A spli A *) admit.
+      * (* ordi B splu B *) admit.
+      * (* spli B *) admit.
+     (* * applys AS_andr... admit. *)
     + lets [Hi'|(?&?&Hi')]: ordi_or_split A...
       * applys AS_or Hu...
+        ** (* ordi A splu A *) admit.
+        ** (* ordi B splu B *) admit.
       * assert (algorithmic_sub x C)...
+        (* splu A spli A *) admit.
         assert (algorithmic_sub x0 C)...
-        applys algorithmic_sub_or...
+        admit.
+        applys AS_or...
   - applys AS_and Hi...
+    (* spli C *) admit. admit.
 Qed.
 
 #[local] Hint Resolve s_trans : AllHd.
 
-Lemma s_sub_arrow : forall A1 A2 B1 B2,
+Lemma sub_arrow : forall A1 A2 B1 B2,
     algorithmic_sub B1 A1 -> algorithmic_sub A2 B2 -> algorithmic_sub (t_arrow A1 A2) (t_arrow B1 B2).
 Proof with (try eassumption; s_auto_unify; s_auto_inv; solve_false; s_elia; try solve [constructor; auto with AllHd]).
   introv Hs1 Hs2.
@@ -585,17 +667,17 @@ Proof with (try eassumption; s_auto_unify; s_auto_inv; solve_false; s_elia; try 
   lets [Hu1|(?&?&Hu1)]: ordu_or_split (t_arrow A1 A2)...
   lets [Hu2|(?&?&Hu2)]: ordu_or_split (t_arrow B1 B2)...
   - inverts Hi2.
-    + forwards (?&?): s_rule_and_inv Hs2 H3...
+    + forwards (?&?): sub_and_inv Hs2 H3...
       applys AS_and.
       econstructor; try eassumption.
       applys~ IH. s_elia.
       applys~ IH. s_elia.
-    + forwards (?&?): s_rule_or_inv Hs1 H4.
+    + forwards (?&?): sub_or_inv Hs1 H4.
       applys AS_and. applys SpI_arrowUnion; try eassumption.
       applys~ IH; s_elia. applys~ IH; s_elia.
   - inverts Hi1.
     + lets [Hi2|(?&?&Hi2)]: ordi_or_split (t_arrow B1 B2).
-      * forwards~ [?|?]: s_rule_andlr_inv Hs2 H3. inverts~ Hi2.
+      * forwards~ [?|?]: sub_andlr_inv Hs2 H3. inverts~ Hi2.
         applys AS_andl; try eassumption.
         econstructor. apply H3.
         applys~ IH. s_elia.
@@ -603,14 +685,14 @@ Proof with (try eassumption; s_auto_unify; s_auto_inv; solve_false; s_elia; try 
         econstructor. apply H3.
         applys~ IH. s_elia.
       * inverts Hi2.
-        ** forwards (?&?): s_rule_and_inv Hs2 H4.
+        ** forwards (?&?): sub_and_inv Hs2 H4.
            applys AS_and. econstructor; try eassumption.
            applys~ IH; s_elia. applys~ IH; s_elia.
-        ** forwards (?&?): s_rule_or_inv Hs1 H5.
+        ** forwards (?&?): sub_or_inv Hs1 H5.
            applys AS_and. applys SpI_arrowUnion; try eassumption.
            applys~ IH; s_elia. applys~ IH; s_elia.
     + lets [Hi2|(?&?&Hi2)]: ordi_or_split (t_arrow B1 B2).
-      * forwards~ [?|?]: s_rule_orlr_inv Hs1 H4. inverts~ Hi2.
+      * forwards~ [?|?]: sub_orlr_inv Hs1 H4. inverts~ Hi2.
         1: { applys AS_andl; try eassumption.
         applys SpI_arrowUnion; try eassumption.
         applys~ IH. s_elia. }
@@ -618,15 +700,15 @@ Proof with (try eassumption; s_auto_unify; s_auto_inv; solve_false; s_elia; try 
         applys SpI_arrowUnion; try eassumption.
         applys~ IH. s_elia. }
       * inverts Hi2.
-        ** forwards (?&?): s_rule_and_inv Hs2 H5.
+        ** forwards (?&?): sub_and_inv Hs2 H5.
            applys AS_and. econstructor; try eassumption.
            applys~ IH; s_elia. applys~ IH; s_elia.
-        ** forwards (?&?): s_rule_or_inv Hs1 H6.
+        ** forwards (?&?): sub_or_inv Hs1 H6.
            applys AS_and. applys SpI_arrowUnion; try eassumption.
            applys~ IH; s_elia. applys~ IH; s_elia.
 Qed.
 
-Lemma s_sub_orl : forall A B B1 B2,
+Lemma sub_orl : forall A B B1 B2,
     splu B B1 B2 -> algorithmic_sub A B1 -> algorithmic_sub A B.
 Proof with (eauto 3 with AllHd).
   introv Hspli Hs.
@@ -635,8 +717,8 @@ Proof with (eauto 3 with AllHd).
   lets [Hi'|(?&?&Hi')]: ordi_or_split A.
   lets [Hu|(?&?&Hu)]: ordu_or_split A.
   - applys~ AS_orl Hspli.
-  - applys~ algorithmic_sub_or Hu; applys IH Hspli; s_elia; applys s_trans Hs; applys s_sub_part2...
-  - forwards~ [?|?]: s_rule_andlr_inv Hs Hi'...
+  - applys~ algorithmic_sub_or Hu; applys IH Hspli; s_elia; applys s_trans Hs; applys sub_part2...
+  - forwards~ [?|?]: sub_andlr_inv Hs Hi'...
       applys~ AS_andl Hi'. applys~ IH Hspli. s_elia.
       applys~ AS_andr Hi'. applys~ IH Hspli. s_elia.
   - inverts Hspli; inverts Hi; solve_false; s_auto_unify.
@@ -656,7 +738,7 @@ Proof with (eauto 3 with AllHd).
       applys~ IH H0; s_elia.
 Qed.
 
-Lemma s_sub_orr : forall A B B1 B2,
+Lemma sub_orr : forall A B B1 B2,
     splu B B1 B2 -> algorithmic_sub A B2 -> algorithmic_sub A B.
 Proof with (eauto 3 with AllHd).
   introv Hspli Hs.
@@ -665,8 +747,8 @@ Proof with (eauto 3 with AllHd).
   lets [Hi'|(?&?&Hi')]: ordi_or_split A.
   lets [Hu|(?&?&Hu)]: ordu_or_split A.
   - applys~ AS_orr Hspli.
-  - applys~ algorithmic_sub_or Hu; applys IH Hspli; s_elia; applys s_trans Hs; applys s_sub_part2...
-  - forwards~ [?|?]: s_rule_andlr_inv Hs Hi'...
+  - applys~ algorithmic_sub_or Hu; applys IH Hspli; s_elia; applys s_trans Hs; applys sub_part2...
+  - forwards~ [?|?]: sub_andlr_inv Hs Hi'...
       applys~ AS_andl Hi'. applys~ IH Hspli. s_elia.
       applys~ AS_andr Hi'. applys~ IH Hspli. s_elia.
   - inverts Hspli; inverts Hi; solve_false; s_auto_unify.
@@ -686,7 +768,7 @@ Proof with (eauto 3 with AllHd).
       applys~ IH H0; s_elia.
 Qed.
 
-Lemma s_sub_distArrU: forall A B C,
+Lemma sub_distArrU: forall A B C,
     algorithmic_sub (t_and (t_arrow A C) (t_arrow B C)) (t_arrow (t_or A B) C).
 Proof with (s_auto_unify; try eassumption).
   introv.
@@ -701,7 +783,7 @@ Proof with (s_auto_unify; try eassumption).
     + applys s_trans Hs2. applys AS_and; eauto with *.
 Qed.
 
-#[local] Hint Resolve s_sub_arrow s_sub_orl s_sub_orr s_sub_distArrU : AllHd.
+#[local] Hint Resolve sub_arrow sub_orl sub_orr sub_distArrU : AllHd.
 
 Lemma arrow_inv : forall A B C D,
     algorithmic_sub (t_arrow A B) (t_arrow C D) -> (algorithmic_sub C A) /\ (algorithmic_sub B D).
@@ -712,11 +794,11 @@ Proof with (simpl in *; solve_false; s_auto_unify; try eassumption; s_auto_inv; 
   lets [Hi1|(?&?&Hi1)]: ordi_or_split (t_arrow A B).
   - inverts s...
   - inverts keep Hi1;
-      forwards~ [?|?]: s_rule_andlr_inv s Hi1;
+      forwards~ [?|?]: sub_andlr_inv s Hi1;
       forwards(IH1&IH2): IH H; try solve [s_elia];
         split; try eassumption; inverts~ Hi2...
   - (* uses and_inv_1 and_inv_2 *)
-    forwards (?&?): s_rule_and_inv s Hi2.
+    forwards (?&?): sub_and_inv s Hi2.
     inverts keep Hi2;
       forwards (?&?): IH H; try solve [s_elia];
         forwards (?&?): IH H0; try solve [s_elia];
@@ -750,7 +832,7 @@ Proof with (simpl in *; solve_false; jauto; s_elia; try solve [right; intros HF;
 Qed.
 
 #[local] Hint Constructors declarative_subtyping : AllHd.
-#[local] Hint Resolve s_sub_refl : core.
+#[local] Hint Resolve sub_refl : core.
 
 Lemma dsub_splu: forall A B C,
     splu A B C -> declarative_subtyping B A /\ declarative_subtyping C A.
@@ -829,21 +911,21 @@ Proof with (simpl in *; try eassumption; eauto 3 with *).
   split; introv H.
   - induction H; try solve [constructor; eauto 3 with AllHd]; eauto.
     + applys s_trans...
-    + applys s_sub_arrow...
+    + applys sub_arrow...
     + applys* AS_and.
-    + applys s_sub_part1...
-    + applys s_sub_part1...
+    + applys sub_part1...
+    + applys sub_part1...
     + applys algorithmic_sub_or. eauto 4 with *. auto. auto.
-    + applys s_sub_orl...
-    + applys s_sub_orr...
+    + applys sub_orl...
+    + applys sub_orr...
     + applys AS_and...
     + applys AS_and... eauto 4 with *. eauto 4 with *.
-    + applys s_sub_distArrU.
+    + applys sub_distArrU.
     + applys* AS_and...
     + applys algorithmic_sub_or. eauto 4 with *.
-      applys AS_and... applys s_sub_orl... applys s_sub_orr...
+      applys AS_and... applys sub_orl... applys sub_orr...
     + applys algorithmic_sub_or. eauto 4 with *.
-      applys s_sub_orl... applys s_sub_orr...
+      applys sub_orl... applys sub_orr...
   - induction H; auto with *.
     + (* and *)
       applys DS_trans (t_and B1 B2)...

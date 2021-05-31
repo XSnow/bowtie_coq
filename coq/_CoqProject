@@ -1,9 +1,9 @@
 -R . Top
 Definitions.v
-DistAnd.v
+TypeSize.v
 DistSubtyping.v
+DistAnd.v
 Duotyping.v
 Equivalence.v
 LibTactics.v
 Subtyping.v
-TypeSize.v
