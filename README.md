@@ -88,5 +88,5 @@ proof of Theorem 4.4 in [Equivalence.v](./coq/Equivalence.v).
 - [DistAnd.v](./coq/DistAnd.v) justifies one statement in the paper. It shows
 that the rule DS-distAnd (Fig. 4) is omittable.
 
-- [DistSubtyping.v](.coq/DistSubtyping.v) is a stand-alone file which contains
+- [DistSubtyping.v](./coq/DistSubtyping.v) is a stand-alone file which contains
 subtyping definitions and related lemmas and theorems.
