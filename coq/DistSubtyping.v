@@ -123,7 +123,6 @@ Proof.
   - introv Hord Hspl. clear splu_keep_ordi.
     inductions Hspl; try inverts~ Hord; eauto.
     + split; constructor*; forwards~ (?&?): spli_keep_ordu H.
-    + split; constructor*.
     + split; constructor*; forwards~ (?&?): spli_keep_ordu H0.
   - introv Hord Hspl. clear spli_keep_ordu.
     inductions Hspl; try inverts~ Hord; eauto.
@@ -374,6 +373,18 @@ Qed.
 #[local] Hint Resolve sub_refl : MulHd.
 #[local] Hint Resolve sub_part1 sub_part2 : AllHd.
 
+Corollary sub_spl_double : forall T A1 A2 B1 B2,
+    spli T A1 A2 -> splu T B1 B2 ->
+    algorithmic_sub T A1 /\ algorithmic_sub T A2 /\ algorithmic_sub B1 T /\ algorithmic_sub B2 T.
+Proof.
+  introv H1 H2.
+  repeat split.
+  - applys* sub_part1.
+  - applys* sub_part1.
+  - applys* sub_part2.
+  - applys* sub_part2.
+Qed.
+
 (**********************************************************************)
 (* algorithm correctness *)
 
@@ -396,10 +407,6 @@ Proof with (s_auto_unify; s_elia).
   - inverts Hsub; solve_false; s_auto_unify; auto with AllHd.
     + (* AS_arrow *)
       inverts Hspl.
-      *  (*  A4->B0 <<| A0->A3 |>> A5->B3 *)
-        split;
-          applys AS_arrow; try applys sub_and_r_inv H H3;
-            forwards*: IH H0...
       * (*  A0->B0 <<| A0->A3 |>> A0->B3 *)
         split; applys AS_arrow; forwards*: IH H0...
       * (*  A4->A3 <<| A0->A3 |>> A5->A3 *)
@@ -407,9 +414,10 @@ Proof with (s_auto_unify; s_elia).
     + (* AS_andl *)
       inverts keep Hspl; inverts keep H; try solve [forwards*: IH H0; s_elia];
         try solve [split*]...
-      (* t_arrow A5 B1 <<| t_arrow A0 B0 |>> t_arrow A6 B2 *)
-      (* t_arrow A0 B0 <| t_arrow A0 B0 |> t_arrow A0 B5 *)
-      * inverts H2; inverts H8;
+      * (* combination 1 *)
+        (* t_arrow A0 B1 <<| t_arrow A0 B0 |>> t_arrow A0 B2 *)
+        (* t_arrow A0 B4 <| t_arrow A0 B0 |> t_arrow A0 B5 *)
+        inverts H2; inverts H8;
           try solve [ forwards~ (?&?): IH H0; try applys* SpU_arrow; try s_elia;
                       split~; applys AS_andl; try applys* SpI_arrowI; eauto with AllHd; auto ].
 

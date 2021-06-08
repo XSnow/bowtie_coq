@@ -287,13 +287,6 @@ splitU B B1 B2
 splitU A/\B A/\B1 A/\B2
 
 
-split A A1 A2
-splitU B B1 B2
---------------------------- :: arrow
-splitU A->B A1->B1 A2->B2
-
-
-ordinary A
 splitU B B1 B2
 -------------------------- :: arrowI
 splitU A->B A->B1 A->B2

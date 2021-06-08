@@ -124,12 +124,7 @@ with splu : typ -> typ -> typ -> Prop :=    (* defn splu *)
      ordu A ->
      splu B B1 B2 ->
      splu (t_and A B) (t_and A B1) (t_and A B2)
- | SpU_arrow : forall (A B A1 B1 A2 B2:typ),
-     spli A A1 A2 ->
-     splu B B1 B2 ->
-     splu (t_arrow A B) (t_arrow A1 B1) (t_arrow A2 B2)
  | SpU_arrowI : forall (A B B1 B2:typ),
-     ordi A ->
      splu B B1 B2 ->
      splu (t_arrow A B) (t_arrow A B1) (t_arrow A B2)
  | SpU_arrowU : forall (A B A1 A2:typ),
