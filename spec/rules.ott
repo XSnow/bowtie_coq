@@ -144,8 +144,12 @@ B < A \/ B
 (A1 -> B) /\ (A2 -> B) < A1 \/ A2 -> B
 
 
----------------------------------------------------- :: distArr
-(A1 /\ A2) -> (B1 \/ B2) < (A1 -> B1) \/ (A2 -> B2)
+--------------------------------------------- :: distArrI
+(A1 /\ A2) -> B < (A1 -> B) \/ (A2 -> B)
+
+
+--------------------------------------------- :: distArrU
+A -> (B1 \/ B2) < (A -> B1) \/ (A -> B2)
 
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -287,15 +291,15 @@ splitU B B1 B2
 splitU A/\B A/\B1 A/\B2
 
 
-splitU B B1 B2
--------------------------- :: arrowI
-splitU A->B A->B1 A->B2
-
-
 ordinaryU B
 split A A1 A2
--------------------------- :: arrowU
+-------------------------- :: arrowI
 splitU A->B A1->B A2->B
+
+
+splitU B B1 B2
+-------------------------- :: arrowU
+splitU A->B A->B1 A->B2
 
 
 %splitU B C D
@@ -325,6 +329,8 @@ A <: Top
 Bot <:  A
 
 
+ordinary A1 -> A2
+ordinary B1 -> B2
 B1 <: A1
 A2 <: B2
 ------------------------ :: arrow
@@ -338,18 +344,22 @@ A <: B2
 A <: B
 
 
+ordinary B
 split A A1 A2
 A1 <: B
 ------------------------- :: andl
 A <: B
 
 
+ordinary B
 split A A1 A2
 A2 <: B
 ------------------------- :: andr
 A <: B
 
 
+ordinary A
+ordinary B
 splitU A A1 A2
 A1 <: B
 A2 <: B
@@ -357,12 +367,18 @@ A2 <: B
 A <: B  
 
 
+ordinary A
+ordinary B
+ordinaryU A
 splitU B B1 B2
 A <: B1
 ------------------------- :: orl
 A <: B
 
 
+ordinary A
+ordinary B
+ordinaryU A
 splitU B B1 B2
 A <: B2
 ------------------------- :: orr

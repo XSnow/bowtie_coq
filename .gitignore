@@ -1,4 +1,5 @@
 .*
+gmon.out
 *.aux 
 *.log 
 *.bbl

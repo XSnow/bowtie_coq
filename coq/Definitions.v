@@ -124,13 +124,13 @@ with splu : typ -> typ -> typ -> Prop :=    (* defn splu *)
      ordu A ->
      splu B B1 B2 ->
      splu (t_and A B) (t_and A B1) (t_and A B2)
- | SpU_arrowI : forall (A B B1 B2:typ),
-     splu B B1 B2 ->
-     splu (t_arrow A B) (t_arrow A B1) (t_arrow A B2)
- | SpU_arrowU : forall (A B A1 A2:typ),
+ | SpU_arrowI : forall (A B A1 A2:typ),
      ordu B ->
      spli A A1 A2 ->
-     splu (t_arrow A B) (t_arrow A1 B) (t_arrow A2 B).
+     splu (t_arrow A B) (t_arrow A1 B) (t_arrow A2 B)
+ | SpU_arrowU : forall (A B B1 B2:typ),
+     splu B B1 B2 ->
+     splu (t_arrow A B) (t_arrow A B1) (t_arrow A B2).
 (** definitions *)
 
 (* defns ASub *)
@@ -142,6 +142,8 @@ Inductive algorithmic_sub : typ -> typ -> Prop :=    (* defn algorithmic_sub *)
  | AS_bot : forall (A:typ),
      algorithmic_sub t_bot A
  | AS_arrow : forall (A1 A2 B1 B2:typ),
+     ordi (t_arrow A1 A2) ->
+     ordi (t_arrow B1 B2) ->
      algorithmic_sub B1 A1 ->
      algorithmic_sub A2 B2 ->
      algorithmic_sub (t_arrow A1 A2) (t_arrow B1 B2)
@@ -151,23 +153,33 @@ Inductive algorithmic_sub : typ -> typ -> Prop :=    (* defn algorithmic_sub *)
      algorithmic_sub A B2 ->
      algorithmic_sub A B
  | AS_andl : forall (A B A1 A2:typ),
+     ordi B ->
      spli A A1 A2 ->
      algorithmic_sub A1 B ->
      algorithmic_sub A B
  | AS_andr : forall (A B A1 A2:typ),
+     ordi B ->
      spli A A1 A2 ->
      algorithmic_sub A2 B ->
      algorithmic_sub A B
  | AS_or : forall (A B A1 A2:typ),
+     ordi A ->
+     ordi B ->
      splu A A1 A2 ->
      algorithmic_sub A1 B ->
      algorithmic_sub A2 B ->
      algorithmic_sub A B
  | AS_orl : forall (A B B1 B2:typ),
+     ordi A ->
+     ordi B ->
+     ordu A ->
      splu B B1 B2 ->
      algorithmic_sub A B1 ->
      algorithmic_sub A B
  | AS_orr : forall (A B B1 B2:typ),
+     ordi A ->
+     ordi B ->
+     ordu A ->
      splu B B1 B2 ->
      algorithmic_sub A B2 ->
      algorithmic_sub A B.
