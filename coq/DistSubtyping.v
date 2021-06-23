@@ -516,6 +516,15 @@ Ltac s_trans_autoIH :=
     (applys~ IH H2; s_elia; constructor~)
   end.
 
+Lemma s_trans_ordi : forall A B C, ordi B -> ordi C -> algorithmic_sub A B -> algorithmic_sub B C -> algorithmic_sub A C.
+Proof.
+  introv Hord1 Hord2 Hsub1 Hsub2. gen A.
+  induction~ Hsub2; intros.
+  - (* bot *) admit.
+  - (* arrow *) inverts~ Hsub1.
+Abort. (* depends on ordu lemma in arrow case *)
+
+
 Lemma s_trans : forall A B C, algorithmic_sub A B -> algorithmic_sub B C -> algorithmic_sub A C.
 Proof with (solve_false; s_auto_unify; try eassumption; auto with *; s_auto_inv; try solve s_trans_autoIH).
   introv s1 s2.
@@ -537,7 +546,20 @@ Proof with (solve_false; s_auto_unify; try eassumption; auto with *; s_auto_inv;
           *** applys~ AS_orl H6...
           *** applys~ AS_orr H6...
       * applys AS_andl... (* ordu A spli A *)
-      * (* ordi B splu B *) admit.
+      * applys AS_andr...
+      * (* ordu A, ordi B splu B, ordi C *)
+        forwards~ [HS|HS]: sub_or_r_inv s1 Hu'...
+    + (* splu A *)
+      lets [Hi'|(?&?&Hi')]: ordi_or_split A...
+      * applys~ AS_or Hu...
+      * (* spli A, ordi C *)
+        lets [Hi''|(?&?&Hi'')]: ordi_or_split B...
+        ** forwards~ [HS|HS]: sub_and_l_inv s1.
+
+
+        inverts keep s2; eauto 4.
+        ** (* bot *) admit.
+        ** applys AS_andl... forwards*: IH H s2.
       * (* spli B *) admit.
      (* * applys AS_andr... admit. *)
     + lets [Hi'|(?&?&Hi')]: ordi_or_split A...
