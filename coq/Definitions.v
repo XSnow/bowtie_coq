@@ -14,7 +14,7 @@ Inductive typ : Set :=  (*r types *)
  | t_and (A:typ) (B:typ) (*r intersection *)
  | t_or (A:typ) (B:typ) (*r union *).
 
-Inductive mode : Set := 
+Inductive mode : Set :=
  | m_sub : mode
  | m_super : mode.
 (** definitions *)
@@ -55,21 +55,23 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
      declarative_subtyping (t_and  (t_or A1 B)   (t_or A2 B) ) (t_or  (t_and A1 A2)  B)
  | DS_distAnd : forall (A1 A2 B:typ),
      declarative_subtyping (t_and  (t_or A1 A2)  B) (t_or  (t_and A1 B)   (t_and A2 B) )
- | DS_distArrI : forall (A B1 B2:typ),
+ | DS_distArrRI : forall (A B1 B2:typ),
      declarative_subtyping (t_and  (t_arrow A B1)   (t_arrow A B2) ) (t_arrow A (t_and B1 B2))
- | DS_distArrU : forall (A1 B A2:typ),
+ | DS_distArrRU : forall (A1 B A2:typ),
      declarative_subtyping (t_and  (t_arrow A1 B)   (t_arrow A2 B) ) (t_arrow (t_or A1 A2) B)
- | DS_distArr : forall (A1 A2 B1 B2:typ),
-     declarative_subtyping (t_arrow  (t_and A1 A2)   (t_or B1 B2) ) (t_or  (t_arrow A1 B1)   (t_arrow A2 B2) ).
+ | DS_distArrLI : forall (A1 A2 B:typ),
+     declarative_subtyping (t_arrow  (t_and A1 A2)  B) (t_or  (t_arrow A1 B)   (t_arrow A2 B) )
+ | DS_distArrLU : forall (A B1 B2:typ),
+     declarative_subtyping (t_arrow A  (t_or B1 B2) ) (t_or  (t_arrow A B1)   (t_arrow A B2) ).
 (** definitions *)
 
 (* defns Ordinary *)
 Inductive ordi : typ -> Prop :=    (* defn ordi *)
- | OI_top : 
+ | OI_top :
      ordi t_top
- | OI_bot : 
+ | OI_bot :
      ordi t_bot
- | OI_int : 
+ | OI_int :
      ordi t_int
  | OI_arrow : forall (A B:typ),
      ordu A ->
@@ -80,11 +82,11 @@ Inductive ordi : typ -> Prop :=    (* defn ordi *)
      ordi B ->
      ordi (t_or A B)
 with ordu : typ -> Prop :=    (* defn ordu *)
- | OU_top : 
+ | OU_top :
      ordu t_top
- | OU_bot : 
+ | OU_bot :
      ordu t_bot
- | OU_int : 
+ | OU_int :
      ordu t_int
  | OU_arrow : forall (A B:typ),
      ordi A ->
@@ -135,7 +137,7 @@ with splu : typ -> typ -> typ -> Prop :=    (* defn splu *)
 
 (* defns ASub *)
 Inductive algorithmic_sub : typ -> typ -> Prop :=    (* defn algorithmic_sub *)
- | AS_int : 
+ | AS_int :
      algorithmic_sub t_int t_int
  | AS_top : forall (A:typ),
      algorithmic_sub A t_top
@@ -144,6 +146,8 @@ Inductive algorithmic_sub : typ -> typ -> Prop :=    (* defn algorithmic_sub *)
  | AS_arrow : forall (A1 A2 B1 B2:typ),
      ordi (t_arrow A1 A2) ->
      ordi (t_arrow B1 B2) ->
+     ordu (t_arrow A1 A2) ->
+     ordu (t_arrow B1 B2) ->
      algorithmic_sub B1 A1 ->
      algorithmic_sub A2 B2 ->
      algorithmic_sub (t_arrow A1 A2) (t_arrow B1 B2)
@@ -183,5 +187,3 @@ Inductive algorithmic_sub : typ -> typ -> Prop :=    (* defn algorithmic_sub *)
      splu B B1 B2 ->
      algorithmic_sub A B2 ->
      algorithmic_sub A B.
-
-
