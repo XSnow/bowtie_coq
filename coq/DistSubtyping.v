@@ -53,8 +53,8 @@ with ordu_or_split: forall A,
 Proof with (eauto with * ; intros).
   - intros. clear ordi_or_split. induction A...
     + (* arrow *)
-      lets [?|(?&?&?)]: ordu_or_split A1.
-        lets [?|(?&?&?)]: IHA2...
+      forwards [?|(?&?&?)]: IHA2...
+      forwards* [?|(?&?&?)]: ordu_or_split A1...
     + (* or *)
       lets [?|(?&?&?)]: IHA1;
         lets [?|(?&?&?)]: IHA2...
@@ -137,7 +137,7 @@ Proof.
   - introv Hord Hspl. clear spli_keep_ordu.
     inductions Hspl; try inverts~ Hord; eauto.
     + split; constructor*; forwards~ (?&?): splu_keep_ordi H.
-    + split; constructor*; forwards~ (?&?): splu_keep_ordi H.
+    + forwards~ (?&?): splu_keep_ordi H0.
 Qed.
 
 Lemma splu_keep_ordi_l : forall A B C,
@@ -397,6 +397,60 @@ Proof.
   introv. split; applys* sub_part2; eauto with AllHd.
 Qed.
 
+(***********************************************************************)
+(* ordinary & split hints *)
+
+#[export]
+ Hint Extern 1 (ordi ?t) =>
+  match goal with
+  | H: ordi (t_or t _) |- _ => inverts H; trivial
+  | H: ordi (t_or _ t) |- _ => inverts H; trivial
+  | H: ordi (t_arrow _ t) |- _ => inverts H; trivial
+  | H: ordu (t_arrow t _) |- _ => inverts H; trivial
+  end : core.
+
+#[export]
+ Hint Extern 1 (ordu ?t) =>
+  match goal with
+  | H: ordu (t_and t _) |- _ => inverts H; trivial
+  | H: ordu (t_and _ t) |- _ => inverts H; trivial
+  | H: ordu (t_arrow _ t) |- _ => inverts H; trivial
+  | H: ordi (t_arrow t _) |- _ => inverts H; trivial
+  end : core.
+
+#[export]
+ Hint Extern 1 (ordi ?t) =>
+  repeat match goal with
+         | H: ordi (t_or _ _) |- _ => inverts H
+         | H: ordi (t_or _ _) |- _ => inverts H
+         | H: ordu (t_arrow _ _) |- _ => inverts H
+         | H: ordi (t_arrow _ _) |- _ => inverts H
+         end; constructor; trivial : core.
+
+#[export]
+ Hint Extern 1 (ordu ?t) =>
+  repeat match goal with
+         | H: ordu (t_and _ _) |- _ => inverts H
+         | H: ordu (t_and _ _) |- _ => inverts H
+         | H: ordu (t_arrow _ _) |- _ => inverts H
+         | H: ordi (t_arrow _ _) |- _ => inverts H
+         end; constructor; trivial : core.
+
+#[export] Hint Immediate SpI_and SpI_orl SpI_arrowU SpU_or SpU_andl SpU_arrowU : core.
+
+Hint Extern 1 (spli _ _ _) =>
+match goal with
+  | H: splu ?t _ _ |- spli (t_arrow ?t _) _ _ => applys~ SpI_arrowU H
+  | H: spli ?t _ _ |- spli (t_or _ ?t) _ _ => applys~ SpI_orr H
+end : core.
+
+Hint Extern 1 (splu _ _ _) =>
+match goal with
+  | H: spli ?t _ _ |- splu (t_arrow ?t _) _ _ => applys~ SpU_arrowI H
+  | H: splu ?t _ _ |- splu (t_or _ ?t) _ _ => applys~ SpU_andr H
+end : core.
+
+
 (**********************************************************************)
 (* algorithm correctness *)
 
@@ -419,9 +473,14 @@ Qed.
 Lemma sub_or_r_inv : forall A B B1 B2,
     algorithmic_sub A B -> splu B B1 B2 -> ordu A -> ordi A -> ordi B ->
     algorithmic_sub A B1 \/ algorithmic_sub A B2.
-Proof with (s_auto_unify; s_elia).
+Proof.
   introv HS HsuB HouA HoiA HoiB. gen B1 B2.
   induction HS; intros; s_auto_unify; solve_false; auto.
+  inverts HsuB.
+  - (* ordu B2, spli B1 *)
+    forwards~ [?|?]: sub_and_l_inv HS1 H6.
+    + left. applys AS_orl.
+  applys~ AS_orl. eauto.
 Qed.
 
 Lemma sub_or_l_inv : forall A A1 A2 B,
@@ -473,24 +532,6 @@ Ltac s_auto_inv :=
          | [ H1: algorithmic_sub ?A ?B, H2: splu ?B _ _ |- _ ] =>
            try (forwards~ [?|?]: sub_or_r_inv H1 H2; clear H1)
              end.
-
-#[export]
- Hint Extern 1 (ordi ?t) =>
-  match goal with
-  | H: ordi (t_or t _) |- _ => inverts H; trivial
-  | H: ordi (t_or _ t) |- _ => inverts H; trivial
-  | H: ordi (t_arrow _ t) |- _ => inverts H; trivial
-  | H: ordu (t_arrow t _) |- _ => inverts H; trivial
-  end : core.
-
-#[export]
- Hint Extern 1 (ordu ?t) =>
-  match goal with
-  | H: ordu (t_and t _) |- _ => inverts H; trivial
-  | H: ordu (t_and _ t) |- _ => inverts H; trivial
-  | H: ordu (t_arrow _ t) |- _ => inverts H; trivial
-  | H: ordi (t_arrow t _) |- _ => inverts H; trivial
-  end : core.
 
 
 Lemma algorithmic_sub_or : forall A A1 A2 B,
@@ -576,21 +617,6 @@ Proof with (solve_false; s_auto_unify; try eassumption; auto with *; s_auto_inv;
 Qed.
 
 #[local] Hint Resolve s_trans : AllHd.
-
-#[export] Hint Immediate SpI_and SpI_orl SpI_arrowU SpU_or SpU_andl SpU_arrowU : core.
-
-Hint Extern 1 (spli _ _ _) =>
-match goal with
-  | H: spli ?t _ _ |- spli (t_arrow _ ?t) _ _ => applys~ SpI_arrowI H
-  | H: spli ?t _ _ |- spli (t_or _ ?t) _ _ => applys~ SpI_orr H
-end : core.
-
-Hint Extern 1 (splu _ _ _) =>
-match goal with
-  | H: splu ?t _ _ |- spli (t_arrow _ ?t) _ _ => applys~ SpI_arrowI H
-  | H: splu ?t _ _ |- spli (t_or _ ?t) _ _ => applys~ SpI_orr H
-end : core.
-
 
 Lemma sub_arrow : forall A1 A2 B1 B2,
     algorithmic_sub B1 A1 -> algorithmic_sub A2 B2 -> algorithmic_sub (t_arrow A1 A2) (t_arrow B1 B2).

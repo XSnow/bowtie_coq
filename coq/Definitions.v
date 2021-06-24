@@ -14,7 +14,7 @@ Inductive typ : Set :=  (*r types *)
  | t_and (A:typ) (B:typ) (*r intersection *)
  | t_or (A:typ) (B:typ) (*r union *).
 
-Inductive mode : Set :=
+Inductive mode : Set := 
  | m_sub : mode
  | m_super : mode.
 (** definitions *)
@@ -67,11 +67,11 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
 
 (* defns Ordinary *)
 Inductive ordi : typ -> Prop :=    (* defn ordi *)
- | OI_top :
+ | OI_top : 
      ordi t_top
- | OI_bot :
+ | OI_bot : 
      ordi t_bot
- | OI_int :
+ | OI_int : 
      ordi t_int
  | OI_arrow : forall (A B:typ),
      ordu A ->
@@ -82,11 +82,11 @@ Inductive ordi : typ -> Prop :=    (* defn ordi *)
      ordi B ->
      ordi (t_or A B)
 with ordu : typ -> Prop :=    (* defn ordu *)
- | OU_top :
+ | OU_top : 
      ordu t_top
- | OU_bot :
+ | OU_bot : 
      ordu t_bot
- | OU_int :
+ | OU_int : 
      ordu t_int
  | OU_arrow : forall (A B:typ),
      ordi A ->
@@ -110,10 +110,10 @@ Inductive spli : typ -> typ -> typ -> Prop :=    (* defn spli *)
      spli B B1 B2 ->
      spli (t_or A B) (t_or A B1) (t_or A B2)
  | SpI_arrowI : forall (A B B1 B2:typ),
-     ordu A ->
      spli B B1 B2 ->
      spli (t_arrow A B) (t_arrow A B1) (t_arrow A B2)
  | SpI_arrowU : forall (A B A1 A2:typ),
+     ordi B ->
      splu A A1 A2 ->
      spli (t_arrow A B) (t_arrow A1 B) (t_arrow A2 B)
 with splu : typ -> typ -> typ -> Prop :=    (* defn splu *)
@@ -137,7 +137,7 @@ with splu : typ -> typ -> typ -> Prop :=    (* defn splu *)
 
 (* defns ASub *)
 Inductive algorithmic_sub : typ -> typ -> Prop :=    (* defn algorithmic_sub *)
- | AS_int :
+ | AS_int : 
      algorithmic_sub t_int t_int
  | AS_top : forall (A:typ),
      algorithmic_sub A t_top
@@ -146,8 +146,6 @@ Inductive algorithmic_sub : typ -> typ -> Prop :=    (* defn algorithmic_sub *)
  | AS_arrow : forall (A1 A2 B1 B2:typ),
      ordi (t_arrow A1 A2) ->
      ordi (t_arrow B1 B2) ->
-     ordu (t_arrow A1 A2) ->
-     ordu (t_arrow B1 B2) ->
      algorithmic_sub B1 A1 ->
      algorithmic_sub A2 B2 ->
      algorithmic_sub (t_arrow A1 A2) (t_arrow B1 B2)
@@ -187,3 +185,5 @@ Inductive algorithmic_sub : typ -> typ -> Prop :=    (* defn algorithmic_sub *)
      splu B B1 B2 ->
      algorithmic_sub A B2 ->
      algorithmic_sub A B.
+
+
