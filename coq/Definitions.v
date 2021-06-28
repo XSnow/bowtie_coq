@@ -146,6 +146,8 @@ Inductive algorithmic_sub : typ -> typ -> Prop :=    (* defn algorithmic_sub *)
  | AS_arrow : forall (A1 A2 B1 B2:typ),
      ordi (t_arrow A1 A2) ->
      ordi (t_arrow B1 B2) ->
+     ordu (t_arrow A1 A2) ->
+     ordu (t_arrow B1 B2) ->
      algorithmic_sub B1 A1 ->
      algorithmic_sub A2 B2 ->
      algorithmic_sub (t_arrow A1 A2) (t_arrow B1 B2)
