@@ -8,11 +8,10 @@ definition in Coq)
 ## Haskell Implementation
 
 - Fig. 3 is in [Algo_bcd.hs](./impl/Algo_bcd.hs)
-- Fig. 9 and 10 are in [Algo2.hs](./impl/Algo2.hs)
+- Fig. 9 and 10 are in [Algo_duo.hs](./impl/Algo_duo.hs)
 - [Algo_sub.hs](./impl/Algo_sub.hs) implements the algorithmic subtyping defined
 in Fig. 6.
-- [Algo1.hs](./impl/Algo1.hs) implements the algorithmic duotyping without the
-dual rule.
+- [Algo_alt.hs](./impl/Algo_alt.hs) implements the algorithmic duotyping in an alternative way (discussed in Section 5.4).
 
 ### Building Instructions
 
