@@ -65,28 +65,27 @@ select MSuper = TBot
 -- subtyping
 
 check :: Mode -> Type -> Type -> Bool
+check _ TInt TInt = True                                                        -- D-int
 check m _ t
   | select m == t
-  = True                                                                        -- S-top
+  = True                                                                        -- D-bound
 check m t _
   | select (flipmode m) == t
-  = True                                                                        -- S-bot
-check _ TInt TInt = True                                                        -- S-int
-check m a b                                                                     -- S-and
+  = True                                                                        -- D-bound (dual)
+check m (TArrow a1 a2) (TArrow b1 b2)                                           -- D-arrow
+  = (check (flipmode m) a1 b1) && (check m a2 b2)
+check m a b                                                                     -- D-and
   | Just (b1, b2) <- split m b
   = (check m a b1) && (check m a b2)
-check m a b                                                                     -- S-or
+check m a b                                                                     -- D-and (dual)
   | Just (a1, a2) <- split (flipmode m) a
   = (check m a1 b) && (check m a2 b)
-check m a b                                                                     -- S-andl S-andr
+check m a b                                                                     --D-andL D-andR
   | Just (a1, a2) <- split m a
   = (check m a1 b) || (check m a2 b)
-check m a b                                                                     -- S-orl S-orr
+check m a b                                                                     -- D-andL AS-andR (dual)
   | Just (b1, b2) <- split (flipmode m) b
   = (check m a b1) || (check m a b2)     
-check m (TArrow a1 a2) (TArrow b1 b2)                                           -- S-arr
-  | ordinary MSub (TArrow a1 a2) && ordinary MSub (TArrow b1 b2)
-  = (check (flipmode m) a1 b1) && (check m a2 b2)
 check _ _ _ = False
 
 

@@ -7,20 +7,20 @@ data Type = TInt
 
 -- ordinary type
 
-ordinaryD :: Type -> Bool
-ordinaryD a = splitD a == Nothing
+ordinary :: Type -> Bool
+ordinary a = split a == Nothing
 
 
 
 -- split type
 
-splitD :: Type -> Maybe (Type, Type)
+split :: Type -> Maybe (Type, Type)
 
-splitD (TAnd a b) = Just (a, b)                           -- Bsp-and
-splitD (TArrow a b)                                       -- Bsp-arrow
-  | Just (b1, b2) <- splitD b
+split (TAnd a b) = Just (a, b)                           -- Bsp-and
+split (TArrow a b)                                       -- Bsp-arrow
+  | Just (b1, b2) <- split b
   = Just (TArrow a b1, TArrow a b2)
-splitD _ = Nothing
+split _ = Nothing
   
 
 
@@ -31,9 +31,9 @@ checkSub :: Type -> Type -> Bool
 checkSub TInt TInt = True                                 -- BS-int
 checkSub _ TTop    = True                                 -- BS-top
 checkSub a b                                              -- BS-and
-  | Just (b1, b2) <- splitD b
+  | Just (b1, b2) <- split b
   = checkSub a b1 && checkSub a b2
-checkSub (TAnd a1 a2) b                                   -- BS-andl BS-andr
+checkSub (TAnd a1 a2) b                                   -- BS-andL BS-andR
   = checkSub a1 b || checkSub a2 b
 checkSub (TArrow a1 a2) (TArrow b1 b2)                    -- BS-arrow
   = checkSub b1 a1 && checkSub a2 b2

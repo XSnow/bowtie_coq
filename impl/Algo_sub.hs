@@ -9,40 +9,43 @@ data Type = TInt
 
 -- ordinary type
 
-ordinaryD :: Type -> Bool
-ordinaryD a = splitD a == Nothing
+ordinaryI :: Type -> Bool
+ordinaryI a = splitI a == Nothing
 
-ordinaryC :: Type -> Bool
-ordinaryC a = splitC a == Nothing
+ordinaryU :: Type -> Bool
+ordinaryU a = splitU a == Nothing
 
 
 -- split type
 
-splitD :: Type -> Maybe (Type, Type)
+splitI :: Type -> Maybe (Type, Type)
 
-splitD (TAnd a b) = Just (a, b)
-splitD (TArrow a b)
-  | Just (b1, b2) <- splitD b
+splitI (TAnd a b) = Just (a, b)
+splitI (TArrow a b)
+  | Just (b1, b2) <- splitI b
   = Just (TArrow a b1, TArrow a b2)
-splitD (TArrow a b)
-  | Just (a1, a2) <- splitC a
+splitI (TArrow a b)
+  | Just (a1, a2) <- splitU a
   = Just (TArrow a1 b, TArrow a2 b)
-splitD (TOr a b)
-  | Just (a1, a2) <- splitD a
+splitI (TOr a b)
+  | Just (a1, a2) <- splitI a
   = Just (TOr a1 b, TOr a2 b)
-splitD (TOr a b)
-  | Just (b1, b2) <- splitD b
+splitI (TOr a b)
+  | Just (b1, b2) <- splitI b
   = Just (TOr a b1, TOr a b2)
-splitD _ = Nothing
-    
-splitC (TOr a b) = Just (a, b)
-splitC (TAnd a b)
-  | Just (a1, a2) <- splitC a
+splitI _ = Nothing
+
+
+splitU :: Type -> Maybe (Type, Type)
+
+splitU (TOr a b) = Just (a, b)
+splitU (TAnd a b)
+  | Just (a1, a2) <- splitU a
   = Just (TAnd a1 b, TAnd a2 b)
-splitC (TAnd a b)
-  | Just (b1, b2) <- splitC b
+splitU (TAnd a b)
+  | Just (b1, b2) <- splitU b
   = Just (TOr a b1, TOr a b2)
-splitC _ = Nothing
+splitU _ = Nothing
   
 
 
@@ -50,22 +53,22 @@ splitC _ = Nothing
 -- subtyping
 
 checkSub :: Type -> Type -> Bool
-checkSub TInt TInt = True                                                          -- S-int
-checkSub _ TTop    = True                                                          -- S-top
-checkSub TBot _    = True                                                          -- S-bot
-checkSub a b                                                                       -- S-and
-  | Just (b1, b2) <- splitD b
+checkSub TInt TInt = True                                                          -- AS-int
+checkSub _ TTop    = True                                                          -- AS-top
+checkSub TBot _    = True                                                          -- AS-bot
+checkSub a b                                                                       -- AS-and
+  | Just (b1, b2) <- splitI b
   = checkSub a b1 && checkSub a b2
-checkSub a b                                                                       -- S-andl S-andr
-  | Just (a1, a2) <- splitD a
+checkSub a b                                                                       -- AS-andL AS-andR
+  | Just (a1, a2) <- splitI a
   = checkSub a1 b || checkSub a2 b
-checkSub a b                                                                       -- S-or
-  | Just (a1, a2) <- splitC a
+checkSub a b                                                                       -- AS-or
+  | Just (a1, a2) <- splitU a
   = checkSub a1 b && checkSub a2 b
-checkSub a b                                                                       -- S-orl S-orr
-  | Just (b1, b2) <- splitC b
+checkSub a b                                                                       -- AS-orL AS-orR
+  | Just (b1, b2) <- splitU b
   = checkSub a b1 || checkSub a b2
-checkSub (TArrow a1 a2) (TArrow b1 b2)                                             -- S-arr
+checkSub (TArrow a1 a2) (TArrow b1 b2)                                             -- AS-arrow
   = checkSub b1 a1 && checkSub a2 b2
 checkSub _ _ = False
 
