@@ -74,7 +74,7 @@ We downloaded it from [here](http://gallium.inria.fr/~fpottier/ssphs/LibTactics.
 
 - [Duotyping.v](./coq/Duotyping.v) is the main file. It contains most theorems
 and lemmas in Sec. 4: Lemma 4.1, Theorem 4.5, Theorem 4.6, Lemma 4.7, Lemma 4.8,
-Lemma 4.9, and Theorem 4.10.
+Lemma 4.9, Theorem 4.10, and Theorem 4.11.
 
 - [Equivalence.v](./coq/Equivalence.v) relates the two declarative systems and
 the two algorithmic systems, respectively.

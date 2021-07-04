@@ -166,7 +166,7 @@ Proof.
 Qed.
 
 (* Theorem 4.4 Equivalence of the algorithmic systems *)
-(* part 2: algorithmic subtyping -> algorithmic duotyping *)
+(* part 1: algorithmic subtyping -> algorithmic duotyping *)
 Theorem algo_subtyping_sound_duotyping : forall A B,
     singlemode_sub A B -> duo A m_sub B /\ duo B m_super A.
 Proof.
@@ -218,7 +218,7 @@ Proof.
 Qed.
 
 (* Theorem 4.4 Equivalence of the algorithmic systems *)
-(* part 1: algorithmic duotyping -> algorithmic subtyping *)
+(* part 2: algorithmic duotyping -> algorithmic subtyping *)
 Theorem algo_subtyping_complete_duotyping : forall A B m,
     duo A m B -> (m = m_sub /\ singlemode_sub A B) \/
                  (m = m_super /\ singlemode_sub B A).

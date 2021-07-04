@@ -62,7 +62,8 @@ select MSub   = TTop
 select MSuper = TBot
 
 
--- subtyping
+-- duotyping implemented without the boolean flag
+-- D-arrow is prioritized
 
 check :: Mode -> Type -> Type -> Bool
 check _ TInt TInt = True                                                        -- D-int

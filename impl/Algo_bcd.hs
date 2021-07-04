@@ -28,6 +28,7 @@ split _ = Nothing
 -- subtyping
 
 checkSub :: Type -> Type -> Bool
+
 checkSub TInt TInt = True                                 -- BS-int
 checkSub _ TTop    = True                                 -- BS-top
 checkSub a b                                              -- BS-and
