@@ -1,5 +1,9 @@
 # Distributing Intersection and Union Types with Splits and Duality (Artifact)
 
+SplitSubtyping
+Xuejing Huang 2021
+Distributed under the terms of [the GPL-v3 license](./LICENSE)
+
 - [impl/](./impl) for the Haskell implementation
 - [coq/](./coq) for the Coq formalization
 - [spec/](./spec) for the Ott specification (that is used to generate the syntax
@@ -28,6 +32,11 @@ that can be used to test.
 
 
 ## Coq Formalization
+
+### Third Party Materials
+
+We use [LibTactics.v](./coq/LibTactics.v) from [the TLC Coq library](https://www.chargueraud.org/softs/tlc/)
+by Arthur Chargueraud.
 
 ### Building Instructions
 

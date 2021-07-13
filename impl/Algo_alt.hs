@@ -1,4 +1,25 @@
--- Compared with Duotyping
+{-
+    Algo_alt.hs
+    Xuejing Huang 2021
+    Distributed under the terms of the GPL-v3 license
+
+    This file is part of SplitSubtyping.
+
+    SplitSubtyping is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    SplitSubtyping is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SplitSubtyping.  If not, see <https://www.gnu.org/licenses/>.
+-}
+
+-- Compared with Algo_duo.hs
 -- 1) the definition of Type does not depend on Mode
 -- 2) no boolean flag is used in Check
 
@@ -17,6 +38,7 @@ data Type = TInt
 
 data Mode = MSub | MSuper
           deriving (Eq, Show)
+
 
 
 
@@ -60,7 +82,7 @@ split MSub (TOr a b)
   | ordinary MSub a
   , Just (b1, b2) <- split MSub b
   = Just (TOr a b1, TOr a b2)
-    
+
 split MSuper (TOr a b) = Just (a, b)
 split MSuper (TAnd a b)
   | Just (a1, a2) <- split MSuper a
@@ -69,7 +91,7 @@ split MSuper (TAnd a b)
   | ordinary MSuper a
   , Just (b1, b2) <- split MSuper b
   = Just (TOr a b1, TOr a b2)
-  
+
 split _ _ = Nothing
 
 
@@ -98,7 +120,7 @@ check m a b                                                --D-andL D-andR
   = (check m a1 b) || (check m a2 b)
 check m a b                                                -- D-andL AS-andR (dual)
   | Just (b1, b2) <- split (flipmode m) b
-  = (check m a b1) || (check m a b2)     
+  = (check m a b1) || (check m a b2)
 check _ _ _ = False
 
 
@@ -118,10 +140,10 @@ pretty TBot = "Bot"
 
 showtest :: Mode -> Type -> Type -> String
 showtest MSub a b =
-  pretty a ++ " <: " ++ pretty b ++ "  Result: " ++ show (check MSub a b) 
+  pretty a ++ " <: " ++ pretty b ++ "  Result: " ++ show (check MSub a b)
 showtest MSuper a b =
-  pretty a ++ " :> " ++ pretty b ++ "  Result: " ++ show (check MSuper a b) 
-  
+  pretty a ++ " :> " ++ pretty b ++ "  Result: " ++ show (check MSuper a b)
+
 
 -- examples
 t0 = TArrow TInt TInt

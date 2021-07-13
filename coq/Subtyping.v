@@ -1,3 +1,25 @@
+(*******************************************************************************
+*   Subtyping.v                                                                *
+*   Xuejing Huang 2021                                                         *
+*   Distributed under the terms of the GPL-v3 license                          *
+*                                                                              *
+*   This file is part of SplitSubtyping.                                       *
+*                                                                              *
+*   SplitSubtyping is free software: you can redistribute it and/or modify     *
+*   it under the terms of the GNU General Public License as published by       *
+*   the Free Software Foundation, either version 3 of the License, or          *
+*   (at your option) any later version.                                        *
+*                                                                              *
+*   SplitSubtyping is distributed in the hope that it will be useful,          *
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of             *
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              *
+*   GNU General Public License for more details.                               *
+*                                                                              *
+*   You should have received a copy of the GNU General Public License          *
+*   along with SplitSubtyping.  If not, see <https://www.gnu.org/licenses/>.   *
+*                                                                              *
+*******************************************************************************)
+
 (** This file contains lemmas and theorems around the declarative and
     algorithmic subtyping formalization.
     They are very similar to those in Duotyping.v (which are covered by
@@ -6,6 +28,7 @@
    Lemma singlemode_sub_or, Lemma s_sub_orl, and Lemma s_sub_orr are
    used in Equivalence.v
  *)
+
 Require Import LibTactics.
 Require Import Definitions.
 Require Import TypeSize.
