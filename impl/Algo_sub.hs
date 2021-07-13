@@ -1,3 +1,6 @@
+module SubtypingAlgorithm where
+
+
 data Type = TInt
           | TTop
           | TBot
@@ -7,6 +10,7 @@ data Type = TInt
           deriving (Eq, Show)
 
 
+
 -- ordinary type
 
 ordinaryI :: Type -> Bool
@@ -14,6 +18,7 @@ ordinaryI a = splitI a == Nothing
 
 ordinaryU :: Type -> Bool
 ordinaryU a = splitU a == Nothing
+
 
 
 -- split type
@@ -74,7 +79,9 @@ checkSub _ _ = False
 
 
 
--- Pretty printer
+
+-- for testing
+-- pretty printer
 pretty :: Type-> String
 pretty (TAnd a b) = "(" ++ pretty a ++ " /" ++ "\\" ++ " " ++ pretty b ++ ")"
 pretty (TOr a b) = "(" ++ pretty a ++ " \\" ++ "/ " ++ pretty b ++ ")"

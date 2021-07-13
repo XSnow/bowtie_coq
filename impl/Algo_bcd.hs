@@ -1,8 +1,12 @@
+module BCDSubtypingAlgorithm where
+
+
 data Type = TInt
           | TTop
           | TArrow Type Type
           | TAnd Type Type
           deriving (Eq, Show)
+
 
 
 -- ordinary type
@@ -21,7 +25,6 @@ split (TArrow a b)                                       -- Bsp-arrow
   | Just (b1, b2) <- split b
   = Just (TArrow a b1, TArrow a b2)
 split _ = Nothing
-  
 
 
 
@@ -42,7 +45,8 @@ checkSub _ _ = False
 
 
 
--- Pretty printer
+-- for testing
+-- pretty printer
 pretty :: Type-> String
 pretty (TAnd a b) = "(" ++ pretty a ++ " /" ++ "\\" ++ " " ++ pretty b ++ ")"
 pretty (TArrow a b) = "(" ++ pretty a ++ " -> " ++ pretty b ++ ")"

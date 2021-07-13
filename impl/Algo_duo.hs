@@ -1,14 +1,45 @@
+module DuotypingAlgorithm where
+
+
+
+-- subtyping or supertyping
+
 data Mode = MSub | MSuper
           deriving (Eq, Show)
-          
-data Type = TInt | TTop | TBot | TArrow Type Type | TOp Mode Type Type -- MSub for and, MSuper for or
+
+
+
+-- MSub for type intersection, MSuper for type union
+
+data Type = TInt | TTop | TBot | TArrow Type Type | TOp Mode Type Type
           deriving (Eq, Show)
 
+
+
+-- flip the mode
+
+flipmode :: Mode -> Mode
+flipmode MSub = MSuper
+flipmode MSuper = MSub
+
+
+
+-- select a type by a mode
+
+select :: Mode -> Type
+select MSub   = TTop
+select MSuper = TBot
+
+
+
 -- ordinary types
+
 ordinary :: Mode -> Type -> Bool
 ordinary m t = split m t == Nothing
 
--- split type
+
+-- split a type under a mode
+
 split :: Mode -> Type -> Maybe (Type, Type)
 split MSub (TArrow a b)                         -- Sp-arrowR
   | Just (b1, b2) <- split MSub b
@@ -27,17 +58,11 @@ split m (TOp m' a b)                            -- Sp-orR
   = Just (TOp m' a b1, TOp m' a b2)
 split _ _ = Nothing
 
--- flip mode
-flipmode :: Mode -> Mode
-flipmode MSub = MSuper
-flipmode MSuper = MSub
 
--- select type by mode
-select :: Mode -> Type
-select MSub   = TTop
-select MSuper = TBot
 
--- subtyping
+-- subtyping / supertyping checking
+-- (initally the boolean flag should be False)
+
 check :: Mode -> Type -> Type -> Bool -> Bool
 check _ TInt TInt _ = True                                                      -- AD-int
 check m _ t _
@@ -56,7 +81,11 @@ check _ _ _ _ = False
 
 
 
--- Pretty printer
+
+-- for testing
+
+-- pretty printer
+
 pretty :: Type-> String
 pretty (TOp MSub a b) = "(" ++ pretty a ++ " /" ++ "\\" ++ " " ++ pretty b ++ ")"
 pretty (TOp MSuper a b) = "(" ++ pretty a ++ " \\" ++ "/ " ++ pretty b ++ ")"
@@ -74,6 +103,7 @@ showtest MSuper a b =
   
 
 -- examples
+
 t0 = TArrow TInt TInt
 
 t1 = (TArrow (TInt) (TOp MSub TInt TInt))

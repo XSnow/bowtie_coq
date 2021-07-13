@@ -1,3 +1,12 @@
+-- Compared with Duotyping
+-- 1) the definition of Type does not depend on Mode
+-- 2) no boolean flag is used in Check
+
+module AlternativeDuotypingAlgorithm where
+
+
+-- TAnd and TOr are two separated constructors
+
 data Type = TInt
           | TTop
           | TBot
@@ -8,6 +17,27 @@ data Type = TInt
 
 data Mode = MSub | MSuper
           deriving (Eq, Show)
+
+
+
+-- flip mode (same as in DuotypingAlgorithm)
+flipmode :: Mode -> Mode
+flipmode MSub = MSuper
+flipmode MSuper = MSub
+
+
+-- select type by mode (same as in DuotypingAlgorithm)
+select :: Mode -> Type
+select MSub   = TTop
+select MSuper = TBot
+
+
+
+
+-- ordinary types (same as in DuotypingAlgorithm)
+
+ordinary :: Mode -> Type -> Bool
+ordinary m t = split m t == Nothing
 
 
 
@@ -44,53 +74,39 @@ split _ _ = Nothing
 
 
 
--- ordinary types
-
-ordinary :: Mode -> Type -> Bool
-ordinary m t = split m t == Nothing
-
-
--- flip mode
-flipmode :: Mode -> Mode
-flipmode MSub = MSuper
-flipmode MSuper = MSub
-
-
--- select type by mode
-select :: Mode -> Type
-select MSub   = TTop
-select MSuper = TBot
-
-
--- duotyping implemented without the boolean flag
+-- subtyping / supertyping checking (implemented without the boolean flag)
 -- D-arrow is prioritized
 
 check :: Mode -> Type -> Type -> Bool
-check _ TInt TInt = True                                                        -- D-int
+check _ TInt TInt = True                                   -- D-int
 check m _ t
   | select m == t
-  = True                                                                        -- D-bound
+  = True                                                   -- D-bound
 check m t _
   | select (flipmode m) == t
-  = True                                                                        -- D-bound (dual)
-check m (TArrow a1 a2) (TArrow b1 b2)                                           -- D-arrow
+  = True                                                   -- D-bound (dual)
+check m (TArrow a1 a2) (TArrow b1 b2)                      -- D-arrow
   = (check (flipmode m) a1 b1) && (check m a2 b2)
-check m a b                                                                     -- D-and
+check m a b                                                -- D-and
   | Just (b1, b2) <- split m b
   = (check m a b1) && (check m a b2)
-check m a b                                                                     -- D-and (dual)
+check m a b                                                -- D-and (dual)
   | Just (a1, a2) <- split (flipmode m) a
   = (check m a1 b) && (check m a2 b)
-check m a b                                                                     --D-andL D-andR
+check m a b                                                --D-andL D-andR
   | Just (a1, a2) <- split m a
   = (check m a1 b) || (check m a2 b)
-check m a b                                                                     -- D-andL AS-andR (dual)
+check m a b                                                -- D-andL AS-andR (dual)
   | Just (b1, b2) <- split (flipmode m) b
   = (check m a b1) || (check m a b2)     
 check _ _ _ = False
 
 
--- Pretty printer
+
+
+-- for testing
+
+-- pretty printer
 pretty :: Type-> String
 pretty (TAnd a b) = "(" ++ pretty a ++ " /" ++ "\\" ++ " " ++ pretty b ++ ")"
 pretty (TOr a b) = "(" ++ pretty a ++ " \\" ++ "/ " ++ pretty b ++ ")"
@@ -111,14 +127,24 @@ showtest MSuper a b =
 t0 = TArrow TInt TInt
 
 t1 = (TArrow (TInt) (TAnd TInt TInt))
-test1 = showtest MSub t1 t1             -- True
-test2 = showtest MSuper t1 t1           -- True
+test1 = showtest MSub t1 t1                             -- True
+test2 = showtest MSuper t1 t1                           -- True
 
 t2 = TArrow (TOr TInt t0) TInt
 t3 = TAnd (TArrow t0 TInt) (TArrow TInt TInt)
-test3 = showtest MSub t2 t3             -- True
+test3 = showtest MSub t2 t3                             -- True
 
-test4 = showtest MSub TBot TInt         -- True
-test5 = showtest MSuper (TArrow TInt TTop) t0   -- True
-test6 = showtest MSuper TBot TInt         -- False
-test7 = showtest MSub (TArrow TInt TTop) t0   -- False
+test4 = showtest MSub TBot TInt                         -- True
+test5 = showtest MSuper (TArrow TInt TTop) t0           -- True
+test6 = showtest MSuper TBot TInt                       -- False
+test7 = showtest MSub (TArrow TInt TTop) t0             -- False
+
+test8 = showtest MSub (TAnd t0 TInt) (TAnd t0 TInt)     -- True
+test9 = showtest MSuper (TAnd t0 TInt) (TAnd t0 TInt)   -- True
+test10 = showtest MSub (TOr t0 TInt) (TOr t0 TInt)      -- True
+test11 = showtest MSuper (TOr t0 TInt) (TOr t0 TInt)    -- True
+
+test12 = showtest MSub (TAnd t0 TInt) t0                -- True
+test13 = showtest MSub t0 (TAnd t0 TInt)                -- False
+test14 = showtest MSub (TOr t0 TInt) t0                 -- False
+test15 = showtest MSub t0 (TOr t0 TInt)                 -- True
