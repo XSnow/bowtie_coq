@@ -1,7 +1,9 @@
 # Distributing Intersection and Union Types with Splits and Duality (Artifact)
 
 SplitSubtyping
+
 Xuejing Huang 2021
+
 Distributed under the terms of [the GPL-v3 license](./LICENSE)
 
 - [impl/](./impl) for the Haskell implementation
