@@ -4,22 +4,13 @@
 %   Xuejing Huang 2021                                                         %
 %   Distributed under the terms of the GPL-v3 license                          %
 %                                                                              %
-%   This file is part of DistributingTypes.                                    %
-%                                                                              %
-%   DistributingTypes is free software: you can redistribute it and/or modify  %
-%   it under the terms of the GNU General Public License as published by       %
-%   the Free Software Foundation, either version 3 of the License, or          %
-%   (at your option) any later version.                                        %
-%                                                                              %
-%   DistributingTypes is distributed in the hope that it will be useful,       %
-%   but WITHOUT ANY WARRANTY; without even the implied warranty of             %
-%   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              %
-%   GNU General Public License for more details.                               %
-%                                                                              %
-%   You should have received a copy of the GNU General Public License          %
-%   along with DistributingTypes.  If not, see <https://www.gnu.org/licenses/>.%
-%                                                                              %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% METAVARIABLES
+
+metavar typevar, X , Y ::= {{ repr-locally-nameless }}
+
+metavar label, l ::= {{ coq nat }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% GRAMMAR (LNgen portion)
@@ -28,14 +19,19 @@ grammar
 
 typ, A, B, C, D, char {{ tex \mathsf{Char} }}, bool {{ tex \mathsf{Bool} }} % , ll {{ tex \{ l \} }}
   :: 't_'             ::=                  {{ com types }}
+  | X                 ::   :: tvar         {{ com type variable }}
   | int               ::   :: int          {{ com int }} {{ tex \mathsf{Int} }}
   | Top               ::   :: top          {{ com top type }} {{ tex \mathsf{Top} }}
   | Bot               ::   :: bot          {{ com bottom type }} {{ tex \mathsf{Bot} }}
+  | Forall X . B
+                      ::   :: forall       (+ bind X in B +)
+                                           {{ com universal type }}
   | A -> B            ::   :: arrow        {{ com function types }}
   | A & B             ::   :: and          {{ com intersection }}
   | A \/ B            ::   :: or           {{ com union }}
   | ( A )             :: S :: paren        {{ coq [[A]] }}
-%  | { l : A }         ::   :: rcd          {{ com record }}
+  | Box l A           ::   :: rcd          {{ com Box (record) }}
+                                           {{ tex \mathsf{Box}_{[[l]]} \, [[A]] }}
   | | mode |          :: S :: topbot       {{ coq (typbymode[[mode]]) }}
   | [ A mode B ]      :: S :: choose       {{ coq (choose[[mode]][[A]][[B]]) }}
 
@@ -69,6 +65,7 @@ terminals :: 'terminals_' ::=
   | |-&              ::  :: wfCombined {{ tex \vdash_{\&} }}
   | <|               ::  :: triangleL  {{ tex \mathbin{\lhd} }}
   | |>               ::  :: triangleR  {{ tex \mathbin{\rhd} }}
+  | Forall           ::  :: forall     {{ tex \forall }}
 
 
 formula :: 'formula_' ::=
@@ -152,6 +149,16 @@ A -> C < B -> D
 
 
 A < B
+--------------------------------- :: forall
+Forall X . A < Forall X . B
+
+
+A < B
+--------------------------------- :: rcd
+Box l A < Box l B
+
+
+A < B
 A < C
 --------------- :: and
 A < B & C
@@ -183,16 +190,16 @@ B < A \/ B
 (A -> B1) & (A -> B2) < A -> B1 & B2
 
 
--------------------------------------- :: distArrRev
- A -> B1 & B2 < (A -> B1) & (A -> B2)
+--------------------------------------------------- :: distAll
+(Forall X.B1) & (Forall X.B2) < Forall X.(B1&B2)
+
+
+--------------------------------------------------- :: distRcd
+(Box l A) & (Box l B) < Box l (A & B)
 
 
 -------------------------------------- :: distArrU
 (A1 -> B) & (A2 -> B) < A1 \/ A2 -> B
-
-
--------------------------------------- :: distArrURev
-A1 \/ A2 -> B < (A1 -> B) & (A2 -> B)
 
 
 -------------------------------------- :: distOr
