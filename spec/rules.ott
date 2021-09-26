@@ -1,873 +1,266 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                              %
-%   rules.ott                                                                  %
-%   Xuejing Huang 2021                                                         %
-%   Distributed under the terms of the GPL-v3 license                          %
-%                                                                              %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% METAVARIABLES
 
 metavar typevar, X , Y ::= {{ repr-locally-nameless }}
-
-metavar label, l ::= {{ coq nat }}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% GRAMMAR (LNgen portion)
-
-grammar
-
-typ, A, B, C, D, char {{ tex \mathsf{Char} }}, bool {{ tex \mathsf{Bool} }} % , ll {{ tex \{ l \} }}
-  :: 't_'             ::=                  {{ com types }}
-  | X                 ::   :: tvar         {{ com type variable }}
-  | int               ::   :: int          {{ com int }} {{ tex \mathsf{Int} }}
-  | Top               ::   :: top          {{ com top type }} {{ tex \mathsf{Top} }}
-  | Bot               ::   :: bot          {{ com bottom type }} {{ tex \mathsf{Bot} }}
-  | Forall X . B
-                      ::   :: forall       (+ bind X in B +)
-                                           {{ com universal type }}
-  | A -> B            ::   :: arrow        {{ com function types }}
-  | A & B             ::   :: and          {{ com intersection }}
-  | A \/ B            ::   :: or           {{ com union }}
-  | ( A )             :: S :: paren        {{ coq [[A]] }}
-  | Box l A           ::   :: rcd          {{ com Box (record) }}
-                                           {{ tex \mathsf{Box}_{[[l]]} \, [[A]] }}
-  | | mode |          :: S :: topbot       {{ coq (typbymode[[mode]]) }}
-  | [ A mode B ]      :: S :: choose       {{ coq (choose[[mode]][[A]][[B]]) }}
-
-
-mode {{ tex \Diamond }}, m {{ tex \Diamond }}
-  :: 'm_'             ::=
-  | sub               ::   :: sub          {{ tex < }}
-  | super             ::   :: super        {{ tex > }}
-  | ! mode            :: S :: flip         {{ tex \overline{[[mode]]} }} {{ coq (flipmode [[mode]]) }}
-
-parsing
-  t_or <= t_and
-  t_arrow <= t_or
-  t_arrow <= t_and
-  t_arrow right t_arrow
   
+indexvar I, J, h, i, j, n, m ::= {{ coq nat }}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% GRAMMAR  (non LNgen portion)
-
 grammar
+l, k :: 'lbl_' ::=
+  | i ::  :: TagIndex
+  | tleft :: :: TagLeft {{ tex \mathrm{left} }}
+  | tright :: :: TagRight {{ tex \mathrm{right} }}
+  
 
+A , B , C :: 't_' ::= {{ com value type }}
+  | X                                ::  :: tvar
+  | In l A                           ::  :: rcd      {{ tex \tytag{[[l]]}{[[A]]} }}
+  | A1 &  A2                         ::  :: and
+  | A1 |  A2                         ::  :: or
+  | A -> B                           ::  :: arrow
+  | forall X . B                     ::  :: forall   (+ bind X in B +)
+  | Top                              ::  :: top
+  | Empty                            ::  :: bot
+
+  | Tcov [ A ]                       :: M:: ctx      {{ icho (appctx_Tcov [[Tcov]] [[A]]) }}
+  | ( A )                            :: S:: paren    {{ icho [[A]] }}
+  | A [ X ~> B ]                     :: M:: tsubst   {{ coq (open_typ_wrt_typ [[X]][[A]][[B]]) }}
+
+
+Tcov {{ tex \tau }} :: 'ty_ctx_cov' ::= {{ com covariant type context }}
+  | In l [-]            :: :: TcovIn   {{ tex \tytag{[[l]]}{\hole} }}
+  | A -> [-]            :: :: TcovArr
+  | forall [-]          :: :: TcovAll
+  | [-] & A             :: :: TCovInterL
+  | A & [-]             :: :: TCovInterR
+  | [-] | A             :: :: TCovUnionL
+  | A | [-]             :: :: TCovUnionR
 
 terminals :: 'terminals_' ::=
-  | ->               ::  :: arrow      {{ tex \rightarrow }}
-  | &                ::  :: and        {{ tex \, \& \, }}
-  | \/               ::  :: or         {{ tex \, \mid \, }}
-  | ,                ::  :: break      {{ tex , }}
-  | <:b              ::  :: subb       {{ tex <: }}
-  | <::              ::  :: subd       {{ tex <: }}
-  | ||-              ::  :: turnstileb {{ tex \vdash }}
-  | |-&              ::  :: wfCombined {{ tex \vdash_{\&} }}
-  | <|               ::  :: triangleL  {{ tex \mathbin{\lhd} }}
-  | |>               ::  :: triangleR  {{ tex \mathbin{\rhd} }}
-  | Forall           ::  :: forall     {{ tex \forall }}
+  | [-]          ::    :: hole      {{ tex \hole }}
+  | &            ::    :: intersect {{ tex \sqcap }}
+  | |            ::    :: union     {{ tex \sqcup }}
+  | forall       ::    :: forall    {{ tex \forall }}
+  | exists       ::    :: exists    {{ tex \exists }}
+  | nil          ::    :: nil       {{ tex \kw{*} }}
+  | notin        ::    :: notin     {{ tex \notin }}
+  | Top          ::    :: topty     {{ tex \tytop }}
+  | Empty        ::    :: emptyty   {{ tex \tyempty }}
 
+formula :: formula_ ::=  
+   | judgement                       ::   :: judgement
+   | l != l'                         ::   :: labNeq
+   | l = l'                          ::   :: labEq
+   | ( formula )                     ::   :: formulaParen
 
-formula :: 'formula_' ::=
-  | judgement        ::   :: judgement
-  | not formula      :: M :: not
-    {{ tex \neg [[formula]] }}
-    {{ coq not ([[formula]]) }}
-  | ( formula )      :: M :: brackets
-    {{ tex ([[formula]]\!) }}
-    {{ coq [[formula]] }}
-  | < formula >              :: M :: high_form
-    {{ tex \hlmath{[[formula]]} }}
-    {{ coq [[formula]] }}
-  | l1 <> l2                 ::   :: label
-    {{ coq [[l1]] <> [[l2]] }}
-    {{ tex [[l1]] \neq [[l2]] }}
+%contextrules
+%  Tcov _:: A :: A
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 embed
 {{ coq
-
-Definition typbymode (m: mode) :=
-  match m with
-  | m_sub => t_top
-  | m_super => t_bot
-  end.
-
-Definition choose (m: mode) (A: typ) (B: typ) :=
-  match m with
-  | m_sub => t_and A B
-  | m_super => t_or A B
-  end.
-
-Definition flipmode (m: mode) :=
-  match m with
-  | m_sub => m_super
-  | m_super => m_sub
-  end.
-
+(** context application *)
+Definition appctx_Tcov (Tcov5:Tcov) (A_6:A) : A :=
+  match Tcov5 with
+  | (ty_ctx_covTcovIn l5) => (t_rcd l5 A_6)
+  | (ty_ctx_covTcovArr A5) => (t_arrow A5 A_6)
+  | (ty_ctx_covTcovAll) => (t_forall A_6)
+  | (ty_ctx_covTCovInterL A5) => (t_and A_6 A5)
+  | (ty_ctx_covTCovInterR A5) => (t_and A5 A_6)
+  | (ty_ctx_covTCovUnionL A5) => (t_or A_6 A5)
+  | (ty_ctx_covTCovUnionR A5) => (t_or A5 A_6)
+end.
 }}
-
-
-%%%%%%%%%%%%%%%%%%%
-% Subtyping rules %
-%%%%%%%%%%%%%%%%%%%
-
 
 defns
 DSub :: '' ::=
 
-defn
-A < B  :: :: declarative_subtyping :: DS_
-{{ com Declarative Subtyping }}
-{{ tex [[A]] \leq [[B]] }}
-by
+  defn
+  A <: B
+  :: :: DeclarativeSubtyping :: ''
+  {{ com Declarative subtyping }}
+  by
 
 
----------------------- :: refl
-A < A
+  ----------- :: DSubRefl
+  A <: A
 
+  A1 <: A2
+  A2 <: A3
+  ------------- :: DSubTrans
+  A1 <: A3
 
-A < B
-B < C
---------------- :: trans
-A < C
+  A <: B
+  -------------------- :: DSubCov 
+  Tcov [ A ] <: Tcov [ B ]
 
+  A2 <: A1
+  -------------------- :: DSubFunCon
+  A1 -> B <: A2 -> B
 
---------------- :: top
-A < Top
+  -------------------------------- :: DSubCovDistI 
+  Tcov[A] & Tcov[B] <: Tcov[A & B]
 
+  ------------------------------------------------- :: DSubFunDistU
+  (A1 & A2) -> (B1 | B2) <: (A1 -> B1) | (A2 -> B2)
 
---------------- :: bot
-Bot < A
+  ------------------------------------------------- :: DSubFunDistI
+  (A1 -> B) & (A2 -> B) <: (A1 | A2) -> B 
 
 
-B < A
-C < D
------------------------- :: arrow
-A -> C < B -> D
+  ---------- :: DSubEmpty
+  Empty <: B
 
+  --------- :: DSubTop
+  A <: Top
 
-A < B
---------------------------------- :: forall
-Forall X . A < Forall X . B
 
+% I think these are derivable from the above
 
-A < B
---------------------------------- :: rcd
-Box l A < Box l B
+  % --------------------------------------- :: DSubUnionDistI 
+  % A1 & (A2 | A3) <: (A1 & A2) | (A1 & A3)
 
+  % --------------------------------------- :: DSubInterDistU
+  % A1 | (A2 & A3) <: (A1 | A2) & (A1 | A3)
 
-A < B
-A < C
---------------- :: and
-A < B & C
+  A1 <: B
+  ----------------- :: DSubInterLL
+  A1 & A2 <: B
 
+  A2 <: B
+  ----------------- :: DSubInterLR
+  A1 & A2 <: B
 
-------------------------- :: andl
-A & B < A
+  A <: B1
+  A <: B2
+  ----------------- :: DSubInterR
+  A <: B1 & B2
 
+  A1 <: B
+  A2 <: B
+  ------------ :: DSubUnionL
+  A1 | A2 <: B
 
------------------ :: andr
-A & B < B
-
-
-A < C
-B < C
---------------- :: or
-A \/ B < C
-
-
-------------------------- :: orl
-A < A \/ B
-
-
------------------ :: orr
-B < A \/ B
-
-
--------------------------------------- :: distArr
-(A -> B1) & (A -> B2) < A -> B1 & B2
-
-
---------------------------------------------------- :: distAll
-(Forall X.B1) & (Forall X.B2) < Forall X.(B1&B2)
-
-
---------------------------------------------------- :: distRcd
-(Box l A) & (Box l B) < Box l (A & B)
-
-
--------------------------------------- :: distArrU
-(A1 -> B) & (A2 -> B) < A1 \/ A2 -> B
-
-
--------------------------------------- :: distOr
-(A1 \/ B) & (A2 \/ B) < (A1 & A2) \/ B
-
-
--------------------------------------- :: distAnd
-(A1 \/ A2) & B < (A1 & B) \/ (A2 & B)
-
-
-
-defns
-DSub_or :: '' ::=
-
-defn
-A <o B  :: :: declarative_subtyping_distor :: DSO_
-{{ com Declarative Subtyping without distAnd }}
-{{ tex [[A]] \leq [[B]] }}
-by
-
-
----------------------- :: refl
-A <o A
-
-
-A <o B
-B <o C
---------------- :: trans
-A <o C
-
-
---------------- :: top
-A <o Top
-
-
---------------- :: bot
-Bot <o A
-
-
-B <o A
-C <o D
------------------------- :: arrow
-A -> C <o B -> D
-
-
-A <o B
-A <o C
---------------- :: and
-A <o B & C
-
-
-------------------------- :: andl
-A & B <o A
-
-
------------------ :: andr
-A & B <o B
-
-
-A <o C
-B <o C
---------------- :: or
-A \/ B <o C
-
-
-------------------------- :: orl
-A <o A \/ B
-
-
------------------ :: orr
-B <o A \/ B
-
-
--------------------------------------- :: distArr
-(A -> B1) & (A -> B2) <o A -> B1 & B2
-
-
--------------------------------------- :: distArrRev
- A -> B1 & B2 <o (A -> B1) & (A -> B2)
-
-
--------------------------------------- :: distArrU
-(A1 -> B) & (A2 -> B) <o A1 \/ A2 -> B
-
-
--------------------------------------- :: distArrURev
-A1 \/ A2 -> B <o (A1 -> B) & (A2 -> B)
-
-
--------------------------------------- :: distOr
-(A1 \/ B) & (A2 \/ B) <o (A1 & A2) \/ B
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%
-%Algorithmic Subtyping
-%%%%%%%%%%%%%%%%%%%%%%
+  A <: B1
+  ------------ :: DSubUnionRL
+  A <: B1 | B2
 
 defns
 Ordinary :: '' ::=
 
-defn
-ordinary A :: :: single_ord :: SO_
-{{ com Ordinary Types }}
-{{ tex [[A]]~\mathsf{Ordinary} }}
-by
+  defn ordinaryU A :: :: UnionOrdinary :: OrdU_
+  by
 
+  ------------- :: top
+  ordinaryU Top
 
----------------- :: top
-ordinary Top
+  --------------- :: bot
+  ordinaryU Empty
 
+  ---------------- :: arrow
+  ordinaryU A -> B
 
----------------- :: bot
-ordinary Bot
+  ordinaryU A
+  ordinaryU B
+  --------------- :: and
+  ordinaryU A & B
 
+  ordinaryU A
+  ---------------- :: rcd
+  ordinaryU In l A
 
----------------- :: int
-ordinary int
+  ordinaryU A
+  ---------------------- :: forall
+  ordinaryU forall X . A
 
 
-ordinaryU A
-ordinary B
----------------- :: arrow
-ordinary A->B
+  defn ordinaryI A :: :: IntersectionOrdinary :: OrdI_
+  by
 
+  ------------- :: top
+  ordinaryI Top
 
-ordinary A
-ordinary B
----------------- :: or
-ordinary A\/B
+  --------------- :: bot
+  ordinaryI Empty
 
+  ordinaryU A
+  ordinaryI B
+  ---------------- :: arrow
+  ordinaryI A -> B
 
-%ordinary B
-%---------------- :: rcd
-%ordinary {l:B}
+  ordinaryI A
+  ordinaryI B
+  --------------- :: or
+  ordinaryI A | B
 
+  ordinaryI A
+  ---------------- :: rcd
+  ordinaryI In l A
 
-defn
-ordinaryU A :: :: ordu :: OU_
-{{ com Ordinary Types (for unions) }}
-{{ tex [[A]]~\mathsf{OrdinaryU} }}
-by
+  ordinaryI A
+  ---------------------- :: forall
+  ordinaryI forall X . A
 
 
----------------- :: top
-ordinaryU Top
+  defn splitI A = B1 & B2 :: :: SplitIntersection :: ''
+  by
 
+  -------------------- :: SpIIntersection
+  splitI A & B = A & B
 
----------------- :: bot
-ordinaryU Bot
+  splitI A = A1 & A2
+  ---------------------------------- :: SpIUnionL
+  splitI A | B = A1 | B & A2 | B
 
+  splitI B = B1 & B2
+  ---------------------------------- :: SpIUnionR
+  splitI A | B = A | B1 & A | B2
 
----------------- :: int
-ordinaryU int
+  splitI B = B1 & B2
+  --------------------------------- :: SpIFunR
+  splitI A -> B = A -> B1 & A -> B2
 
+  splitU A = A1 | A2
+  --------------------------------- :: SpIFunL
+  splitI A -> B = A1 -> B & A2 -> B
 
----------------- :: arrow
-ordinaryU A->B
+  splitI A = A1 & A2
+  --------------------------------------------------- :: SpIFunTy
+  splitI forall X . A = forall X . A1 & forall X . A2
 
+  splitI A = A1 & A2 
+  --------------------------------- :: SpIIn
+  splitI In l A = In l A1 & In l A2
 
-% (A1\/A2)&(B1\/B2) ~= (A1&(B1\/B2)) \/ (A2&(B1\/B2))
 
-ordinaryU A
-ordinaryU B
----------------- :: and
-ordinaryU A&B
+  defn splitU A = B1 | B2 :: :: SplitUnion :: ''
+  by
 
+  -------------------- :: SpUUnion
+  splitU A | B = A | B
 
-%ordinaryU B
-%---------------- :: rcd
-%ordinaryU {l:B}
+  splitU A = A1 | A2
+  ------------------------------ :: SpUIntersectionL
+  splitU A & B = A1 & B | A2 & B
 
+  splitU B = B1 | B2
+  ------------------------------ :: SpUIntersectionR
+  splitU A & B = A & B1 | A & B2
 
-
-defns
-Split :: '' ::=
-
-defn
-split A B C :: :: single_spl :: SSp_
-{{ com Splittable Types }}
-{{ tex [[B]] \mathbin{\lhd} [[A]] \mathbin{\rhd} [[C]] }}
-by
-
-
-----------------:: and
-split A&B A B
-
-
-split B C D
--------------------------- :: arrow
-split A->B A->C A->D
-
-
-%split B C D
-%-------------------------- :: rcd
-%split {l:B} {l:C} {l:D}
-
-
-ordinary D
-splitU A B C
--------------------------- :: arrowUnion
-split A->D B->D C->D
-
-
-split A A1 A2
--------------------------- :: orl
-split A\/B A1\/B A2\/B
-
-
-ordinary A
-split B B1 B2
--------------------------- :: orr
-split A\/B A\/B1 A\/B2
-
-
-defn
-splitU A B C :: :: splu :: SpU_
-{{ com Split Union Types }}
-{{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
-by
-
-
---------------------:: or
-splitU A\/B A B
-
-
-%splitU B C D
-%--------------------------- :: arrow
-%splitU A->B A->C A->D
-
-
-%splitU B C D
-%-------------------------- :: rcd
-%splitU {l:B} {l:C} {l:D}
-
-
-% (A1\/A2)&(B1\/B2) ~= (A1&(B1\/B2)) \/ (A2&(B1\/B2))
-
-splitU A A1 A2
--------------------------- :: andl
-splitU A&B A1&B A2&B
-
-
-ordinaryU A
-splitU B B1 B2
--------------------------- :: andr
-splitU A&B A&B1 A&B2
-
-
-
-defns
-SSub :: '' ::=
-
-defn
-A <: B  :: :: singlemode_sub :: SS_
-{{ com Algorithmic Subtyping }}
-by
-
-
----------------------- :: int
-int <: int
-
-
----------------------- :: top
-A <: Top
-
-
----------------------- :: bot
-Bot <:  A
-
-
-ordinary A1 -> A2
-ordinary B1 -> B2
-B1 <: A1
-A2 <: B2
------------------------- :: arrow
-A1 -> A2 <: B1 -> B2
-
-
-split B B1 B2
-A <: B1
-A <: B2
---------------- :: and
-A <: B
-
-
-ordinary B
-split A A1 A2
-A1 <: B
-------------------------- :: andl
-A <: B
-
-
-ordinary B
-split A A1 A2
-A2 <: B
-------------------------- :: andr
-A <: B
-
-
-ordinary A
-ordinary B
-splitU A A1 A2
-A1 <: B
-A2 <: B
---------------- :: or
-A <: B  
-
-
-ordinary A
-ordinary B
-ordinaryU A
-splitU B B1 B2
-A <: B1
-------------------------- :: orl
-A <: B
-
-
-ordinary A
-ordinary B
-ordinaryU A
-splitU B B1 B2
-A <: B2
-------------------------- :: orr
-A <: B
-
-
-
-%%%%%%%%%%%%%%%%%%%
-% Duotyping rules %
-%%%%%%%%%%%%%%%%%%%
-
-defns
-OSubtyping :: '' ::=
-
-defn
-A < mode > B  :: :: osub :: OS_
-{{ com Original BCD Declarative Subtyping - Top-Like + Unions }}
-{{ tex [[A]] [[mode]] [[B]] }}
-by
-
-
----------------------- :: refl
-A < mode > A
-
-
-A < mode >  B
-B < mode > C
---------------- :: trans
-A < mode > C
-
-
------------------- :: top
-A < mode > |mode|
-
-
-A < ! mode > B
-C < mode >  D
------------------------- :: arr
-A -> C < mode > B -> D
-
-
-A < mode > B
-A < mode > C
----------------------- :: and
-A < mode > [B mode C]
-
-
-------------------------- :: andl
-[A mode B] < mode > A
-
-
-------------------------- :: andr
-[A mode B] < mode > B
-
-
---------------------------------------- :: distArr
-(A -> B) & (A -> C) < mode > A -> B & C
-
-
---------------------------------------- :: distArrU
-(A -> C) & (B -> C) < mode > A \/ B -> C
-
-
-%-------------------------------------- :: distAnd
-%(B1 \/ B2) & A < (B1 & A) \/ (B2 & A)
-
-
--------------------------------------------------------------------- :: distOr
-[[A1 !mode B] mode [A2 !mode B]] < mode > [[A1 mode A2] !mode B]
-
-
-B  < ! mode > A
-------------------------- :: flip
-A  < mode > B
-
-
-defns
-OrdinaryType :: '' ::=
-
-defn
-ordinary m A :: :: ord :: O_
-{{ com Ordinary Types }}
-{{ tex [[A]]~\mathsf{Ordinary}_{[[m]]} }}
-by
-
-
----------------- :: top
-ordinary m Top
-
-
----------------- :: bot
-ordinary m Bot
-
-
----------------- :: int
-ordinary m int
-
-
---------------------- :: arrowUnion
-ordinary super A->B
-
-
-ordinary super  A
-ordinary sub B
---------------------- :: arrow
-ordinary sub A->B
-
-
-ordinary m A
-ordinary m B
---------------------- :: or
-ordinary m [A !m B]
-
-
-
-defns
-SplitType :: '' ::=
-
-defn
-split m A B C :: :: spl :: Sp_
-{{ com Splittable Types }}
-{{ tex [[B]] \mathbin{\lhd}_{[[m]]} [[A]] \mathbin{\rhd}_{[[m]]} [[C]] }}
-% {{ tex [[B]] \mathbin{\LHD} [[A]] \mathbin{\RHD} [[C]] }}
-by
-
-
------------------------:: and
-split m [A m B] A B
-
-
-split sub B C D
----------------------------- :: arrow
-split sub A->B A->C A->D
-
-
-ordinary sub D
-split super A B C
--------------------------- :: arrowUnion
-split sub A->D B->D C->D
-
-
-split m A A1 A2
---------------------------------------- :: orl
-split m [A !m B] [A1 !m B] [A2 !m B]
-
-
-ordinary m A
-split m B B1 B2
---------------------------------------- :: orr
-split m [A !m B] [A !m B1] [A !m B2]
-
-
-defns
-Duotyping_dual :: '' ::=
-
-defn
-A <|: mode :|> B  :: :: duo :: SD_
-{{ com Algorithmic Duotyping with dual }}
-{{ tex [[A]] :[[mode]]: [[B]] }}
-by
-
-
-------------------------------- :: int
-int <|: mode :|> int
-
-
-------------------------------- :: top
-A <|: mode :|> |mode|
-
-
-split mode B B1 B2
-A <|: mode :|> B1
-A <|: mode :|> B2
-------------------------------- :: and
-A <|: mode :|> B
-
-
-ordinary mode B
-split mode A A1 A2
-A1 <|: mode :|> B
-------------------------------- :: andl
-A <|: mode :|> B
-
-
-ordinary mode B
-split mode A A1 A2
-A2 <|: mode :|> B
-------------------------------- :: andr
-A <|: mode :|> B
-
-
-ordinary mode A
-ordinary mode B
-B  <|: ! mode :|> A
-------------------------- :: dual
-A  <|: mode :|> B
-
-
-ordinary sub A1 -> A2
-ordinary sub B1 -> B2
-A1 <|: !mode :|> B1
-A2 <|: mode :|> B2
-------------------------------- :: arr
-A1 -> A2 <|: mode :|> B1 -> B2
-
-
-
-defns
-Subtyping :: '' ::=
-
-defn
-A <: mode :> B  :: :: sub :: S_
-{{ com Algorithmic Duotyping }}
-{{ tex [[A]] :[[mode]]: [[B]] }}
-by
-
-
-------------------------------- :: int
-int <: mode :> int
-
-
-------------------------------- :: top
-A <: mode :> |mode|
-
-
-------------------------------- :: bot
-|!mode| <: mode :> A
-
-
-ordinary sub A1 -> A2
-ordinary sub B1 -> B2
-A1 <: !mode :> B1
-A2 <: mode :> B2
-------------------------------- :: arr
-A1 -> A2 <: mode :> B1 -> B2
-
-
-split mode B B1 B2
-A <: mode :> B1
-A <: mode :> B2
-------------------------------- :: and
-A <: mode :> B
-
-
-ordinary mode B
-split mode A A1 A2
-A1 <: mode :> B
-------------------------------- :: andl
-A <: mode :> B
-
-
-ordinary mode B
-split mode A A1 A2
-A2 <: mode :> B
-------------------------------- :: andr
-A <: mode :> B
-
-
-ordinary mode A
-ordinary mode B
-split !mode A A1 A2
-A1 <: mode :> B
-A2 <: mode :> B
-------------------------------- :: or
-A <: mode :> B
-
-
-ordinary mode A
-ordinary mode B
-ordinary !mode A
-split !mode B B1 B2
-A <: mode :> B1
-------------------------------- :: orl
-A <: mode :> B
-
-
-ordinary mode A
-ordinary mode B
-ordinary !mode A
-split !mode B B1 B2
-A <: mode :> B2
-------------------------------- :: orr
-A <: mode :> B
-
-
-
-defns
-LSubtyping :: '' ::=
-
-defn
-A <| mode |> B  :: :: lsub :: LS_
-{{ com Algorithmic Duotyping with Less Conditions }}
-{{ tex [[A]] :[[mode]]: [[B]] }}
-by
-
-
-------------------------------- :: int
-int <| mode |> int
-
-
-------------------------------- :: top
-A <| mode |> |mode|
-
-
-------------------------------- :: bot
-|!mode| <| mode |> A
-
-
-A1 <| !mode |> B1
-A2 <| mode |> B2
-------------------------------- :: arr
-A1 -> A2 <| mode |> B1 -> B2
-
-
-split mode B B1 B2
-A <| mode |> B1
-A <| mode |> B2
-------------------------------- :: and
-A <| mode |> B
-
-
-split mode A A1 A2
-A1 <| mode |> B
-------------------------------- :: andl
-A <| mode |> B
-
-
-split mode A A1 A2
-A2 <| mode |> B
-------------------------------- :: andr
-A <| mode |> B
-
-
-split !mode A A1 A2
-A1 <| mode |> B
-A2 <| mode |> B
-------------------------------- :: or
-A <| mode |> B
-
-
-split !mode B B1 B2
-A <| mode |> B1
-------------------------------- :: orl
-A <| mode |> B
-
-
-split !mode B B1 B2
-A <| mode |> B2
-------------------------------- :: orr
-A <| mode |> B
+  splitU B = B1 | B2
+  --------------------------------- :: SpUFunR
+  splitU A -> B = A -> B1 | A -> B2
+
+  splitI A = A1 & A2
+  --------------------------------- :: SpUFunL
+  splitU A -> B = A1 -> B | A2 -> B
+
+  splitU A = A1 | A2
+  --------------------------------------------------- :: SpUFunTy
+  splitU forall X . A = forall X . A1 | forall X . A2
+
+  splitU A = A1 | A2 
+  --------------------------------- :: SpUIn
+  splitU In l A = In l A1 | In l A2
