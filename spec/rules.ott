@@ -79,73 +79,115 @@ DSub :: '' ::=
 
   defn
   A <: B
-  :: :: DeclarativeSubtyping :: ''
+  :: :: DeclarativeSubtyping :: DSub_
   {{ com Declarative subtyping }}
   by
 
 
-  ----------- :: DSubRefl
+  ----------- :: Refl
   A <: A
 
   A1 <: A2
   A2 <: A3
-  ------------- :: DSubTrans
+  ------------- :: Trans
   A1 <: A3
 
   A <: B
-  -------------------- :: DSubCov 
-  Tcov [ A ] <: Tcov [ B ]
+  -------------------- :: CovIn %1
+  In l A <: In l B
+  
+  A <: B
+  -------------------- :: CovArr %2
+  C -> A <: C -> B
+  
+  A <: B
+  --------------------------- :: CovAll %3
+  forall X. A <: forallX. B
+  
+  A <: B
+  -------------------- :: CovInterL %4
+  A & C <: B & C
+  
+  A <: B
+  -------------------- :: CovInterR %5
+  C & A <: C & B
 
+  A <: B
+  -------------------- :: CovUnionL %6
+  A | C <: B | C
+  
+  A <: B
+  -------------------- :: CovUnionR %7
+  C | A <: C | B
+  
   A2 <: A1
-  -------------------- :: DSubFunCon
+  -------------------- :: FunCon
   A1 -> B <: A2 -> B
 
-  -------------------------------- :: DSubCovDistI 
-  Tcov[A] & Tcov[B] <: Tcov[A & B]
+  ------------------------------------- :: CovDistIn %1
+  (In l A) & (In l B) <: In l (A & B)
+  
+  ------------------------------------- :: CovDistArr %2
+  (C -> A) & (C -> B) <: (C -> A & B)
+  
+  --------------------------------------------------- :: CovDistAll %3
+  (Forall X. A) & (Forall X. B) <: (Forall X. A & B)
+  
+  ------------------------------------- :: CovDistInterL %4
+  (A & C) & (B & C) <: (A & B) & C
+  
+  ------------------------------------- :: CovDistInterR %5
+  (C & A) & (C & B) <: C & (A & B)
+  
+  ------------------------------------- :: CovDistUnionL %6
+  (A | C) & (B | C) <: (A & B) | C
+  
+  ------------------------------------- :: CovDistUnionR %7
+  (C | A) & (C | B) <: C | (A & B)
 
-  ------------------------------------------------- :: DSubFunDistU
-  (A1 & A2) -> (B1 | B2) <: (A1 -> B1) | (A2 -> B2)
-
-  ------------------------------------------------- :: DSubFunDistI
+  ------------------------------------------------- :: FunDistI
   (A1 -> B) & (A2 -> B) <: (A1 | A2) -> B 
-
-
-  ---------- :: DSubEmpty
-  Empty <: B
-
-  --------- :: DSubTop
-  A <: Top
-
 
 % I think these are derivable from the above
 
-  % --------------------------------------- :: DSubUnionDistI 
+  % --------------------------------------- :: UnionDistI 
   % A1 & (A2 | A3) <: (A1 & A2) | (A1 & A3)
 
-  % --------------------------------------- :: DSubInterDistU
+  % --------------------------------------- :: InterDistU
   % A1 | (A2 & A3) <: (A1 | A2) & (A1 | A3)
 
   A1 <: B
-  ----------------- :: DSubInterLL
+  ----------------- :: InterLL
   A1 & A2 <: B
 
   A2 <: B
-  ----------------- :: DSubInterLR
+  ----------------- :: InterLR
   A1 & A2 <: B
 
   A <: B1
   A <: B2
-  ----------------- :: DSubInterR
+  ----------------- :: InterR
   A <: B1 & B2
 
   A1 <: B
   A2 <: B
-  ------------ :: DSubUnionL
+  ------------ :: UnionL
   A1 | A2 <: B
 
   A <: B1
-  ------------ :: DSubUnionRL
+  ------------ :: UnionRL
   A <: B1 | B2
+
+  A <: B2
+  ------------ :: UnionRR
+  A <: B1 | B2
+  
+  ---------- :: Empty
+  Empty <: B
+
+  --------- :: Top
+  A <: Top
+
 
 defns
 Ordinary :: '' ::=
@@ -204,34 +246,37 @@ Ordinary :: '' ::=
   ordinaryI forall X . A
 
 
-  defn splitI A = B1 & B2 :: :: SplitIntersection :: ''
+defns
+Split :: '' ::=
+
+  defn splitI A = B1 & B2 :: :: SplitIntersection :: SpI_
   by
 
-  -------------------- :: SpIIntersection
+  -------------------- :: Intersection
   splitI A & B = A & B
 
   splitI A = A1 & A2
-  ---------------------------------- :: SpIUnionL
+  ---------------------------------- :: UnionL
   splitI A | B = A1 | B & A2 | B
 
   splitI B = B1 & B2
-  ---------------------------------- :: SpIUnionR
+  ---------------------------------- :: UnionR
   splitI A | B = A | B1 & A | B2
 
   splitI B = B1 & B2
-  --------------------------------- :: SpIFunR
+  --------------------------------- :: FunR
   splitI A -> B = A -> B1 & A -> B2
 
   splitU A = A1 | A2
-  --------------------------------- :: SpIFunL
+  --------------------------------- :: FunL
   splitI A -> B = A1 -> B & A2 -> B
 
   splitI A = A1 & A2
-  --------------------------------------------------- :: SpIFunTy
+  --------------------------------------------------- :: FunTy
   splitI forall X . A = forall X . A1 & forall X . A2
 
   splitI A = A1 & A2 
-  --------------------------------- :: SpIIn
+  --------------------------------- :: In
   splitI In l A = In l A1 & In l A2
 
 
