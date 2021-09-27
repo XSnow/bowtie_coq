@@ -32,32 +32,34 @@
 
 Require Import LibTactics.
 Require Import Coq.micromega.Lia.
-Require Import Definitions.
-
+Require Export Definitions.
+Require Import LN_Lemmas.
 
 Create HintDb AllHd.
 Create HintDb SizeHd.
 Create HintDb FalseHd.
 
-(** * Size *)
-Fixpoint size_typ (A1 : typ) {struct A1} : nat :=
-  match A1 with
-    | t_int => 1
-    | t_top => 1
-    | t_bot => 1
-    | t_arrow A2 B1 => 1 + (size_typ A2) + (size_typ B1)
-    | t_and A2 B1 => 1 + (size_typ A2) + (size_typ B1)
-    | t_or A2 B1 => 1 + (size_typ A2) + (size_typ B1)
-  end.
+#[local] Hint Resolve OrdI_top OrdI_bot OrdU_top OrdU_bot OrdU_arrow SpI_and SpU_or : core.
+#[local] Hint Resolve AS_int AS_top AS_bot : AllHd.
 
-Lemma size_typ_min :
-  forall A1, 1 <= size_typ A1.
-Proof.
-  induction A1; simpl in *; eauto; try lia.
+(********************* rename & subst **********************************)
+
+Lemma lc_typ_rename : forall A X Y,
+    X \notin (typefv_typ A) -> lc_typ (A -^ X) -> lc_typ (A -^ Y).
+Proof with (simpl in *; eauto).
+  introv Fr Lc.
+  assert (H: lc_typ [X ~~> (t_tvar_f Y)] (A -^ X)).
+  applys~ typsubst_typ_lc_typ.
+  simpl in H. rewrite typsubst_typ_spec in H.
+  rewrite close_typ_wrt_typ_open_typ_wrt_typ in H...
 Qed.
 
-#[local] Hint Resolve OI_top OI_bot OI_int OU_top OU_bot OU_int OU_arrow SpI_and SpU_or : core.
-#[local] Hint Resolve AS_int AS_top AS_bot : AllHd.
+Lemma lc_forall_inv : forall X A B,
+    lc_typ (t_forall A B) -> lc_typ (B -^ X).
+Proof.
+  intros. inverts* H.
+Qed.
+
 
 (* Types are Either Ordinary or Splittable *)
 #[local] Hint Constructors ordi ordu spli splu : FalseHd AllHd.

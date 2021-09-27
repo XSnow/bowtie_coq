@@ -223,39 +223,47 @@ Inductive DeclarativeSubtyping : A -> A -> Prop :=    (* defn DeclarativeSubtypi
      lc_A B ->
      DeclarativeSubtyping A2 A1 ->
      DeclarativeSubtyping (t_arrow A1 B) (t_arrow A2 B)
- | DSub_CovDistIn : forall (l5:l) (A5 B:A),
+ | DSub_CovDistIIn : forall (l5:l) (A5 B:A),
      lc_A A5 ->
      lc_A B ->
      DeclarativeSubtyping (t_and  (t_rcd l5 A5)   (t_rcd l5 B) ) (t_rcd l5  (t_and A5 B) )
- | DSub_CovDistArr : forall (C A5 B:A),
+ | DSub_CovDistIArr : forall (C A5 B:A),
      lc_A C ->
      lc_A A5 ->
      lc_A B ->
      DeclarativeSubtyping (t_and  (t_arrow C A5)   (t_arrow C B) )  (t_arrow C (t_and A5 B)) 
- | DSub_CovDistAll : forall (A5 B:A),
-     lc_A (t_forall A5) ->
-     lc_A (t_forall B) ->
-     DeclarativeSubtyping (t_and  (t_forall A5)   (t_forall B) )  (t_forall (t_and A5 B)) 
- | DSub_CovDistInterL : forall (A5 C B:A),
-     lc_A A5 ->
-     lc_A B ->
-     lc_A C ->
-     DeclarativeSubtyping (t_and  (t_and A5 C)   (t_and B C) ) (t_and  (t_and A5 B)  C)
- | DSub_CovDistInterR : forall (C A5 B:A),
-     lc_A C ->
-     lc_A A5 ->
-     lc_A B ->
-     DeclarativeSubtyping (t_and  (t_and C A5)   (t_and C B) ) (t_and C  (t_and A5 B) )
- | DSub_CovDistUnionL : forall (A5 C B:A),
+ | DSub_CovDistIUnionL : forall (A5 C B:A),
      lc_A A5 ->
      lc_A B ->
      lc_A C ->
      DeclarativeSubtyping (t_and  (t_or A5 C)   (t_or B C) ) (t_or  (t_and A5 B)  C)
- | DSub_CovDistUnionR : forall (C A5 B:A),
+ | DSub_CovDistIUnionR : forall (C A5 B:A),
      lc_A C ->
      lc_A A5 ->
      lc_A B ->
      DeclarativeSubtyping (t_and  (t_or C A5)   (t_or C B) ) (t_or C  (t_and A5 B) )
+ | DSub_CovDistIAll : forall (A5 B:A),
+     lc_A (t_forall A5) ->
+     lc_A (t_forall B) ->
+     DeclarativeSubtyping (t_and  (t_forall A5)   (t_forall B) )  (t_forall (t_and A5 B)) 
+ | DSub_CovDistUIn : forall (l5:l) (A5 B:A),
+     lc_A A5 ->
+     lc_A B ->
+     DeclarativeSubtyping (t_rcd l5  (t_or A5 B) ) (t_or  (t_rcd l5 A5)   (t_rcd l5 B) )
+ | DSub_CovDistUAll : forall (A5 B:A),
+     lc_A (t_forall  (t_or A5 B) ) ->
+     lc_A (t_forall  (t_or A5 B) ) ->
+     DeclarativeSubtyping (t_forall  (t_or A5 B) ) (t_or  (t_forall A5)   (t_forall B) )
+ | DSub_CovDistUInterL : forall (A5 B C:A),
+     lc_A A5 ->
+     lc_A B ->
+     lc_A C ->
+     DeclarativeSubtyping (t_and  (t_or A5 B)  C) (t_or  (t_and A5 C)   (t_and B C) )
+ | DSub_CovDistUInterR : forall (C A5 B:A),
+     lc_A A5 ->
+     lc_A C ->
+     lc_A B ->
+     DeclarativeSubtyping (t_and C  (t_or A5 B) ) (t_or  (t_and C A5)   (t_and C B) )
  | DSub_FunDistI : forall (A1 B A2:A),
      lc_A A1 ->
      lc_A A2 ->
@@ -334,45 +342,51 @@ with IntersectionOrdinary : A -> Prop :=    (* defn IntersectionOrdinary *)
 
 (* defns Split *)
 Inductive SplitIntersection : A -> A -> A -> Prop :=    (* defn SplitIntersection *)
- | SpI_Intersection : forall (A5 B:A),
+ | SpI_and : forall (A5 B:A),
      lc_A A5 ->
      lc_A B ->
      SplitIntersection (t_and A5 B) A5 B
- | SpI_UnionL : forall (A_5 B A1 A2:A),
+ | SpI_orl : forall (A_5 B A1 A2:A),
      lc_A B ->
      SplitIntersection A_5 A1 A2 ->
      SplitIntersection (t_or A_5 B) (t_or A1 B) (t_or A2 B)
- | SpI_UnionR : forall (A5 B B1 B2:A),
+ | SpI_orr : forall (A5 B B1 B2:A),
      lc_A A5 ->
      SplitIntersection B B1 B2 ->
      SplitIntersection (t_or A5 B) (t_or A5 B1) (t_or A5 B2)
- | SpI_FunR : forall (A5 B B1 B2:A),
+ | SpI_arrow : forall (A5 B B1 B2:A),
      lc_A A5 ->
      SplitIntersection B B1 B2 ->
      SplitIntersection (t_arrow A5 B) (t_arrow A5 B1) (t_arrow A5 B2)
- | SpI_FunL : forall (A_5 B A1 A2:A),
+ | SpI_arrowUnion : forall (A_5 B A1 A2:A),
      IntersectionOrdinary B ->
      SplitUnion A_5 A1 A2 ->
      SplitIntersection (t_arrow A_5 B) (t_arrow A1 B) (t_arrow A2 B)
- | SpI_FunTy : forall (L:vars) (A_5 A1 A2:A),
+ | SpI_forall : forall (L:vars) (A_5 A1 A2:A),
       ( forall X , X \notin  L  -> SplitIntersection  ( open_A_wrt_A A_5 (t_tvar_f X) )   ( open_A_wrt_A A1 (t_tvar_f X) )   ( open_A_wrt_A A2 (t_tvar_f X) )  )  ->
      SplitIntersection (t_forall A_5) (t_forall A1) (t_forall A2)
- | SpI_In : forall (l5:l) (A_5 A1 A2:A),
+ | SpI_in : forall (l5:l) (A_5 A1 A2:A),
      SplitIntersection A_5 A1 A2 ->
      SplitIntersection (t_rcd l5 A_5) (t_rcd l5 A1) (t_rcd l5 A2)
 with SplitUnion : A -> A -> A -> Prop :=    (* defn SplitUnion *)
- | SpUUnion : forall (A5 B:A),
+ | SpU_or : forall (A5 B:A),
      lc_A A5 ->
      lc_A B ->
      SplitUnion (t_or A5 B) A5 B
- | SpUIntersectionL : forall (A_5 B A1 A2:A),
+ | SpU_andl : forall (A_5 B A1 A2:A),
      lc_A B ->
      SplitUnion A_5 A1 A2 ->
      SplitUnion (t_and A_5 B) (t_and A1 B) (t_and A2 B)
- | SpUIntersectionR : forall (A5 B B1 B2:A),
+ | SpU_andr : forall (A5 B B1 B2:A),
      lc_A A5 ->
      SplitUnion B B1 B2 ->
-     SplitUnion (t_and A5 B) (t_and A5 B1) (t_and A5 B2).
+     SplitUnion (t_and A5 B) (t_and A5 B1) (t_and A5 B2)
+ | SpU_forall : forall (L:vars) (A_5 A1 A2:A),
+      ( forall X , X \notin  L  -> SplitUnion  ( open_A_wrt_A A_5 (t_tvar_f X) )   ( open_A_wrt_A A1 (t_tvar_f X) )   ( open_A_wrt_A A2 (t_tvar_f X) )  )  ->
+     SplitUnion (t_forall A_5) (t_forall A1) (t_forall A2)
+ | SpU_in : forall (l5:l) (A_5 A1 A2:A),
+     SplitUnion A_5 A1 A2 ->
+     SplitUnion (t_rcd l5 A_5) (t_rcd l5 A1) (t_rcd l5 A2).
 
 (* defns AlgorithmicSubtyping *)
 Inductive algo_sub : A -> A -> Prop :=    (* defn algo_sub *)

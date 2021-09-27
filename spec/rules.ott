@@ -106,6 +106,8 @@ DSub :: '' ::=
   ------------- :: Trans
   A1 <: A3
 
+
+
   A <: B
   -------------------- :: CovIn
   In l A <: In l B
@@ -133,34 +135,57 @@ DSub :: '' ::=
   A <: B
   -------------------- :: CovUnionR
   C | A <: C | B
-  
+
+
+
   A2 <: A1
   -------------------- :: FunCon
   A1 -> B <: A2 -> B
 
-  ------------------------------------- :: CovDistIn
+
+
+  ------------------------------------- :: CovDistIIn
   (In l A) & (In l B) <: In l (A & B)
   
-  ------------------------------------- :: CovDistArr
+  ------------------------------------- :: CovDistIArr
   (C -> A) & (C -> B) <: (C -> A & B)
   
-  ------------------------------------------------------ :: CovDistAll
-  (forall X. A) & (forall X. B) <: (forall X. A & B)
+
+  % ------------------------------------- :: CovDistIInterL
+  %  (A & C) & (B & C) <: (A & B) & C
+   
+  % ------------------------------------- :: CovDistIInterR
+  %  (C & A) & (C & B) <: C & (A & B)
   
-  ------------------------------------- :: CovDistInterL
-  (A & C) & (B & C) <: (A & B) & C
-  
-  ------------------------------------- :: CovDistInterR
-  (C & A) & (C & B) <: C & (A & B)
-  
-  ------------------------------------- :: CovDistUnionL
+  ------------------------------------- :: CovDistIUnionL
   (A | C) & (B | C) <: (A & B) | C
   
-  ------------------------------------- :: CovDistUnionR
+  ------------------------------------- :: CovDistIUnionR
   (C | A) & (C | B) <: C | (A & B)
+
+  ------------------------------------------------------ :: CovDistIAll
+  (forall X. A) & (forall X. B) <: (forall X. A & B)  
+
+
+% I omit these two (and two in the following CovDistU set of rules) since they are trivially admissible
+
+  ------------------------------------- :: CovDistUIn
+  In l (A | B) <: (In l A) | (In l B)
+  
+  ------------------------------------------------------ :: CovDistUAll
+  forall X. (A | B) <: (forall X. A) | (forall X. B)
+
+  ------------------------------------- :: CovDistUInterL
+  (A | B) & C <: (A & C) | (B & C)
+   
+  ------------------------------------- :: CovDistUInterR
+  C & (A | B) <: (C & A) | (C & B)
+
+
 
   ------------------------------------------------- :: FunDistI
   (A1 -> B) & (A2 -> B) <: (A1 | A2) -> B 
+
 
 % I think these are derivable from the above
 
@@ -169,6 +194,7 @@ DSub :: '' ::=
 
   % --------------------------------------- :: InterDistU
   % A1 | (A2 & A3) <: (A1 | A2) & (A1 | A3)
+
 
   A1 <: B
   ----------------- :: InterLL
@@ -266,47 +292,47 @@ Split :: '' ::=
   defn splitI A = B1 & B2 :: :: SplitIntersection :: SpI_
   by
 
-  -------------------- :: Intersection
+  -------------------- :: and
   splitI A & B = A & B
 
   splitI A = A1 & A2
-  ---------------------------------- :: UnionL
+  ---------------------------------- :: orl
   splitI A | B = A1 | B & A2 | B
 
   splitI B = B1 & B2
-  ---------------------------------- :: UnionR
+  ---------------------------------- :: orr
   splitI A | B = A | B1 & A | B2
 
   splitI B = B1 & B2
-  --------------------------------- :: FunR
+  --------------------------------- :: arrow
   splitI A -> B = A -> B1 & A -> B2
 
   ordinaryI B
   splitU A = A1 | A2
-  --------------------------------- :: FunL
+  --------------------------------- :: arrowUnion
   splitI A -> B = A1 -> B & A2 -> B
 
   splitI A = A1 & A2
-  --------------------------------------------------- :: FunTy
+  --------------------------------------------------- :: forall
   splitI forall X . A = forall X . A1 & forall X . A2
 
   splitI A = A1 & A2 
-  --------------------------------- :: In
+  --------------------------------- :: in
   splitI In l A = In l A1 & In l A2
 
 
-  defn splitU A = B1 | B2 :: :: SplitUnion :: ''
+  defn splitU A = B1 | B2 :: :: SplitUnion :: SpU_
   by
 
-  -------------------- :: SpUUnion
+  -------------------- :: or
   splitU A | B = A | B
 
   splitU A = A1 | A2
-  ------------------------------ :: SpUIntersectionL
+  ------------------------------ :: andl
   splitU A & B = A1 & B | A2 & B
 
   splitU B = B1 | B2
-  ------------------------------ :: SpUIntersectionR
+  ------------------------------ :: andr
   splitU A & B = A & B1 | A & B2
 
 %  splitU B = B1 | B2
@@ -317,13 +343,13 @@ Split :: '' ::=
 %  --------------------------------- :: SpUFunL
 %  splitU A -> B = A1 -> B | A2 -> B
 %
-%  splitU A = A1 | A2
-%  --------------------------------------------------- :: SpUFunTy
-%  splitU forall X . A = forall X . A1 | forall X . A2
-%
-%  splitU A = A1 | A2 
-%  --------------------------------- :: SpUIn
-%  splitU In l A = In l A1 | In l A2
+  splitU A = A1 | A2
+  --------------------------------------------------- :: forall
+  splitU forall X . A = forall X . A1 | forall X . A2
+
+  splitU A = A1 | A2 
+  --------------------------------- :: in
+  splitU In l A = In l A1 | In l A2
 
 
 defns
