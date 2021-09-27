@@ -24,19 +24,19 @@ A , B , C :: 't_' ::= {{ com value type }}
   | Top                              ::  :: top
   | Empty                            ::  :: bot
 
-  | Tcov [ A ]                       :: M:: ctx      {{ icho (appctx_Tcov [[Tcov]] [[A]]) }}
+%   | Tcov [ A ]                       :: M:: ctx      {{ icho (appctx_Tcov [[Tcov]] [[A]]) }}
   | ( A )                            :: S:: paren    {{ icho [[A]] }}
   | A [ X ~> B ]                     :: M:: tsubst   {{ coq (open_typ_wrt_typ [[X]][[A]][[B]]) }}
 
 
-Tcov {{ tex \tau }} :: 'ty_ctx_cov' ::= {{ com covariant type context }}
-  | In l [-]            :: :: TcovIn   {{ tex \tytag{[[l]]}{\hole} }}
-  | A -> [-]            :: :: TcovArr
-  | forall [-]          :: :: TcovAll
-  | [-] & A             :: :: TCovInterL
-  | A & [-]             :: :: TCovInterR
-  | [-] | A             :: :: TCovUnionL
-  | A | [-]             :: :: TCovUnionR
+% Tcov {{ tex \tau }} :: 'ty_ctx_cov' ::= {{ com covariant type context }}
+%   | In l [-]            :: :: TcovIn   {{ tex \tytag{[[l]]}{\hole} }}
+%   | A -> [-]            :: :: TcovArr
+%   | forall [-]          :: :: TcovAll
+%   | [-] & A             :: :: TCovInterL
+%   | A & [-]             :: :: TCovInterR
+%   | [-] | A             :: :: TCovUnionL
+%   | A | [-]             :: :: TCovUnionR
 
 terminals :: 'terminals_' ::=
   | [-]          ::    :: hole      {{ tex \hole }}
@@ -73,20 +73,21 @@ parsing
   t_arrow right t_arrow
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-embed
-{{ coq
-(** context application *)
-Definition appctx_Tcov (Tcov5:Tcov) (A_6:A) : A :=
-  match Tcov5 with
-  | (ty_ctx_covTcovIn l5) => (t_rcd l5 A_6)
-  | (ty_ctx_covTcovArr A5) => (t_arrow A5 A_6)
-  | (ty_ctx_covTcovAll) => (t_forall A_6)
-  | (ty_ctx_covTCovInterL A5) => (t_and A_6 A5)
-  | (ty_ctx_covTCovInterR A5) => (t_and A5 A_6)
-  | (ty_ctx_covTCovUnionL A5) => (t_or A_6 A5)
-  | (ty_ctx_covTCovUnionR A5) => (t_or A5 A_6)
-end.
-}}
+% embed
+% {{ coq
+% (** context application *)
+% Definition appctx_Tcov (Tcov5:Tcov) (A_6:A) : A :=
+%   match Tcov5 with
+%   | (ty_ctx_covTcovIn l5) => (t_rcd l5 A_6)
+%   | (ty_ctx_covTcovArr A5) => (t_arrow A5 A_6)
+%   | (ty_ctx_covTcovAll) => (t_forall A_6)
+%   | (ty_ctx_covTCovInterL A5) => (t_and A_6 A5)
+%   | (ty_ctx_covTCovInterR A5) => (t_and A5 A_6)
+%   | (ty_ctx_covTCovUnionL A5) => (t_or A_6 A5)
+%   | (ty_ctx_covTCovUnionR A5) => (t_or A5 A_6)
+% end.
+% }}
+
 
 defns
 DSub :: '' ::=
