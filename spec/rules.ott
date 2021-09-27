@@ -3,10 +3,11 @@
 
 metavar typevar, X , Y ::= {{ repr-locally-nameless }}
   
-indexvar I, J, h, i, j, n, m ::= {{ coq nat }}
+metavar I, J, h, i, j, n, m ::= {{ coq nat }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 grammar
+
 l, k :: 'lbl_' ::=
   | i ::  :: TagIndex
   | tleft :: :: TagLeft {{ tex \mathrm{left} }}
@@ -16,8 +17,8 @@ l, k :: 'lbl_' ::=
 A , B , C :: 't_' ::= {{ com value type }}
   | X                                ::  :: tvar
   | In l A                           ::  :: rcd      {{ tex \tytag{[[l]]}{[[A]]} }}
-  | A1 &  A2                         ::  :: and
-  | A1 |  A2                         ::  :: or
+  | A1 & A2                          ::  :: and
+  | A1 | A2                          ::  :: or
   | A -> B                           ::  :: arrow
   | forall X . B                     ::  :: forall   (+ bind X in B +)
   | Top                              ::  :: top
@@ -47,6 +48,7 @@ terminals :: 'terminals_' ::=
   | notin        ::    :: notin     {{ tex \notin }}
   | Top          ::    :: topty     {{ tex \tytop }}
   | Empty        ::    :: emptyty   {{ tex \tyempty }}
+  | <a           ::    :: algosub   {{ tex <_a }}
 
 formula :: formula_ ::=  
    | judgement                       ::   :: judgement
@@ -57,6 +59,18 @@ formula :: formula_ ::=
 %contextrules
 %  Tcov _:: A :: A
 
+substitutions
+  single A X   :: typsubst
+
+freevars
+  A X      :: typefv
+  
+parsing
+  t_arrow <= t_and
+  t_forall <= t_and
+  t_arrow <= t_or
+  t_forall <= t_or
+  t_arrow right t_arrow
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 embed
@@ -93,56 +107,56 @@ DSub :: '' ::=
   A1 <: A3
 
   A <: B
-  -------------------- :: CovIn %1
+  -------------------- :: CovIn
   In l A <: In l B
   
   A <: B
-  -------------------- :: CovArr %2
+  -------------------- :: CovArr
   C -> A <: C -> B
   
   A <: B
-  --------------------------- :: CovAll %3
-  forall X. A <: forallX. B
+  --------------------------- :: CovAll
+  forall X. A <: forall X. B
   
   A <: B
-  -------------------- :: CovInterL %4
+  -------------------- :: CovInterL
   A & C <: B & C
   
   A <: B
-  -------------------- :: CovInterR %5
+  -------------------- :: CovInterR
   C & A <: C & B
 
   A <: B
-  -------------------- :: CovUnionL %6
+  -------------------- :: CovUnionL
   A | C <: B | C
   
   A <: B
-  -------------------- :: CovUnionR %7
+  -------------------- :: CovUnionR
   C | A <: C | B
   
   A2 <: A1
   -------------------- :: FunCon
   A1 -> B <: A2 -> B
 
-  ------------------------------------- :: CovDistIn %1
+  ------------------------------------- :: CovDistIn
   (In l A) & (In l B) <: In l (A & B)
   
-  ------------------------------------- :: CovDistArr %2
+  ------------------------------------- :: CovDistArr
   (C -> A) & (C -> B) <: (C -> A & B)
   
-  --------------------------------------------------- :: CovDistAll %3
-  (Forall X. A) & (Forall X. B) <: (Forall X. A & B)
+  ------------------------------------------------------ :: CovDistAll
+  (forall X. A) & (forall X. B) <: (forall X. A & B)
   
-  ------------------------------------- :: CovDistInterL %4
+  ------------------------------------- :: CovDistInterL
   (A & C) & (B & C) <: (A & B) & C
   
-  ------------------------------------- :: CovDistInterR %5
+  ------------------------------------- :: CovDistInterR
   (C & A) & (C & B) <: C & (A & B)
   
-  ------------------------------------- :: CovDistUnionL %6
+  ------------------------------------- :: CovDistUnionL
   (A | C) & (B | C) <: (A & B) | C
   
-  ------------------------------------- :: CovDistUnionR %7
+  ------------------------------------- :: CovDistUnionR
   (C | A) & (C | B) <: C | (A & B)
 
   ------------------------------------------------- :: FunDistI
@@ -267,6 +281,7 @@ Split :: '' ::=
   --------------------------------- :: FunR
   splitI A -> B = A -> B1 & A -> B2
 
+  ordinaryI B
   splitU A = A1 | A2
   --------------------------------- :: FunL
   splitI A -> B = A1 -> B & A2 -> B
@@ -294,18 +309,74 @@ Split :: '' ::=
   ------------------------------ :: SpUIntersectionR
   splitU A & B = A & B1 | A & B2
 
-  splitU B = B1 | B2
-  --------------------------------- :: SpUFunR
-  splitU A -> B = A -> B1 | A -> B2
+%  splitU B = B1 | B2
+%  --------------------------------- :: SpUFunR
+%  splitU A -> B = A -> B1 | A -> B2
+%
+%  splitI A = A1 & A2
+%  --------------------------------- :: SpUFunL
+%  splitU A -> B = A1 -> B | A2 -> B
+%
+%  splitU A = A1 | A2
+%  --------------------------------------------------- :: SpUFunTy
+%  splitU forall X . A = forall X . A1 | forall X . A2
+%
+%  splitU A = A1 | A2 
+%  --------------------------------- :: SpUIn
+%  splitU In l A = In l A1 | In l A2
 
+
+defns
+AlgorithmicSubtyping :: '' ::=
+
+  defn
+  A <a B  :: :: algo_sub :: ASub_
+  {{ com Algorithmic Subtyping }}
+  by
+  
+  
+  ---------------------- :: var
+  X <a X
+  
+  ---------------------- :: top
+  A <a Top
+  
+  ---------------------- :: bot
+  Empty <a  A
+  
+  B1 <a A1
+  A2 <a B2
+  ------------------------ :: arrow
+  A1 -> A2 <a B1 -> B2
+  
+  splitI B = B1 & B2
+  A <a B1
+  A <a B2
+  --------------- :: and
+  A <a B
+  
   splitI A = A1 & A2
-  --------------------------------- :: SpUFunL
-  splitU A -> B = A1 -> B | A2 -> B
-
+  A1 <a B
+  ------------------------- :: andl
+  A <a B
+  
+  splitI A = A1 & A2
+  A2 <a B
+  ------------------------- :: andr
+  A <a B
+  
   splitU A = A1 | A2
-  --------------------------------------------------- :: SpUFunTy
-  splitU forall X . A = forall X . A1 | forall X . A2
-
-  splitU A = A1 | A2 
-  --------------------------------- :: SpUIn
-  splitU In l A = In l A1 | In l A2
+  A1 <a B
+  A2 <a B
+  --------------- :: or
+  A <a B  
+  
+  splitU B = B1 | B2
+  A <a B1
+  ------------------------- :: orl
+  A <a B
+  
+  splitU B = B1 | B2
+  A <a B2
+  ------------------------- :: orr
+  A <a B

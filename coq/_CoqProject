@@ -5,5 +5,6 @@ DistSubtyping.v
 Duotyping.v
 Equivalence.v
 LibTactics.v
+LN_Lemmas.v
 Subtyping.v
 TypeSize.v
