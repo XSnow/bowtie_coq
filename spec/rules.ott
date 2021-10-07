@@ -14,7 +14,7 @@ l, k :: 'lbl_' ::=
   | tright :: :: TagRight {{ tex \mathrm{right} }}
   
 
-A , B , C :: 't_' ::= {{ com value type }}
+typ, A , B , C :: 't_' ::= {{ com value type }}
   | X                                ::  :: tvar
   | In l A                           ::  :: rcd      {{ tex \tytag{[[l]]}{[[A]]} }}
   | A1 & A2                          ::  :: and
@@ -57,13 +57,13 @@ formula :: formula_ ::=
    | ( formula )                     ::   :: formulaParen
 
 %contextrules
-%  Tcov _:: A :: A
+%  Tcov _:: typ :: typ
 
 substitutions
-  single A X   :: typsubst
+  single typ X   :: typsubst
 
 freevars
-  A X      :: typefv
+  typ X      :: typefv
   
 parsing
   t_arrow <= t_and
@@ -233,9 +233,12 @@ DSub :: '' ::=
 defns
 Ordinary :: '' ::=
 
-  defn ordinaryU A :: :: UnionOrdinary :: OrdU_
+  defn ordinaryU A :: :: ordu :: OrdU_
   by
 
+  ------------- :: var
+  ordinaryU X
+  
   ------------- :: top
   ordinaryU Top
 
@@ -259,8 +262,11 @@ Ordinary :: '' ::=
   ordinaryU forall X . A
 
 
-  defn ordinaryI A :: :: IntersectionOrdinary :: OrdI_
+  defn ordinaryI A :: :: ordi :: OrdI_
   by
+
+  ------------- :: var
+  ordinaryI X
 
   ------------- :: top
   ordinaryI Top
@@ -290,7 +296,7 @@ Ordinary :: '' ::=
 defns
 Split :: '' ::=
 
-  defn splitI A = B1 & B2 :: :: SplitIntersection :: SpI_
+  defn splitI A = B1 & B2 :: :: spli :: SpI_
   by
 
   -------------------- :: and
@@ -322,7 +328,7 @@ Split :: '' ::=
   splitI In l A = In l A1 & In l A2
 
 
-  defn splitU A = B1 | B2 :: :: SplitUnion :: SpU_
+  defn splitU A = B1 | B2 :: :: splu :: SpU_
   by
 
   -------------------- :: or

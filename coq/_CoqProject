@@ -7,4 +7,5 @@ Equivalence.v
 LibTactics.v
 LN_Lemmas.v
 Subtyping.v
+test.v
 TypeSize.v

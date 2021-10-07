@@ -40,7 +40,65 @@ Create HintDb SizeHd.
 Create HintDb FalseHd.
 
 #[local] Hint Resolve OrdI_top OrdI_bot OrdU_top OrdU_bot OrdU_arrow SpI_and SpU_or : core.
-#[local] Hint Resolve AS_int AS_top AS_bot : AllHd.
+#[local] Hint Resolve ASub_top ASub_bot : AllHd.
+
+(************************************ Ltac ************************************)
+
+(* try solve the goal by contradiction *)
+Create HintDb FalseHd.
+Ltac solve_false := try intro; try solve [false; eauto with FalseHd].
+
+(* destrcut conjunctions *)
+Ltac destruct_conj :=
+  repeat match goal with H: ?T |- _ =>
+    match T with
+    | _ /\ _ => destruct H
+    end
+         end.
+
+(* Ltac from Alvin *)
+Ltac detect_fresh_var_and_do t :=
+  match goal with
+  | Fr : ?x `notin` ?L1 |- _ => t x
+  | _ =>
+    let x := fresh "x" in
+    pick fresh x; t x
+  end.
+
+Ltac instantiate_cofinite_with H X :=
+  match type of H with
+  | forall x, x `notin` ?L -> _ =>
+    let H1 := fresh "H" in
+    assert (H1 : X `notin` L) by solve_notin;
+    specialize (H X H1); clear H1
+  end.
+
+Ltac instantiate_cofinites_with x :=
+  repeat match goal with
+  | H : forall x, x `notin` ?L -> _ |- _ =>
+    instantiate_cofinite_with H x
+         end;
+  destruct_conj.
+
+Ltac instantiate_cofinites :=
+  detect_fresh_var_and_do instantiate_cofinites_with.
+
+Ltac applys_and_instantiate_cofinites_with H x :=
+  applys H x; try solve_notin; instantiate_cofinites_with x.
+
+Ltac pick_fresh_applys_and_instantiate_cofinites H :=
+  let X:= fresh in
+  pick fresh X; applys_and_instantiate_cofinites_with H X.
+
+Ltac detect_fresh_var_and_apply H :=
+  let f x := applys_and_instantiate_cofinites_with H x in
+  detect_fresh_var_and_do f.
+
+(************************ Notations related to types **************************)
+Notation "[ z ~~> u ] t" := (typsubst_typ u z t) (at level 0).
+Notation "t ^-^ u"       := (open_typ_wrt_typ t u) (at level 67).
+Notation "t -^ x"        := (open_typ_wrt_typ t (t_tvar_f x))(at level 67).
+Notation "[[ A ]]"         := (typefv_typ A) (at level 0).
 
 (********************* rename & subst **********************************)
 
@@ -54,15 +112,330 @@ Proof with (simpl in *; eauto).
   rewrite close_typ_wrt_typ_open_typ_wrt_typ in H...
 Qed.
 
-Lemma lc_forall_inv : forall X A B,
-    lc_typ (t_forall A B) -> lc_typ (B -^ X).
+Lemma lc_forall_inv : forall X A,
+    lc_typ (t_forall A) -> lc_typ (A -^ X).
 Proof.
   intros. inverts* H.
 Qed.
 
+#[local] Hint Resolve lc_forall_inv : core.
+
+
+(* rename / typsubst in ord & split *)
+#[local] Hint Resolve typsubst_typ_lc_typ : core.
+#[local] Hint Constructors ordi ordu spli splu : core FalseHd.
+
+(*********************************)
+(* some useful lemmas            *)
+(* for proving typsubst lemmas:  *)
+(* lc_t_forall_exists            *)
+(* typsubst_typ_spec             *)
+(* typsubst_typ_open_typ_wrt_typ *)
+(*********************************)
+
+(* mimic typsubst_typ_lc_typ *)
+Lemma typsubst_typ_ordu_typ : forall A X Y,
+  ordu A ->
+  ordu ( [X ~~> (t_tvar_f Y)] A ).
+Proof with (simpl in *; eauto).
+  introv Ord. gen X Y. induction Ord; intros...
+  - destruct (X==X0)...
+  - applys~ (OrdU_forall (L \u {{X}})).
+    introv Fr. forwards* Ord: H0 X0 X Y.
+    rewrite typsubst_typ_open_typ_wrt_typ in Ord...
+    case_eq (@eq_dec typevar EqDec_eq_of_X X0 X); intuition...
+    rewrite H1 in Ord...
+Qed.
+
+Lemma typsubst_typ_ordi_typ : forall A X Y,
+  ordi A ->
+  ordi ( [X ~~> (t_tvar_f Y)] A ).
+Proof with (simpl in *; eauto using typsubst_typ_ordu_typ).
+  introv Ord. gen X Y. induction Ord; intros...
+  - destruct (X==X0)...
+  - applys~ (OrdI_forall (L \u {{X}})).
+    introv Fr. forwards* Ord: H0 X0 X Y.
+    rewrite typsubst_typ_open_typ_wrt_typ in Ord...
+    case_eq (@eq_dec typevar EqDec_eq_of_X X0 X); intuition...
+    rewrite H1 in Ord...
+Qed.
+
+Lemma typsubst_typ_splu_typ : forall A B C X Y,
+  splu A B C->
+  splu ([X ~~> (t_tvar_f Y)] A) ([X ~~> (t_tvar_f Y)] B) ([X ~~> (t_tvar_f Y)] C).
+Proof with (simpl in *; eauto).
+  introv Spl. gen X Y.
+  induction Spl; intros...
+  - applys~ (SpU_forall (L \u {{X}})).
+    introv Fr. forwards* Spl: H0 X0 X Y.
+    rewrite 3 typsubst_typ_open_typ_wrt_typ in Spl...
+    case_eq (@eq_dec typevar EqDec_eq_of_X X0 X); intuition...
+    rewrite H1 in Spl...
+Qed.
+
+Lemma typsubst_typ_spli_typ : forall A B C X Y,
+  spli A B C->
+  spli ([X ~~> (t_tvar_f Y)] A) ([X ~~> (t_tvar_f Y)] B) ([X ~~> (t_tvar_f Y)] C).
+Proof with (simpl in *; eauto using typsubst_typ_ordi_typ, typsubst_typ_splu_typ).
+  introv Spl. gen X Y.
+  induction Spl; intros...
+  - applys~ (SpI_forall (L \u {{X}})).
+    introv Fr. forwards* Spl: H0 X0 X Y.
+    rewrite 3 typsubst_typ_open_typ_wrt_typ in Spl...
+    case_eq (@eq_dec typevar EqDec_eq_of_X X0 X); intuition...
+    rewrite H1 in Spl...
+Qed.
+
+#[export] Hint Resolve typsubst_typ_ordu_typ typsubst_typ_ordi_typ
+ typsubst_typ_spli_typ typsubst_typ_splu_typ : core.
+
+Lemma ordu_rename : forall A X Y,
+    X \notin (typefv_typ A) -> ordu( A -^ X ) -> ordu( A -^ Y ).
+Proof with (simpl in *; eauto).
+  introv Fr Lc.
+  assert (H: ordu[X ~~> (t_tvar_f Y)] (A -^ X) ).
+  applys~ typsubst_typ_ordu_typ.
+  simpl in H. rewrite typsubst_typ_spec in H.
+  rewrite close_typ_wrt_typ_open_typ_wrt_typ in H...
+Qed.
+
+Lemma ordi_rename : forall A X Y,
+    X \notin (typefv_typ A) -> ordi ( A -^ X ) -> ordi ( A -^ Y ).
+Proof with (simpl in *; eauto).
+  introv Fr Lc.
+  assert (H: ordi [X ~~> (t_tvar_f Y)] (A -^ X) ).
+  applys~ typsubst_typ_ordi_typ.
+  simpl in H. rewrite typsubst_typ_spec in H.
+  rewrite close_typ_wrt_typ_open_typ_wrt_typ in H...
+Qed.
+
+Lemma splu_rename : forall A B C X Y,
+    X \notin (typefv_typ A) \u (typefv_typ B) \u (typefv_typ C)->
+    splu ( A -^ X ) ( B -^ X ) ( C -^ X ) ->
+    splu ( A -^ Y ) ( B -^ Y ) ( C -^ Y ).
+Proof with (simpl in *; eauto).
+  introv Fr Lc.
+  assert (H: splu [X ~~> (t_tvar_f Y)] (A -^ X) [X ~~> (t_tvar_f Y)] (B -^ X) [X ~~> (t_tvar_f Y)] (C -^ X)).
+  applys~ typsubst_typ_splu_typ.
+  simpl in H. rewrite 3 typsubst_typ_spec in H.
+  rewrite 3 close_typ_wrt_typ_open_typ_wrt_typ in H...
+Qed.
+
+Lemma spli_rename : forall A B C X Y,
+    X \notin (typefv_typ A) \u (typefv_typ B) \u (typefv_typ C)->
+    spli ( A -^ X ) ( B -^ X ) ( C -^ X ) ->
+    spli ( A -^ Y ) ( B -^ Y ) ( C -^ Y ).
+Proof with (simpl in *; eauto).
+  introv Fr Lc.
+  assert (H: spli [X ~~> (t_tvar_f Y)] (A -^ X) [X ~~> (t_tvar_f Y)] (B -^ X) [X ~~> (t_tvar_f Y)] (C -^ X)).
+  applys~ typsubst_typ_spli_typ.
+  simpl in H. rewrite 3 typsubst_typ_spec in H.
+  rewrite 3 close_typ_wrt_typ_open_typ_wrt_typ in H...
+Qed.
+
+#[export]
+Hint Extern 1 (ordu ( ?A -^ ?Y )) =>
+  match goal with
+  | H: ordu ( A -^ ?X ) |- _ => let Fr := fresh in
+                               assert (Fr: X \notin (typefv_typ A)) by solve_notin;
+                                 applys ordu_rename Fr H
+  end : core.
+
+#[export]
+Hint Extern 1 (ordi ( ?A -^ ?Y )) =>
+  match goal with
+  | H: ordi ( A -^ ?X ) |- _ => let Fr := fresh in
+                               assert (Fr: X \notin (typefv_typ A)) by solve_notin;
+                                 applys ordi_rename Fr H
+  end : core.
+
+#[export]
+Hint Extern 1 (splu ( ?A -^ ?Y ) _ _) =>
+  match goal with
+| H: splu ( A -^ ?X ) ( ?B -^ ?X ) ( ?C -^ ?X ) |- _ => applys splu_rename H; solve_notin
+end : core.
+
+#[export]
+Hint Extern 1 (spli ( ?A -^ ?Y ) _ _) =>
+  match goal with
+| H: spli ( A -^ ?X ) ( ?B -^ ?X ) ( ?C -^ ?X ) |- _ => applys spli_rename H; solve_notin
+end : core.
+
+#[local] Hint Resolve ordi_rename ordu_rename spli_rename splu_rename : core.
+
+Lemma ordu_forall_exists : forall X B,
+  X `notin` typefv_typ B ->
+  ordu (open_typ_wrt_typ B (t_tvar_f X)) ->
+  ordu (t_forall B).
+Proof with (simpl in *; eauto).
+  introv Fr Ord.
+  applys~ OrdU_forall (typefv_typ B).
+Qed.
+
+Lemma ordi_forall_exists : forall X B,
+  X `notin` typefv_typ B ->
+  ordi (open_typ_wrt_typ B (t_tvar_f X)) ->
+  ordi (t_forall B).
+Proof with (simpl in *; eauto).
+  introv Fr Ord.
+  applys~ OrdI_forall (typefv_typ B).
+Qed.
+
+#[export]
+Hint Extern 1 =>
+match goal with
+| H: ordi (open_typ_wrt_typ ?B (t_tvar_f ?X)) |- ordi (t_forall _ ?B) =>
+  applys~ ordi_forall_exists H; solve_notin
+end : core.
+
+#[export]
+Hint Extern 1 =>
+match goal with
+| H: ordu (open_typ_wrt_typ ?B (t_tvar_f ?X)) |- ordu (t_forall _ ?B) =>
+  applys~ ordu_forall_exists H; solve_notin
+end : core.
+
+
+Lemma splu_fv_1 : forall A B C,
+    splu A B C -> (typefv_typ B) [<=] (typefv_typ A).
+Proof with (subst; simpl in *).
+  introv Hspl.
+  induction Hspl; simpl in *; try fsetdec.
+  remember ((typefv_typ A) \u (typefv_typ A1)).
+  pick fresh X.
+  forwards~ Aux1: H0 X.
+  lets* Aux2: typefv_typ_open_typ_wrt_typ_upper A (t_tvar_f X).
+  lets* Aux3: typefv_typ_open_typ_wrt_typ_lower A1 (t_tvar_f X).
+  assert (HS: typefv_typ A1 [<=] union (typefv_typ (t_tvar_f X)) (typefv_typ A)) by fsetdec.
+  clear Aux1 Aux2 Aux3...
+  fsetdec.
+Qed.
+
+Lemma splu_fv_2 : forall A B C,
+    splu A B C -> (typefv_typ C) [<=] (typefv_typ A).
+Proof with (subst; simpl in *).
+  introv Hspl.
+  induction Hspl; simpl in *; try fsetdec.
+  remember ((typefv_typ A) \u (typefv_typ A2)).
+  pick fresh X.
+  forwards~ Aux1: H0 X.
+  lets* Aux2: typefv_typ_open_typ_wrt_typ_upper A (t_tvar_f X).
+  lets* Aux3: typefv_typ_open_typ_wrt_typ_lower A2 (t_tvar_f X).
+  assert (HS: typefv_typ A2 [<=] union (typefv_typ (t_tvar_f X)) (typefv_typ A)) by fsetdec.
+  clear Aux1 Aux2 Aux3...
+  fsetdec.
+Qed.
+
+Lemma splu_forall_exists : forall X B B1 B2,
+  X `notin` typefv_typ B ->
+  splu (B -^ X) B1 B2->
+  splu (t_forall B) (t_forall (close_typ_wrt_typ X B1)) (t_forall (close_typ_wrt_typ X B2)).
+Proof with (simpl in *; eauto).
+  introv Fr H.
+  rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ B1 X) in H.
+  rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ B2 X) in H.
+  applys SpU_forall. intros. applys splu_rename H.
+  repeat rewrite typefv_typ_close_typ_wrt_typ.
+  solve_notin.
+  Unshelve. applys empty.
+Qed.
+
+Lemma spli_fv_1 : forall A B C,
+    spli A B C -> (typefv_typ B) [<=] (typefv_typ A).
+Proof with (subst; simpl in *).
+  introv Hspl.
+  induction Hspl; simpl in *; try fsetdec.
+  - lets: splu_fv_1 H0. fsetdec.
+  -
+  remember ((typefv_typ A) \u (typefv_typ A1)).
+  pick fresh X.
+  forwards~ Aux1: H0 X.
+  lets* Aux2: typefv_typ_open_typ_wrt_typ_upper A (t_tvar_f X).
+  lets* Aux3: typefv_typ_open_typ_wrt_typ_lower A1 (t_tvar_f X).
+  assert (HS: typefv_typ A1 [<=] union (typefv_typ (t_tvar_f X)) (typefv_typ A)) by fsetdec.
+  clear Aux1 Aux2 Aux3...
+  fsetdec.
+Qed.
+
+Lemma spli_fv_2 : forall A B C,
+    spli A B C -> (typefv_typ C) [<=] (typefv_typ A).
+Proof with (subst; simpl in *).
+  introv Hspl.
+  induction Hspl; simpl in *; try fsetdec.
+  - lets: splu_fv_2 H0. fsetdec.
+  -
+  remember ((typefv_typ A) \u (typefv_typ A2)).
+  pick fresh X.
+  forwards~ Aux1: H0 X.
+  lets* Aux2: typefv_typ_open_typ_wrt_typ_upper A (t_tvar_f X).
+  lets* Aux3: typefv_typ_open_typ_wrt_typ_lower A2 (t_tvar_f X).
+  assert (HS: typefv_typ A2 [<=] union (typefv_typ (t_tvar_f X)) (typefv_typ A)) by fsetdec.
+  clear Aux1 Aux2 Aux3...
+  fsetdec.
+Qed.
+
+Lemma spli_forall_exists : forall X B B1 B2,
+  X `notin` typefv_typ B ->
+  spli (B -^ X) B1 B2->
+  spli (t_forall B) (t_forall (close_typ_wrt_typ X B1)) (t_forall (close_typ_wrt_typ X B2)).
+Proof with (simpl in *; eauto).
+  introv Fr H.
+  rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ B1 X) in H.
+  rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ B2 X) in H.
+  applys SpI_forall. intros. applys spli_rename H.
+  repeat rewrite typefv_typ_close_typ_wrt_typ.
+  solve_notin.
+  Unshelve. applys empty.
+Qed.
+
+#[export]
+Hint Extern 2 =>
+match goal with
+| H: spli (?B -^ ?X) ?B1 ?B2 |-
+  spli (t_forall ?B) (t_forall ?A (close_typ_wrt_typ ?X ?B1)) (t_forall ?A (close_typ_wrt_typ ?X ?B2)) =>
+  applys spli_forall_exists H; solve_notin
+| H: splu (?B -^ ?X) ?B1 ?B2 |-
+  splu (t_forall ?B) (t_forall ?A (close_typ_wrt_typ ?X ?B1)) (t_forall ?A (close_typ_wrt_typ ?X ?B2)) =>
+  applys splu_forall_exists H; solve_notin
+| H: spli (?B -^ ?X) _ _ |-
+  splu (t_forall ?B) _ _ =>
+  applys spli_forall_exists H; solve_notin
+| H: splu (?B -^ ?X) _ _ |-
+  splu (t_forall ?B) _ _ =>
+  applys splu_forall_exists H; solve_notin
+end : core.
+
+
+(*********************************** ord & split *******************************)
+#[export] Hint Extern 1 (ordu _) =>
+progress match goal with
+         | H: forall X : atom, X `notin` _ -> ordu (?B -^ X) |- ordi (t_forall ?B) => applys OrdU_forall H
+         | |- ordu (t_forall _) => detect_fresh_var_and_apply ordu_forall_exists
+         | _ => applys OrdU_var + applys OrdU_top + applys OrdU_bot + applys OrdU_arrow + applys OrdU_forall
+         end : core.
+
+#[export] Hint Extern 1 (spli _ _ _) => applys SpI_arrow + applys SpI_in + applys SpI_and : core.
+#[export] Hint Extern 1 (splu _ _ _) => applys SpU_in + applys SpU_or : core.
+
+#[export] Hint Extern 1 (spli (t_forall _)  _ _) => applys SpI_forall : core.
+#[export] Hint Extern 1 (splu (t_forall _)  _ _) => applys SpU_forall : core.
+
 
 (* Types are Either Ordinary or Splittable *)
-#[local] Hint Constructors ordi ordu spli splu : FalseHd AllHd.
+Lemma ord_or_split: forall A,
+    lc_typ A -> ordu A \/ exists B C, splu A B C.
+Proof with (subst~; simpl in *; eauto).
+  introv Lc. induction Lc...
+  - forwards* [?|(?&?&?)]: IHLc.
+  - (* and *)
+    forwards* [?|(?&?&?)]: IHLc1.
+    forwards* [?|(?&?&?)]: IHLc2.
+  - (* forall *)
+    pick fresh x.
+    forwards* [?|(?&?&?)]: H0 x.
+  - (* arrow *)
+    forwards* [?|(?&?&?)]: IHLc.
+Qed.
 
 Lemma ordu_or_split: forall A,
     ordu A \/ exists B C, splu A B C.
@@ -337,12 +710,12 @@ Proof with (try eassumption; auto 4 with *; try solve [s_sub_part_autoIH]; eauto
       * destruct B; s_auto_unify; solve_false...
         **(* arrow *)
           constructor...
-      * applys~ AS_or Hu...
-    + applys AS_andl...
-    + applys AS_andr...
+      * applys~ ASub_or Hu...
+    + applys ASub_andl...
+    + applys ASub_andr...
   - (* spl B *)
     lets~ (?&?): single_part_spl Hp Hi.
-    applys AS_and Hi...
+    applys ASub_and Hi...
 
     --
     introv Ho1 Ho2 Hp.
@@ -352,11 +725,11 @@ Proof with (try eassumption; auto 4 with *; try solve [s_sub_part_autoIH]; eauto
       destruct A; s_auto_unify; auto; solve_false...
       ** (* arrow case, non-ord types involved *)
         constructor...
-      * applys AS_orl...
-      * applys AS_orr...
+      * applys ASub_orl...
+      * applys ASub_orr...
     +
       lets~ (?&?): u_part_spl Hp Hu.
-      applys AS_or...
+      applys ASub_or...
 Qed.
 
 Theorem s_sub_refl : forall A, algorithmic_sub A A.
@@ -487,22 +860,22 @@ Proof with (s_auto_unify; try eassumption; s_auto_inv; s_elia).
   indTypSize (size_typ A + size_typ B).
   lets [Hi|(?&?&Hi)]: ordi_or_split B...
   lets [Hi'|(?&?&Hi')]: ordi_or_split A...
-  - applys AS_or...
+  - applys ASub_or...
   - (* double spliit A *)
     inverts keep Hspli; inverts keep Hi'...
-    + applys~ AS_andl Hi'... applys IH...
-    + applys~ AS_andr Hi'... applys IH...
-    + applys~ AS_andl Hi'... applys IH...
-    + applys~ AS_andr Hi'... applys IH...
-    + applys~ AS_andl Hi'... applys IH...
-    + applys~ AS_andr Hi'...
-    + applys~ AS_andr Hi'...
-    + applys~ AS_andr Hi'...
-    + applys~ AS_andl Hi'...
-    + applys~ AS_andl Hi'...
-    + applys~ AS_andl Hi'...
-    + applys~ AS_andr Hi'... applys IH; eauto; try eassumption; s_elia.
-  - applys~ AS_and Hi...
+    + applys~ ASub_andl Hi'... applys IH...
+    + applys~ ASub_andr Hi'... applys IH...
+    + applys~ ASub_andl Hi'... applys IH...
+    + applys~ ASub_andr Hi'... applys IH...
+    + applys~ ASub_andl Hi'... applys IH...
+    + applys~ ASub_andr Hi'...
+    + applys~ ASub_andr Hi'...
+    + applys~ ASub_andr Hi'...
+    + applys~ ASub_andl Hi'...
+    + applys~ ASub_andl Hi'...
+    + applys~ ASub_andl Hi'...
+    + applys~ ASub_andr Hi'... applys IH; eauto; try eassumption; s_elia.
+  - applys~ ASub_and Hi...
     applys IH... applys IH...
 Qed.
 
@@ -531,21 +904,21 @@ Proof with (solve_false; s_auto_unify; try eassumption; auto with *; s_auto_inv;
         inverts s1; s_auto_unify...
         ** (* top *)
           inverts~ s2...
-          *** applys~ AS_orl H2...
-          *** applys~ AS_orr H2...
+          *** applys~ ASub_orl H2...
+          *** applys~ ASub_orr H2...
         ** (* arrow *)
           inverts~ s2...
-          *** applys~ AS_arrow...
-          *** applys~ AS_orl H6...
-          *** applys~ AS_orr H6...
-      * applys AS_andl...
-      * applys AS_andr...
+          *** applys~ ASub_arrow...
+          *** applys~ ASub_orl H6...
+          *** applys~ ASub_orr H6...
+      * applys ASub_andl...
+      * applys ASub_andr...
     + lets [Hi'|(?&?&Hi')]: ordi_or_split A...
-      * applys AS_or Hu...
+      * applys ASub_or Hu...
       * assert (algorithmic_sub x C)...
         assert (algorithmic_sub x0 C)...
         applys algorithmic_sub_or...
-  - applys AS_and Hi...
+  - applys ASub_and Hi...
 Qed.
 
 #[local] Hint Resolve s_trans : AllHd.
@@ -561,43 +934,43 @@ Proof with (try eassumption; s_auto_unify; s_auto_inv; solve_false; s_elia; try 
   lets [Hu2|(?&?&Hu2)]: ordu_or_split (t_arrow B1 B2)...
   - inverts Hi2.
     + forwards (?&?): s_rule_and_inv Hs2 H3...
-      applys AS_and.
+      applys ASub_and.
       econstructor; try eassumption.
       applys~ IH. s_elia.
       applys~ IH. s_elia.
     + forwards (?&?): s_rule_or_inv Hs1 H4.
-      applys AS_and. applys SpI_arrowUnion; try eassumption.
+      applys ASub_and. applys SpI_arrowUnion; try eassumption.
       applys~ IH; s_elia. applys~ IH; s_elia.
   - inverts Hi1.
     + lets [Hi2|(?&?&Hi2)]: ordi_or_split (t_arrow B1 B2).
       * forwards~ [?|?]: s_rule_andlr_inv Hs2 H3. inverts~ Hi2.
-        applys AS_andl; try eassumption.
+        applys ASub_andl; try eassumption.
         econstructor. apply H3.
         applys~ IH. s_elia.
-        applys AS_andr; try eassumption.
+        applys ASub_andr; try eassumption.
         econstructor. apply H3.
         applys~ IH. s_elia.
       * inverts Hi2.
         ** forwards (?&?): s_rule_and_inv Hs2 H4.
-           applys AS_and. econstructor; try eassumption.
+           applys ASub_and. econstructor; try eassumption.
            applys~ IH; s_elia. applys~ IH; s_elia.
         ** forwards (?&?): s_rule_or_inv Hs1 H5.
-           applys AS_and. applys SpI_arrowUnion; try eassumption.
+           applys ASub_and. applys SpI_arrowUnion; try eassumption.
            applys~ IH; s_elia. applys~ IH; s_elia.
     + lets [Hi2|(?&?&Hi2)]: ordi_or_split (t_arrow B1 B2).
       * forwards~ [?|?]: s_rule_orlr_inv Hs1 H4. inverts~ Hi2.
-        1: { applys AS_andl; try eassumption.
+        1: { applys ASub_andl; try eassumption.
         applys SpI_arrowUnion; try eassumption.
         applys~ IH. s_elia. }
-        1: { applys AS_andr; try eassumption.
+        1: { applys ASub_andr; try eassumption.
         applys SpI_arrowUnion; try eassumption.
         applys~ IH. s_elia. }
       * inverts Hi2.
         ** forwards (?&?): s_rule_and_inv Hs2 H5.
-           applys AS_and. econstructor; try eassumption.
+           applys ASub_and. econstructor; try eassumption.
            applys~ IH; s_elia. applys~ IH; s_elia.
         ** forwards (?&?): s_rule_or_inv Hs1 H6.
-           applys AS_and. applys SpI_arrowUnion; try eassumption.
+           applys ASub_and. applys SpI_arrowUnion; try eassumption.
            applys~ IH; s_elia. applys~ IH; s_elia.
 Qed.
 
@@ -609,24 +982,24 @@ Proof with (eauto 3 with AllHd).
   lets [Hi|(?&?&Hi)]: ordi_or_split B.
   lets [Hi'|(?&?&Hi')]: ordi_or_split A.
   lets [Hu|(?&?&Hu)]: ordu_or_split A.
-  - applys~ AS_orl Hspli.
+  - applys~ ASub_orl Hspli.
   - applys~ algorithmic_sub_or Hu; applys IH Hspli; s_elia; applys s_trans Hs; applys s_sub_part2...
   - forwards~ [?|?]: s_rule_andlr_inv Hs Hi'...
-      applys~ AS_andl Hi'. applys~ IH Hspli. s_elia.
-      applys~ AS_andr Hi'. applys~ IH Hspli. s_elia.
+      applys~ ASub_andl Hi'. applys~ IH Hspli. s_elia.
+      applys~ ASub_andr Hi'. applys~ IH Hspli. s_elia.
   - inverts Hspli; inverts Hi; solve_false; s_auto_unify.
-    + applys AS_and...
+    + applys ASub_and...
       applys IH; s_elia. 2: {eauto. } applys s_trans Hs...
       applys IH; s_elia. 2: {eauto. } applys s_trans Hs...
-    + applys AS_and...
+    + applys ASub_and...
       applys IH; s_elia. 2: {eauto. } applys s_trans Hs...
       applys IH; s_elia. 2: {eauto. } applys s_trans Hs...
     + s_auto_inv.
-      applys AS_and. eauto.
+      applys ASub_and. eauto.
       applys~ IH H; s_elia.
       try eassumption.
     + s_auto_inv.
-      applys AS_and. eauto.
+      applys ASub_and. eauto.
       try eassumption.
       applys~ IH H0; s_elia.
 Qed.
@@ -639,24 +1012,24 @@ Proof with (eauto 3 with AllHd).
   lets [Hi|(?&?&Hi)]: ordi_or_split B.
   lets [Hi'|(?&?&Hi')]: ordi_or_split A.
   lets [Hu|(?&?&Hu)]: ordu_or_split A.
-  - applys~ AS_orr Hspli.
+  - applys~ ASub_orr Hspli.
   - applys~ algorithmic_sub_or Hu; applys IH Hspli; s_elia; applys s_trans Hs; applys s_sub_part2...
   - forwards~ [?|?]: s_rule_andlr_inv Hs Hi'...
-      applys~ AS_andl Hi'. applys~ IH Hspli. s_elia.
-      applys~ AS_andr Hi'. applys~ IH Hspli. s_elia.
+      applys~ ASub_andl Hi'. applys~ IH Hspli. s_elia.
+      applys~ ASub_andr Hi'. applys~ IH Hspli. s_elia.
   - inverts Hspli; inverts Hi; solve_false; s_auto_unify.
-    + applys AS_and...
+    + applys ASub_and...
       applys IH; s_elia. eauto. applys s_trans Hs...
       applys IH; s_elia. eauto. applys s_trans Hs...
-    + applys AS_and...
+    + applys ASub_and...
       applys IH; s_elia. eauto. applys s_trans Hs...
       applys IH; s_elia. eauto. applys s_trans Hs...
     + s_auto_inv.
-      applys AS_and. eauto.
+      applys ASub_and. eauto.
       applys~ IH H; s_elia.
       try eassumption.
     + s_auto_inv.
-      applys AS_and. eauto.
+      applys ASub_and. eauto.
       try eassumption.
       applys~ IH H0; s_elia.
 Qed.
@@ -667,13 +1040,13 @@ Proof with (s_auto_unify; try eassumption).
   introv.
   indTypSize (size_typ C).
   lets [Hi1|(?&?&Hi1)]: ordi_or_split C.
-  - applys AS_and; eauto with *.
+  - applys ASub_and; eauto with *.
   - (* split C x x0 *)
     forwards Hs1: IH A B x. s_elia.
     forwards Hs2: IH A B x0. s_elia.
-    applys AS_and. eauto with *.
-    + applys s_trans Hs1. applys AS_and; eauto with *.
-    + applys s_trans Hs2. applys AS_and; eauto with *.
+    applys ASub_and. eauto with *.
+    + applys s_trans Hs1. applys ASub_and; eauto with *.
+    + applys s_trans Hs2. applys ASub_and; eauto with *.
 Qed.
 
 #[local] Hint Resolve s_sub_arrow s_sub_orl s_sub_orr s_sub_distArrU : AllHd.
@@ -805,18 +1178,18 @@ Proof with (simpl in *; try eassumption; eauto 3 with *).
   - induction H; try solve [constructor; eauto 3 with AllHd]; eauto.
     + applys s_trans...
     + applys s_sub_arrow...
-    + applys* AS_and.
+    + applys* ASub_and.
     + applys s_sub_part1...
     + applys s_sub_part1...
     + applys algorithmic_sub_or. eauto 4 with *. auto. auto.
     + applys s_sub_orl...
     + applys s_sub_orr...
-    + applys AS_and...
-    + applys AS_and... eauto 4 with *. eauto 4 with *.
+    + applys ASub_and...
+    + applys ASub_and... eauto 4 with *. eauto 4 with *.
     + applys s_sub_distArrU.
-    + applys* AS_and...
+    + applys* ASub_and...
     + applys algorithmic_sub_or. eauto 4 with *.
-      applys AS_and... applys s_sub_orl... applys s_sub_orr...
+      applys ASub_and... applys s_sub_orl... applys s_sub_orr...
     + applys algorithmic_sub_or. eauto 4 with *.
       applys s_sub_orl... applys s_sub_orr...
   - induction H; auto with *.
