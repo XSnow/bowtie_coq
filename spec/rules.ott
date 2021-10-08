@@ -306,6 +306,7 @@ Split :: '' ::=
   ---------------------------------- :: orl
   splitI A | B = A1 | B & A2 | B
 
+  ordinaryI A
   splitI B = B1 & B2
   ---------------------------------- :: orr
   splitI A | B = A | B1 & A | B2
@@ -338,6 +339,7 @@ Split :: '' ::=
   ------------------------------ :: andl
   splitU A & B = A1 & B | A2 & B
 
+  ordinaryU A
   splitU B = B1 | B2
   ------------------------------ :: andr
   splitU A & B = A & B1 | A & B2
@@ -382,6 +384,14 @@ AlgorithmicSubtyping :: '' ::=
   ------------------------ :: arrow
   A1 -> A2 <a B1 -> B2
   
+  A <a B
+  ---------------------------- :: forall
+  forall X. A <a forall X. B
+
+  A <a B
+  ------------------------ :: rcd
+  In l A <a In l B
+
   splitI B = B1 & B2
   A <a B1
   A <a B2

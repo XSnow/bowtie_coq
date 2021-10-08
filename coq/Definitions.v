@@ -4,7 +4,7 @@ Require Import Metalib.Metatheory.
 Definition typevar : Set := var.
 Definition I : Set := nat.
 
-Inductive l : Set := 
+Inductive l : Set :=
  | lbl_TagIndex (i:I)
  | lbl_TagLeft : l
  | lbl_TagRight : l.
@@ -28,7 +28,7 @@ Inductive typ : Set :=  (*r value type *)
 (** opening up abstractions *)
 Fixpoint open_typ_wrt_typ_rec (k:nat) (A_5:typ) (A__6:typ) {struct A__6}: typ :=
   match A__6 with
-  | (t_tvar_b nat) => 
+  | (t_tvar_b nat) =>
       match lt_eq_lt_dec nat k with
         | inleft (left _) => t_tvar_b nat
         | inleft (right _) => A_5
@@ -40,8 +40,8 @@ Fixpoint open_typ_wrt_typ_rec (k:nat) (A_5:typ) (A__6:typ) {struct A__6}: typ :=
   | (t_or A1 A2) => t_or (open_typ_wrt_typ_rec k A_5 A1) (open_typ_wrt_typ_rec k A_5 A2)
   | (t_arrow A B) => t_arrow (open_typ_wrt_typ_rec k A_5 A) (open_typ_wrt_typ_rec k A_5 B)
   | (t_forall B) => t_forall (open_typ_wrt_typ_rec (S k) A_5 B)
-  | t_top => t_top 
-  | t_bot => t_bot 
+  | t_top => t_top
+  | t_bot => t_bot
 end.
 
 Definition open_typ_wrt_typ A_5 A__6 := open_typ_wrt_typ_rec 0 A__6 A_5.
@@ -71,9 +71,9 @@ Inductive lc_typ : typ -> Prop :=    (* defn lc_typ *)
  | lc_t_forall : forall (B:typ),
       ( forall X , lc_typ  ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
      (lc_typ (t_forall B))
- | lc_t_top : 
+ | lc_t_top :
      (lc_typ t_top)
- | lc_t_bot : 
+ | lc_t_bot :
      (lc_typ t_bot).
 (** free variables *)
 Fixpoint typefv_typ (A_5:typ) : vars :=
@@ -99,8 +99,8 @@ Fixpoint typsubst_typ (A_5:typ) (X5:typevar) (A__6:typ) {struct A__6} : typ :=
   | (t_or A1 A2) => t_or (typsubst_typ A_5 X5 A1) (typsubst_typ A_5 X5 A2)
   | (t_arrow A B) => t_arrow (typsubst_typ A_5 X5 A) (typsubst_typ A_5 X5 B)
   | (t_forall B) => t_forall (typsubst_typ A_5 X5 B)
-  | t_top => t_top 
-  | t_bot => t_bot 
+  | t_top => t_top
+  | t_bot => t_bot
 end.
 
 
@@ -153,7 +153,7 @@ Inductive DeclarativeSubtyping : typ -> typ -> Prop :=    (* defn DeclarativeSub
      lc_typ C ->
      lc_typ A ->
      lc_typ B ->
-     DeclarativeSubtyping (t_and  (t_arrow C A)   (t_arrow C B) )  (t_arrow C (t_and A B)) 
+     DeclarativeSubtyping (t_and  (t_arrow C A)   (t_arrow C B) )  (t_arrow C (t_and A B))
  | DSub_CovDistIUnionL : forall (A C B:typ),
      lc_typ A ->
      lc_typ B ->
@@ -167,7 +167,7 @@ Inductive DeclarativeSubtyping : typ -> typ -> Prop :=    (* defn DeclarativeSub
  | DSub_CovDistIAll : forall (A B:typ),
      lc_typ (t_forall A) ->
      lc_typ (t_forall B) ->
-     DeclarativeSubtyping (t_and  (t_forall A)   (t_forall B) )  (t_forall (t_and A B)) 
+     DeclarativeSubtyping (t_and  (t_forall A)   (t_forall B) )  (t_forall (t_and A B))
  | DSub_CovDistUIn : forall (l5:l) (A B:typ),
      lc_typ A ->
      lc_typ B ->
@@ -226,9 +226,9 @@ Inductive DeclarativeSubtyping : typ -> typ -> Prop :=    (* defn DeclarativeSub
 Inductive ordu : typ -> Prop :=    (* defn ordu *)
  | OrdU_var : forall (X:typevar),
      ordu (t_tvar_f X)
- | OrdU_top : 
+ | OrdU_top :
      ordu t_top
- | OrdU_bot : 
+ | OrdU_bot :
      ordu t_bot
  | OrdU_arrow : forall (A B:typ),
      lc_typ A ->
@@ -247,9 +247,9 @@ Inductive ordu : typ -> Prop :=    (* defn ordu *)
 with ordi : typ -> Prop :=    (* defn ordi *)
  | OrdI_var : forall (X:typevar),
      ordi (t_tvar_f X)
- | OrdI_top : 
+ | OrdI_top :
      ordi t_top
- | OrdI_bot : 
+ | OrdI_bot :
      ordi t_bot
  | OrdI_arrow : forall (A B:typ),
      ordu A ->
@@ -277,7 +277,7 @@ Inductive spli : typ -> typ -> typ -> Prop :=    (* defn spli *)
      spli A A1 A2 ->
      spli (t_or A B) (t_or A1 B) (t_or A2 B)
  | SpI_orr : forall (A B B1 B2:typ),
-     lc_typ A ->
+     ordi A ->
      spli B B1 B2 ->
      spli (t_or A B) (t_or A B1) (t_or A B2)
  | SpI_arrow : forall (A B B1 B2:typ),
@@ -304,7 +304,7 @@ with splu : typ -> typ -> typ -> Prop :=    (* defn splu *)
      splu A A1 A2 ->
      splu (t_and A B) (t_and A1 B) (t_and A2 B)
  | SpU_andr : forall (A B B1 B2:typ),
-     lc_typ A ->
+     ordu A ->
      splu B B1 B2 ->
      splu (t_and A B) (t_and A B1) (t_and A B2)
  | SpU_forall : forall (L:vars) (A A1 A2:typ),
@@ -328,6 +328,12 @@ Inductive algo_sub : typ -> typ -> Prop :=    (* defn algo_sub *)
      algo_sub B1 A1 ->
      algo_sub A2 B2 ->
      algo_sub (t_arrow A1 A2) (t_arrow B1 B2)
+ | ASub_forall : forall (L:vars) (A B:typ),
+      ( forall X , X \notin  L  -> algo_sub  ( open_typ_wrt_typ A (t_tvar_f X) )   ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
+     algo_sub (t_forall A) (t_forall B)
+ | ASub_rcd : forall (l5:l) (A B:typ),
+     algo_sub A B ->
+     algo_sub (t_rcd l5 A) (t_rcd l5 B)
  | ASub_and : forall (A B B1 B2:typ),
      spli B B1 B2 ->
      algo_sub A B1 ->
@@ -357,6 +363,4 @@ Inductive algo_sub : typ -> typ -> Prop :=    (* defn algo_sub *)
 
 
 (** infrastructure *)
-Hint Constructors DeclarativeSubtyping ordu ordi spli splu algo_sub lc_typ : core.
-
-
+Hint Constructors DeclarativeSubtyping spli splu algo_sub : core.
