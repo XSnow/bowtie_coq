@@ -4777,11 +4777,11 @@ Tactic Notation "skip" :=
 Tactic Notation "skip'" :=
   skip_with_existential.
 
-
+(*
 (* For backward compatibility *)
 Tactic Notation "admit" :=
   skip.
-
+*)
 (** [demo] is like [admit] but it documents the fact that admit is intended *)
 Tactic Notation "demo" :=
   skip.

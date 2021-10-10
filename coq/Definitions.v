@@ -325,13 +325,23 @@ Inductive algo_sub : typ -> typ -> Prop :=    (* defn algo_sub *)
      lc_typ A ->
      algo_sub t_bot A
  | ASub_arrow : forall (A1 A2 B1 B2:typ),
+     ordi (t_arrow A1 A2) ->
+     ordi (t_arrow B1 B2) ->
      algo_sub B1 A1 ->
      algo_sub A2 B2 ->
      algo_sub (t_arrow A1 A2) (t_arrow B1 B2)
  | ASub_forall : forall (L:vars) (A B:typ),
+      ( forall X , X \notin  L  -> ordi  ( open_typ_wrt_typ A (t_tvar_f X) )  )  ->
+      ( forall X , X \notin  L  -> ordi  ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
+      ( forall X , X \notin  L  -> ordu  ( open_typ_wrt_typ A (t_tvar_f X) )  )  ->
+      ( forall X , X \notin  L  -> ordu  ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
       ( forall X , X \notin  L  -> algo_sub  ( open_typ_wrt_typ A (t_tvar_f X) )   ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
      algo_sub (t_forall A) (t_forall B)
  | ASub_rcd : forall (l5:l) (A B:typ),
+     ordi A ->
+     ordi B ->
+     ordu A ->
+     ordu B ->
      algo_sub A B ->
      algo_sub (t_rcd l5 A) (t_rcd l5 B)
  | ASub_and : forall (A B B1 B2:typ),
@@ -340,27 +350,37 @@ Inductive algo_sub : typ -> typ -> Prop :=    (* defn algo_sub *)
      algo_sub A B2 ->
      algo_sub A B
  | ASub_andl : forall (A B A1 A2:typ),
+     ordi B ->
      spli A A1 A2 ->
      algo_sub A1 B ->
      algo_sub A B
  | ASub_andr : forall (A B A1 A2:typ),
+     ordi B ->
      spli A A1 A2 ->
      algo_sub A2 B ->
      algo_sub A B
  | ASub_or : forall (A B A1 A2:typ),
+     ordi A ->
+     ordi B ->
      splu A A1 A2 ->
      algo_sub A1 B ->
      algo_sub A2 B ->
      algo_sub A B
  | ASub_orl : forall (A B B1 B2:typ),
+     ordi A ->
+     ordi B ->
+     ordu A ->
      splu B B1 B2 ->
      algo_sub A B1 ->
      algo_sub A B
  | ASub_orr : forall (A B B1 B2:typ),
+     ordi A ->
+     ordi B ->
+     ordu A ->
      splu B B1 B2 ->
      algo_sub A B2 ->
      algo_sub A B.
 
 
 (** infrastructure *)
-Hint Constructors DeclarativeSubtyping spli splu algo_sub : core.
+Hint Constructors DeclarativeSubtyping ordu ordi spli splu lc_typ : core.

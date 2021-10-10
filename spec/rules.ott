@@ -376,16 +376,26 @@ AlgorithmicSubtyping :: '' ::=
   
   ---------------------- :: bot
   Empty <a  A
-  
+
+  ordinaryI A1->A2
+  ordinaryI B1->B2
   B1 <a A1
   A2 <a B2
   ------------------------ :: arrow
   A1 -> A2 <a B1 -> B2
   
+  ordinaryI A
+  ordinaryI B
+  ordinaryU A
+  ordinaryU B
   A <a B
   ---------------------------- :: forall
   forall X. A <a forall X. B
 
+  ordinaryI A
+  ordinaryI B
+  ordinaryU A
+  ordinaryU B
   A <a B
   ------------------------ :: rcd
   In l A <a In l B
@@ -396,27 +406,37 @@ AlgorithmicSubtyping :: '' ::=
   --------------- :: and
   A <a B
   
+  ordinaryI B
   splitI A = A1 & A2
   A1 <a B
   ------------------------- :: andl
   A <a B
-  
+
+  ordinaryI B
   splitI A = A1 & A2
   A2 <a B
   ------------------------- :: andr
   A <a B
-  
+
+  ordinaryI A
+  ordinaryI B
   splitU A = A1 | A2
   A1 <a B
   A2 <a B
   --------------- :: or
   A <a B  
   
+  ordinaryI A
+  ordinaryI B
+  ordinaryU A
   splitU B = B1 | B2
   A <a B1
   ------------------------- :: orl
   A <a B
   
+  ordinaryI A
+  ordinaryI B
+  ordinaryU A
   splitU B = B1 | B2
   A <a B2
   ------------------------- :: orr
