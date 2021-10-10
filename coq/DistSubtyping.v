@@ -1183,74 +1183,39 @@ Lemma algo_rule_or_inv : forall A A1 A2 B,
 Proof with (auto_unify; auto; try eassumption; elia; try solve [split; auto]; eauto 4).
   introv Hsub Hspl.
   indTypSize (size_typ A + size_typ B).
-  inverts keep Hsub; inverts_all_spl; inverts_all_ord; solve_false; auto_unify; auto.
+  inverts Hsub; inverts_all_spl; inverts_all_ord; solve_false; auto_unify; auto.
   - forwards (?&?): IH H0...
     forwards (?&?): IH H1...
   -  (* double split A, ordi B *)
-    split.
-    + inverts Hspl; inverts H0.
-      * forwards (?&?): IH H1...
-      * forwards (?&?): IH H1...
-      * forwards (?&?): IH H1...
-      * applys ASub_andl...
-      * assert (lc_typ (t_forall A5)) by admit. inverts Hsub.
-        ** eauto.
-        ** applys ASub_forall. admit. admit. admit. admit.
-           admit.
-        ** admit.
-        **
-        * eauto.
-           pcick_fresh X. instantiate_cofinites_with X. eauto.
-        applys ASub_andr...
-      * eauto. forwards (?&?): IH H1...
-      *
-    admit.
-  -
-
-
-    forwards (?&?): IH H...
-    forwards (?&?): IH H0...
-   lets [Hi|(?&?&Hi)]: ordi_or_split B. eauto.
-  - inverts Hsub; inverts_all_spl; inverts_all_ord; solve_false; auto_unify; auto.
-    + (* double split A *)
-      inverts Hspl; inverts H0.
-      * forwards* (?&?): IH (t_or A0 A2) A0 A2 B...
-      * forwards* (?&?): IH (t_or A1 B1) A1 B1 B...
-      * forwards: IH; try eassumption; elia; destruct_conj; split~.
-      * split~.
-      * pick_fresh X. instantiate_cofinites_with X.
-        forwards: IH H2; try eassumption.
-
-        elia; destruct_conj split~.
-
-        forwards (?&?): IH H3 B...
-    + (* double split A *)
-      inverts Hspl; inverts H0...
-      * forwards* (?&?): IH (t_or A5 A2) A5 A2 B...
-      * forwards* (?&?): IH (t_or A1 B2) A1 B2 B...
-      * forwards* (?&?): IH H1...
-  - forwards (?&?): algo_rule_and_inv Hsub Hi.
-    forwards (?&?): IH H...
-    forwards (?&?): IH H0...
+    forwards [ [?|?] | [?|?] ]: double_split Hspl; try eassumption; destruct_conj;
+      try solve [
+            match goal with
+              H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; elia
+            end; split; eauto].
+    split*.
+  -  (* double split A, ordi B *)
+    forwards [ [?|?] | [?|?] ]: double_split Hspl; try eassumption; destruct_conj;
+      try solve [
+            match goal with
+              H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; elia
+            end; split; eauto].
+    split*.
 Qed.
 
 Lemma algo_rule_orlr_inv : forall A B B1 B2,
     algo_sub A B -> ordu A -> splu B B1 B2 ->
     algo_sub A B1 \/ algo_sub A B2.
-Proof with (solve_false; auto_unify; try eassumption; algo_elia; eauto 3 with AllHd).
+Proof with (solve_false; auto_unify; try eassumption; elia; eauto 3).
   introv Hsub Hord Hspl.
   indTypSize (size_typ A + size_typ B).
-  inverts Hsub...
+  inverts Hsub; inverts_all_spl; inverts_all_ord; solve_false; auto_unify; auto.
   + (* double split *)
-    inverts Hspl; inverts H...
-    * forwards [?|?]: IH H0...
-      forwards [?|?]: IH H1...
-    * forwards [?|?]: IH H0...
-      forwards [?|?]: IH H1...
-    * forwards [?|?]: IH H2...
-    * forwards [?|?]: IH H1 H3...
-  + forwards [?|?]: IH H1... eauto 4 with AllHd. eauto 4 with AllHd.
-  + forwards* [?|?]: IH H1...  eauto 4 with AllHd. eauto 4 with AllHd.
+    forwards [ [?|?] | [?|?] ]: double_split Hspl; try eassumption; destruct_conj;
+      repeat match goal with
+               H0: ordu ?A, H1 : algo_sub ?A ?B, H2 : splu ?B _ _ |- _ => forwards [?|?]: IH H0 H1 H2; clear H1; elia
+             end; eauto.
+  + forwards [?|?]: IH H1... left... right...
+  + forwards [?|?]: IH H1... left... right...
 Qed.
 
 (********************************************)
