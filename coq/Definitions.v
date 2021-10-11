@@ -4,7 +4,7 @@ Require Import Metalib.Metatheory.
 Definition typevar : Set := var.
 Definition I : Set := nat.
 
-Inductive l : Set := 
+Inductive l : Set :=
  | lbl_TagIndex (i:I)
  | lbl_TagLeft : l
  | lbl_TagRight : l.
@@ -28,7 +28,7 @@ Inductive typ : Set :=  (*r value type *)
 (** opening up abstractions *)
 Fixpoint open_typ_wrt_typ_rec (k:nat) (A_5:typ) (A__6:typ) {struct A__6}: typ :=
   match A__6 with
-  | (t_tvar_b nat) => 
+  | (t_tvar_b nat) =>
       match lt_eq_lt_dec nat k with
         | inleft (left _) => t_tvar_b nat
         | inleft (right _) => A_5
@@ -40,8 +40,8 @@ Fixpoint open_typ_wrt_typ_rec (k:nat) (A_5:typ) (A__6:typ) {struct A__6}: typ :=
   | (t_or A1 A2) => t_or (open_typ_wrt_typ_rec k A_5 A1) (open_typ_wrt_typ_rec k A_5 A2)
   | (t_arrow A B) => t_arrow (open_typ_wrt_typ_rec k A_5 A) (open_typ_wrt_typ_rec k A_5 B)
   | (t_forall B) => t_forall (open_typ_wrt_typ_rec (S k) A_5 B)
-  | t_top => t_top 
-  | t_bot => t_bot 
+  | t_top => t_top
+  | t_bot => t_bot
 end.
 
 Definition open_typ_wrt_typ A_5 A__6 := open_typ_wrt_typ_rec 0 A__6 A_5.
@@ -71,9 +71,9 @@ Inductive lc_typ : typ -> Prop :=    (* defn lc_typ *)
  | lc_t_forall : forall (B:typ),
       ( forall X , lc_typ  ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
      (lc_typ (t_forall B))
- | lc_t_top : 
+ | lc_t_top :
      (lc_typ t_top)
- | lc_t_bot : 
+ | lc_t_bot :
      (lc_typ t_bot).
 (** free variables *)
 Fixpoint typefv_typ (A_5:typ) : vars :=
@@ -99,136 +99,136 @@ Fixpoint typsubst_typ (A_5:typ) (X5:typevar) (A__6:typ) {struct A__6} : typ :=
   | (t_or A1 A2) => t_or (typsubst_typ A_5 X5 A1) (typsubst_typ A_5 X5 A2)
   | (t_arrow A B) => t_arrow (typsubst_typ A_5 X5 A) (typsubst_typ A_5 X5 B)
   | (t_forall B) => t_forall (typsubst_typ A_5 X5 B)
-  | t_top => t_top 
-  | t_bot => t_bot 
+  | t_top => t_top
+  | t_bot => t_bot
 end.
 
 
 (** definitions *)
 
 (* defns DSub *)
-Inductive DeclarativeSubtyping : typ -> typ -> Prop :=    (* defn DeclarativeSubtyping *)
+Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_subtyping *)
  | DSub_Refl : forall (A:typ),
      lc_typ A ->
-     DeclarativeSubtyping A A
+     declarative_subtyping A A
  | DSub_Trans : forall (A1 A3 A2:typ),
-     DeclarativeSubtyping A1 A2 ->
-     DeclarativeSubtyping A2 A3 ->
-     DeclarativeSubtyping A1 A3
+     declarative_subtyping A1 A2 ->
+     declarative_subtyping A2 A3 ->
+     declarative_subtyping A1 A3
  | DSub_CovIn : forall (l5:l) (A B:typ),
-     DeclarativeSubtyping A B ->
-     DeclarativeSubtyping (t_rcd l5 A) (t_rcd l5 B)
+     declarative_subtyping A B ->
+     declarative_subtyping (t_rcd l5 A) (t_rcd l5 B)
  | DSub_CovArr : forall (C A B:typ),
      lc_typ C ->
-     DeclarativeSubtyping A B ->
-     DeclarativeSubtyping (t_arrow C A) (t_arrow C B)
+     declarative_subtyping A B ->
+     declarative_subtyping (t_arrow C A) (t_arrow C B)
  | DSub_CovAll : forall (L:vars) (A B:typ),
-      ( forall X , X \notin  L  -> DeclarativeSubtyping  ( open_typ_wrt_typ A (t_tvar_f X) )   ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
-     DeclarativeSubtyping (t_forall A) (t_forall B)
+      ( forall X , X \notin  L  -> declarative_subtyping  ( open_typ_wrt_typ A (t_tvar_f X) )   ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
+     declarative_subtyping (t_forall A) (t_forall B)
  | DSub_CovInterL : forall (A C B:typ),
      lc_typ C ->
-     DeclarativeSubtyping A B ->
-     DeclarativeSubtyping (t_and A C) (t_and B C)
+     declarative_subtyping A B ->
+     declarative_subtyping (t_and A C) (t_and B C)
  | DSub_CovInterR : forall (C A B:typ),
      lc_typ C ->
-     DeclarativeSubtyping A B ->
-     DeclarativeSubtyping (t_and C A) (t_and C B)
+     declarative_subtyping A B ->
+     declarative_subtyping (t_and C A) (t_and C B)
  | DSub_CovUnionL : forall (A C B:typ),
      lc_typ C ->
-     DeclarativeSubtyping A B ->
-     DeclarativeSubtyping (t_or A C) (t_or B C)
+     declarative_subtyping A B ->
+     declarative_subtyping (t_or A C) (t_or B C)
  | DSub_CovUnionR : forall (C A B:typ),
      lc_typ C ->
-     DeclarativeSubtyping A B ->
-     DeclarativeSubtyping (t_or C A) (t_or C B)
+     declarative_subtyping A B ->
+     declarative_subtyping (t_or C A) (t_or C B)
  | DSub_FunCon : forall (A1 B A2:typ),
      lc_typ B ->
-     DeclarativeSubtyping A2 A1 ->
-     DeclarativeSubtyping (t_arrow A1 B) (t_arrow A2 B)
+     declarative_subtyping A2 A1 ->
+     declarative_subtyping (t_arrow A1 B) (t_arrow A2 B)
  | DSub_CovDistIIn : forall (l5:l) (A B:typ),
      lc_typ A ->
      lc_typ B ->
-     DeclarativeSubtyping (t_and  (t_rcd l5 A)   (t_rcd l5 B) ) (t_rcd l5  (t_and A B) )
+     declarative_subtyping (t_and  (t_rcd l5 A)   (t_rcd l5 B) ) (t_rcd l5  (t_and A B) )
  | DSub_CovDistIArr : forall (C A B:typ),
      lc_typ C ->
      lc_typ A ->
      lc_typ B ->
-     DeclarativeSubtyping (t_and  (t_arrow C A)   (t_arrow C B) )  (t_arrow C (t_and A B)) 
+     declarative_subtyping (t_and  (t_arrow C A)   (t_arrow C B) )  (t_arrow C (t_and A B))
  | DSub_CovDistIUnionL : forall (A C B:typ),
      lc_typ A ->
      lc_typ B ->
      lc_typ C ->
-     DeclarativeSubtyping (t_and  (t_or A C)   (t_or B C) ) (t_or  (t_and A B)  C)
+     declarative_subtyping (t_and  (t_or A C)   (t_or B C) ) (t_or  (t_and A B)  C)
  | DSub_CovDistIUnionR : forall (C A B:typ),
      lc_typ C ->
      lc_typ A ->
      lc_typ B ->
-     DeclarativeSubtyping (t_and  (t_or C A)   (t_or C B) ) (t_or C  (t_and A B) )
+     declarative_subtyping (t_and  (t_or C A)   (t_or C B) ) (t_or C  (t_and A B) )
  | DSub_CovDistIAll : forall (A B:typ),
      lc_typ (t_forall A) ->
      lc_typ (t_forall B) ->
-     DeclarativeSubtyping (t_and  (t_forall A)   (t_forall B) )  (t_forall (t_and A B)) 
+     declarative_subtyping (t_and  (t_forall A)   (t_forall B) )  (t_forall (t_and A B))
  | DSub_CovDistUIn : forall (l5:l) (A B:typ),
      lc_typ A ->
      lc_typ B ->
-     DeclarativeSubtyping (t_rcd l5  (t_or A B) ) (t_or  (t_rcd l5 A)   (t_rcd l5 B) )
+     declarative_subtyping (t_rcd l5  (t_or A B) ) (t_or  (t_rcd l5 A)   (t_rcd l5 B) )
  | DSub_CovDistUAll : forall (A B:typ),
      lc_typ (t_forall  (t_or A B) ) ->
      lc_typ (t_forall  (t_or A B) ) ->
-     DeclarativeSubtyping (t_forall  (t_or A B) ) (t_or  (t_forall A)   (t_forall B) )
+     declarative_subtyping (t_forall  (t_or A B) ) (t_or  (t_forall A)   (t_forall B) )
  | DSub_CovDistUInterL : forall (A B C:typ),
      lc_typ A ->
      lc_typ B ->
      lc_typ C ->
-     DeclarativeSubtyping (t_and  (t_or A B)  C) (t_or  (t_and A C)   (t_and B C) )
+     declarative_subtyping (t_and  (t_or A B)  C) (t_or  (t_and A C)   (t_and B C) )
  | DSub_CovDistUInterR : forall (C A B:typ),
      lc_typ A ->
      lc_typ C ->
      lc_typ B ->
-     DeclarativeSubtyping (t_and C  (t_or A B) ) (t_or  (t_and C A)   (t_and C B) )
+     declarative_subtyping (t_and C  (t_or A B) ) (t_or  (t_and C A)   (t_and C B) )
  | DSub_FunDistI : forall (A1 B A2:typ),
      lc_typ A1 ->
      lc_typ A2 ->
      lc_typ B ->
-     DeclarativeSubtyping (t_and  (t_arrow A1 B)   (t_arrow A2 B) ) (t_arrow  (t_or A1 A2)  B)
+     declarative_subtyping (t_and  (t_arrow A1 B)   (t_arrow A2 B) ) (t_arrow  (t_or A1 A2)  B)
  | DSub_InterLL : forall (A1 A2 B:typ),
      lc_typ A2 ->
-     DeclarativeSubtyping A1 B ->
-     DeclarativeSubtyping (t_and A1 A2) B
+     declarative_subtyping A1 B ->
+     declarative_subtyping (t_and A1 A2) B
  | DSub_InterLR : forall (A1 A2 B:typ),
      lc_typ A1 ->
-     DeclarativeSubtyping A2 B ->
-     DeclarativeSubtyping (t_and A1 A2) B
+     declarative_subtyping A2 B ->
+     declarative_subtyping (t_and A1 A2) B
  | DSub_InterR : forall (A B1 B2:typ),
-     DeclarativeSubtyping A B1 ->
-     DeclarativeSubtyping A B2 ->
-     DeclarativeSubtyping A (t_and B1 B2)
+     declarative_subtyping A B1 ->
+     declarative_subtyping A B2 ->
+     declarative_subtyping A (t_and B1 B2)
  | DSub_UnionL : forall (A1 A2 B:typ),
-     DeclarativeSubtyping A1 B ->
-     DeclarativeSubtyping A2 B ->
-     DeclarativeSubtyping (t_or A1 A2) B
+     declarative_subtyping A1 B ->
+     declarative_subtyping A2 B ->
+     declarative_subtyping (t_or A1 A2) B
  | DSub_UnionRL : forall (A B1 B2:typ),
      lc_typ B2 ->
-     DeclarativeSubtyping A B1 ->
-     DeclarativeSubtyping A (t_or B1 B2)
+     declarative_subtyping A B1 ->
+     declarative_subtyping A (t_or B1 B2)
  | DSub_UnionRR : forall (A B1 B2:typ),
      lc_typ B1 ->
-     DeclarativeSubtyping A B2 ->
-     DeclarativeSubtyping A (t_or B1 B2)
+     declarative_subtyping A B2 ->
+     declarative_subtyping A (t_or B1 B2)
  | DSub_Empty : forall (B:typ),
      lc_typ B ->
-     DeclarativeSubtyping t_bot B
+     declarative_subtyping t_bot B
  | DSub_Top : forall (A:typ),
      lc_typ A ->
-     DeclarativeSubtyping A t_top.
+     declarative_subtyping A t_top.
 
 (* defns Ordinary *)
 Inductive ordu : typ -> Prop :=    (* defn ordu *)
  | OrdU_var : forall (X:typevar),
      ordu (t_tvar_f X)
- | OrdU_top : 
+ | OrdU_top :
      ordu t_top
- | OrdU_bot : 
+ | OrdU_bot :
      ordu t_bot
  | OrdU_arrow : forall (A B:typ),
      lc_typ A ->
@@ -247,9 +247,9 @@ Inductive ordu : typ -> Prop :=    (* defn ordu *)
 with ordi : typ -> Prop :=    (* defn ordi *)
  | OrdI_var : forall (X:typevar),
      ordi (t_tvar_f X)
- | OrdI_top : 
+ | OrdI_top :
      ordi t_top
- | OrdI_bot : 
+ | OrdI_bot :
      ordi t_bot
  | OrdI_arrow : forall (A B:typ),
      ordu A ->
@@ -364,6 +364,6 @@ Inductive algo_sub : typ -> typ -> Prop :=    (* defn algo_sub *)
 
 
 (** infrastructure *)
-Hint Constructors DeclarativeSubtyping ordu ordi spli splu algo_sub lc_typ : core.
+Hint Constructors declarative_subtyping ordu ordi spli splu algo_sub lc_typ : core.
 
 

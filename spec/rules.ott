@@ -94,7 +94,7 @@ DSub :: '' ::=
 
   defn
   A <: B
-  :: :: DeclarativeSubtyping :: DSub_
+  :: :: declarative_subtyping :: DSub_
   {{ com Declarative subtyping }}
   by
 
