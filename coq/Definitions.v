@@ -4,7 +4,7 @@ Require Import Metalib.Metatheory.
 Definition typevar : Set := var.
 Definition I : Set := nat.
 
-Inductive l : Set :=
+Inductive l : Set := 
  | lbl_TagIndex (i:I)
  | lbl_TagLeft : l
  | lbl_TagRight : l.
@@ -20,6 +20,10 @@ Inductive typ : Set :=  (*r value type *)
  | t_top : typ
  | t_bot : typ.
 
+Inductive Fty : Set :=  (*r elimination type *)
+ | fty_StackArg (A:typ)
+ | fty_StackTyArg (A:typ).
+
 (* EXPERIMENTAL *)
 (** auxiliary functions on the new list types *)
 (** library functions *)
@@ -28,7 +32,7 @@ Inductive typ : Set :=  (*r value type *)
 (** opening up abstractions *)
 Fixpoint open_typ_wrt_typ_rec (k:nat) (A_5:typ) (A__6:typ) {struct A__6}: typ :=
   match A__6 with
-  | (t_tvar_b nat) =>
+  | (t_tvar_b nat) => 
       match lt_eq_lt_dec nat k with
         | inleft (left _) => t_tvar_b nat
         | inleft (right _) => A_5
@@ -40,9 +44,17 @@ Fixpoint open_typ_wrt_typ_rec (k:nat) (A_5:typ) (A__6:typ) {struct A__6}: typ :=
   | (t_or A1 A2) => t_or (open_typ_wrt_typ_rec k A_5 A1) (open_typ_wrt_typ_rec k A_5 A2)
   | (t_arrow A B) => t_arrow (open_typ_wrt_typ_rec k A_5 A) (open_typ_wrt_typ_rec k A_5 B)
   | (t_forall B) => t_forall (open_typ_wrt_typ_rec (S k) A_5 B)
-  | t_top => t_top
-  | t_bot => t_bot
+  | t_top => t_top 
+  | t_bot => t_bot 
 end.
+
+Definition open_Fty_wrt_typ_rec (k:nat) (A5:typ) (Fty5:Fty) : Fty :=
+  match Fty5 with
+  | (fty_StackArg A) => fty_StackArg (open_typ_wrt_typ_rec k A5 A)
+  | (fty_StackTyArg A) => fty_StackTyArg (open_typ_wrt_typ_rec k A5 A)
+end.
+
+Definition open_Fty_wrt_typ A5 Fty5 := open_Fty_wrt_typ_rec 0 Fty5 A5.
 
 Definition open_typ_wrt_typ A_5 A__6 := open_typ_wrt_typ_rec 0 A__6 A_5.
 
@@ -71,10 +83,19 @@ Inductive lc_typ : typ -> Prop :=    (* defn lc_typ *)
  | lc_t_forall : forall (B:typ),
       ( forall X , lc_typ  ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
      (lc_typ (t_forall B))
- | lc_t_top :
+ | lc_t_top : 
      (lc_typ t_top)
- | lc_t_bot :
+ | lc_t_bot : 
      (lc_typ t_bot).
+
+(* defns LC_Fty *)
+Inductive lc_Fty : Fty -> Prop :=    (* defn lc_Fty *)
+ | lc_fty_StackArg : forall (A:typ),
+     (lc_typ A) ->
+     (lc_Fty (fty_StackArg A))
+ | lc_fty_StackTyArg : forall (A:typ),
+     (lc_typ A) ->
+     (lc_Fty (fty_StackTyArg A)).
 (** free variables *)
 Fixpoint typefv_typ (A_5:typ) : vars :=
   match A_5 with
@@ -89,6 +110,12 @@ Fixpoint typefv_typ (A_5:typ) : vars :=
   | t_bot => {}
 end.
 
+Definition typefv_Fty (Fty5:Fty) : vars :=
+  match Fty5 with
+  | (fty_StackArg A) => (typefv_typ A)
+  | (fty_StackTyArg A) => (typefv_typ A)
+end.
+
 (** substitutions *)
 Fixpoint typsubst_typ (A_5:typ) (X5:typevar) (A__6:typ) {struct A__6} : typ :=
   match A__6 with
@@ -99,8 +126,14 @@ Fixpoint typsubst_typ (A_5:typ) (X5:typevar) (A__6:typ) {struct A__6} : typ :=
   | (t_or A1 A2) => t_or (typsubst_typ A_5 X5 A1) (typsubst_typ A_5 X5 A2)
   | (t_arrow A B) => t_arrow (typsubst_typ A_5 X5 A) (typsubst_typ A_5 X5 B)
   | (t_forall B) => t_forall (typsubst_typ A_5 X5 B)
-  | t_top => t_top
-  | t_bot => t_bot
+  | t_top => t_top 
+  | t_bot => t_bot 
+end.
+
+Definition typsubst_Fty (A5:typ) (X5:typevar) (Fty5:Fty) : Fty :=
+  match Fty5 with
+  | (fty_StackArg A) => fty_StackArg (typsubst_typ A5 X5 A)
+  | (fty_StackTyArg A) => fty_StackTyArg (typsubst_typ A5 X5 A)
 end.
 
 
@@ -153,7 +186,7 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
      lc_typ C ->
      lc_typ A ->
      lc_typ B ->
-     declarative_subtyping (t_and  (t_arrow C A)   (t_arrow C B) )  (t_arrow C (t_and A B))
+     declarative_subtyping (t_and  (t_arrow C A)   (t_arrow C B) )  (t_arrow C (t_and A B)) 
  | DSub_CovDistIUnionL : forall (A C B:typ),
      lc_typ A ->
      lc_typ B ->
@@ -167,7 +200,7 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
  | DSub_CovDistIAll : forall (A B:typ),
      lc_typ (t_forall A) ->
      lc_typ (t_forall B) ->
-     declarative_subtyping (t_and  (t_forall A)   (t_forall B) )  (t_forall (t_and A B))
+     declarative_subtyping (t_and  (t_forall A)   (t_forall B) )  (t_forall (t_and A B)) 
  | DSub_CovDistUIn : forall (l5:l) (A B:typ),
      lc_typ A ->
      lc_typ B ->
@@ -226,9 +259,9 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
 Inductive ordu : typ -> Prop :=    (* defn ordu *)
  | OrdU_var : forall (X:typevar),
      ordu (t_tvar_f X)
- | OrdU_top :
+ | OrdU_top : 
      ordu t_top
- | OrdU_bot :
+ | OrdU_bot : 
      ordu t_bot
  | OrdU_arrow : forall (A B:typ),
      lc_typ A ->
@@ -247,9 +280,9 @@ Inductive ordu : typ -> Prop :=    (* defn ordu *)
 with ordi : typ -> Prop :=    (* defn ordi *)
  | OrdI_var : forall (X:typevar),
      ordi (t_tvar_f X)
- | OrdI_top :
+ | OrdI_top : 
      ordi t_top
- | OrdI_bot :
+ | OrdI_bot : 
      ordi t_bot
  | OrdI_arrow : forall (A B:typ),
      ordu A ->
@@ -362,8 +395,107 @@ Inductive algo_sub : typ -> typ -> Prop :=    (* defn algo_sub *)
      algo_sub A B2 ->
      algo_sub A B.
 
+(* defns OrduFty *)
+Inductive UnionOrdinaryFty : Fty -> Prop :=    (* defn UnionOrdinaryFty *)
+ | OrdUArg : forall (A:typ),
+     ordu A ->
+     UnionOrdinaryFty (fty_StackArg A)
+ | OrdUTypeArg : forall (A:typ),
+     lc_typ A ->
+     UnionOrdinaryFty (fty_StackTyArg A).
+
+(* defns Appty *)
+Inductive ApplyTy : typ -> Fty -> typ -> Prop :=    (* defn ApplyTy *)
+ | ApplyTyEmpty : forall (Fty5:Fty),
+     UnionOrdinaryFty Fty5 ->
+     ApplyTy t_bot Fty5 t_bot
+ | ApplyFunTy : forall (A B:typ),
+     lc_typ (t_forall A) ->
+     lc_typ B ->
+     ApplyTy (t_forall A) (fty_StackTyArg B)  (open_typ_wrt_typ  A B ) 
+ | ApplyTyFun : forall (A A' B:typ),
+     lc_typ A' ->
+     UnionOrdinaryFty (fty_StackArg B) ->
+     declarative_subtyping B A ->
+     ApplyTy (t_arrow A A') (fty_StackArg B) A'
+ | ApplyTyUnion : forall (A1 A2:typ) (Fty5:Fty) (A1' A2':typ),
+     UnionOrdinaryFty Fty5 ->
+     ApplyTy A1 Fty5 A1' ->
+     ApplyTy A2 Fty5 A2' ->
+     ApplyTy (t_or A1 A2) Fty5 (t_or A1' A2')
+ | ApplyTyUnionArg : forall (A B B1' B2' B1 B2:typ),
+     splu B B1 B2 ->
+     ApplyTy A (fty_StackArg B1) B1' ->
+     ApplyTy A (fty_StackArg B2) B2' ->
+     ApplyTy A (fty_StackArg B) (t_or B1' B2')
+ | ApplyTyInterL : forall (A1 A2:typ) (Fty5:Fty) (A1':typ),
+     UnionOrdinaryFty Fty5 ->
+     ApplyTy A1 Fty5 A1' ->
+     NApplyTy A2 Fty5 ->
+     ApplyTy (t_and A1 A2) Fty5 A1'
+ | ApplyTyInterR : forall (A1 A2:typ) (Fty5:Fty) (A2':typ),
+     UnionOrdinaryFty Fty5 ->
+     NApplyTy A1 Fty5 ->
+     ApplyTy A2 Fty5 A2' ->
+     ApplyTy (t_and A1 A2) Fty5 A2'
+ | ApplyTyInterBoth : forall (A1 A2:typ) (Fty5:Fty) (A1' A2':typ),
+     UnionOrdinaryFty Fty5 ->
+     ApplyTy A1 Fty5 A1' ->
+     ApplyTy A2 Fty5 A2' ->
+     ApplyTy (t_and A1 A2) Fty5 (t_and A1' A2')
+with NApplyTy : typ -> Fty -> Prop :=    (* defn NApplyTy *)
+ | NApplyTop : forall (Fty5:Fty),
+     lc_Fty Fty5 ->
+     NApplyTy t_top Fty5
+ | NApplyVar : forall (X:typevar) (Fty5:Fty),
+     lc_Fty Fty5 ->
+     NApplyTy (t_tvar_f X) Fty5
+ | NApplyIn : forall (l5:l) (A:typ) (Fty5:Fty),
+     lc_typ A ->
+     lc_Fty Fty5 ->
+     NApplyTy (t_rcd l5 A) Fty5
+ | NApplyFunTy : forall (A B:typ),
+     lc_typ (t_forall A) ->
+     lc_typ B ->
+     NApplyTy (t_forall A) (fty_StackArg B)
+ | NApplyTyFun : forall (A A' B:typ) (Fty5:Fty),
+     lc_typ A' ->
+      lc_typ  A  ->
+      lc_typ  B  ->
+     UnionOrdinaryFty Fty5 ->
+      not (  declarative_subtyping B A  )  ->
+     NApplyTy (t_arrow A A') (fty_StackArg B)
+ | NApplyTyFunFty : forall (A A' B:typ),
+     lc_typ A ->
+     lc_typ A' ->
+     lc_typ B ->
+     NApplyTy (t_arrow A A') (fty_StackTyArg B)
+ | NApplyTyUnionL : forall (A1 A2:typ) (Fty5:Fty),
+     lc_typ A2 ->
+     UnionOrdinaryFty Fty5 ->
+     NApplyTy A1 Fty5 ->
+     NApplyTy (t_or A1 A2) Fty5
+ | NApplyTyUnionR : forall (A1 A2:typ) (Fty5:Fty),
+     lc_typ A1 ->
+     UnionOrdinaryFty Fty5 ->
+     NApplyTy A2 Fty5 ->
+     NApplyTy (t_or A1 A2) Fty5
+ | NApplyTyUnionArgL : forall (A B B1 B2:typ),
+     splu B B1 B2 ->
+     NApplyTy A (fty_StackArg B1) ->
+     NApplyTy A (fty_StackArg B)
+ | NApplyTyUnionArgR : forall (A B B1 B2:typ),
+     splu B B1 B2 ->
+     NApplyTy A (fty_StackArg B2) ->
+     NApplyTy A (fty_StackArg B)
+ | NApplyTyInter : forall (A1 A2:typ) (Fty5:Fty),
+     UnionOrdinaryFty Fty5 ->
+     NApplyTy A1 Fty5 ->
+     NApplyTy A2 Fty5 ->
+     NApplyTy (t_and A1 A2) Fty5.
+
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping ordu ordi spli splu algo_sub lc_typ : core.
+Hint Constructors declarative_subtyping ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy lc_typ lc_Fty : core.
 
 

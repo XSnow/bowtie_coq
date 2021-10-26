@@ -1,11 +1,6 @@
 -R . Top
+Appty.v
 Definitions.v
-DistAnd.v
 DistSubtyping.v
-Duotyping.v
-Equivalence.v
 LibTactics.v
 LN_Lemmas.v
-Subtyping.v
-test.v
-TypeSize.v

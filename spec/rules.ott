@@ -26,7 +26,7 @@ typ, A , B , C :: 't_' ::= {{ com value type }}
 
 %   | Tcov [ A ]                       :: M:: ctx      {{ icho (appctx_Tcov [[Tcov]] [[A]]) }}
   | ( A )                            :: S:: paren    {{ icho [[A]] }}
-  | A [ X ~> B ]                     :: M:: tsubst   {{ coq (open_typ_wrt_typ [[X]][[A]][[B]]) }}
+  | A [ X ~> B ]                     :: M:: tsubst   {{ coq (open_typ_wrt_typ [[X A]][[B]]) }}
 
 
 % Tcov {{ tex \tau }} :: 'ty_ctx_cov' ::= {{ com covariant type context }}
@@ -38,6 +38,10 @@ typ, A , B , C :: 't_' ::= {{ com value type }}
 %   | [-] | A             :: :: TCovUnionL
 %   | A | [-]             :: :: TCovUnionR
 
+Fty {{ tex \hat{A} }} :: 'fty_' ::= {{ com elimination type }}
+  | A       :: :: StackArg
+  | [ A ]   :: :: StackTyArg
+  
 terminals :: 'terminals_' ::=
   | [-]          ::    :: hole      {{ tex \hole }}
   | &            ::    :: intersect {{ tex \sqcap }}
@@ -54,7 +58,14 @@ formula :: formula_ ::=
    | judgement                       ::   :: judgement
    | l != l'                         ::   :: labNeq
    | l = l'                          ::   :: labEq
-   | ( formula )                     ::   :: formulaParen
+   | lc_typ A                        ::   :: lcTyp
+     {{ tex }}
+     {{ coq lc_typ [[A]] }}
+   | ( formula )                     :: M :: formulaParen
+    {{ coq [[formula]] }}
+   | not formula                     :: M :: not
+    {{ tex \neg [[formula]] }}
+    {{ coq not ([[formula]]) }}
 
 %contextrules
 %  Tcov _:: typ :: typ
@@ -421,3 +432,124 @@ AlgorithmicSubtyping :: '' ::=
   A <a B2
   ------------------------- :: orr
   A <a B
+
+defns
+OrduFty :: '' ::=
+
+  defn ordinaryUFty Fty :: :: UnionOrdinaryFty :: ''
+  {{ tex \nsplitu{[[Fty]]} }}
+  by
+
+  ordinaryU A
+  -------------- :: OrdUArg
+  ordinaryUFty A
+
+  ---------------- :: OrdUTypeArg
+  ordinaryUFty [A]
+  
+defns
+Appty :: '' ::=
+
+  defn
+  apply ( A , Fty ) => B
+  :: :: ApplyTy :: ''
+  {{ tex \applyty{[[ A ]]}{[[ Fty ]]}{[[ B ]]} }}
+  by
+
+  ordinaryUFty Fty
+  -------------------------- :: ApplyTyEmpty
+  apply(Empty, Fty) => Empty
+
+  ------------------------------------ :: ApplyFunTy
+  apply(forall X . A, [B]) => A[X~>B]
+
+  ordinaryUFty B
+  B <: A
+  ----------------------- :: ApplyTyFun
+  apply(A -> A', B) => A'
+
+  ordinaryUFty Fty
+  apply(A1, Fty) => A1'
+  apply(A2, Fty) => A2'
+  -------------------------------- :: ApplyTyUnion
+  apply(A1 | A2, Fty) => A1' | A2'
+
+  splitU B = B1 | B2
+  apply(A, B1) => B1'
+  apply(A, B2) => B2'
+  ------------------------ :: ApplyTyUnionArg
+  apply(A, B) => B1' | B2'
+
+  ordinaryUFty Fty
+  apply(A1, Fty) => A1'
+  apply(A2, Fty) =/>
+  ------------------------------ :: ApplyTyInterL
+  apply(A1 & A2, Fty) => A1'
+
+  ordinaryUFty Fty
+  apply(A1, Fty) =/>
+  apply(A2, Fty) => A2'
+  ------------------------------ :: ApplyTyInterR
+  apply(A1 & A2, Fty) => A2'
+
+  ordinaryUFty Fty
+  apply(A1, Fty) => A1'
+  apply(A2, Fty) => A2'
+  ------------------------------ :: ApplyTyInterBoth
+  apply(A1 & A2, Fty) => A1' & A2'
+  
+  defn
+  apply ( A , Fty ) =/>
+  :: :: NApplyTy :: ''
+  {{ tex \napplyty{[[ A ]]}{[[ Fty ]]} }}
+  by
+
+  ---------------------------------- :: NApplyTop
+  apply(Top, Fty) =/>
+  
+  ---------------------------------- :: NApplyVar
+  apply(X, Fty) =/>
+  
+  ---------------------------------- :: NApplyIn
+  apply(In l A, Fty) =/>
+  
+  ---------------------------------- :: NApplyFunTy
+  apply(forall X . A, B) =/>
+
+  lc_typ A 
+  lc_typ B
+  ordinaryUFty Fty
+  not (B <: A)
+  ----------------------- :: NApplyTyFun
+  apply(A -> A', B) =/>
+
+  ----------------------- :: NApplyTyFunFty
+  apply(A -> A', [B]) =/>
+
+  ordinaryUFty Fty
+  apply(A1, Fty) =/>
+  -------------------------------- :: NApplyTyUnionL
+  apply(A1 | A2, Fty) =/>
+
+  ordinaryUFty Fty
+  apply(A2, Fty) =/>
+  -------------------------------- :: NApplyTyUnionR
+  apply(A1 | A2, Fty) =/>
+  
+  splitU B = B1 | B2
+  apply(A, B1) =/>
+  ------------------------ :: NApplyTyUnionArgL
+  apply(A, B) =/>
+  
+  splitU B = B1 | B2
+  apply(A, B2) =/>
+  ------------------------ :: NApplyTyUnionArgR
+  apply(A, B) =/>
+
+  ordinaryUFty Fty
+  apply(A1, Fty) =/>
+  apply(A2, Fty) =/>
+  ------------------------------ :: NApplyTyInter
+  apply(A1 & A2, Fty) =/>
+
+  
