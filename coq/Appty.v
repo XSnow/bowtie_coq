@@ -5,6 +5,9 @@ Require Import LN_Lemmas.
 
 (******** subtyping **********)
 
+#[export] Hint Extern 1 (lc_typ (t_forall _)) =>
+let Y:= fresh "Y" in pick_fresh Y; instantiate_cofinites_with Y; applys lc_t_forall_exists Y : core.
+
 Lemma typsubst_typ_algo_sub : forall A B C X,
   algo_sub A B ->
   algo_sub ([X ~~> C] A) ([X ~~> C] B).
@@ -101,12 +104,10 @@ Lemma nappty_splitu_inv : forall A B B1 B2,
 Proof.
   introv HN HS.
   inverts HN; solve_false; auto_unify; eauto.
-  - (* arrow sub *)
-    forwards* [?|?]: nsub_splitu H5 HS.
 Qed.
 
 Lemma appty_contradication : forall A B C,
-    ApplyTy A B C -> NApplyTy A B -> False.
+   ApplyTy A B C -> NApplyTy A B -> False.
 Proof with solve_false.
   introv HA HN.
   indTypFtySize (size_typ A + size_Fty B).
@@ -198,17 +199,16 @@ Lemma appty_inter_both : forall A1 A2 B C1 C2,
 Admitted.
 *)
 
-Lemma appty_splitu_fun : forall A A1 A2 F C,
-    (ApplyTy A1 F C -> ApplyTy A2 F C -> splu A A1 A2 ->
+Lemma appty_splitu_fun_aux : forall A A1 A2 F,
+    (forall C1 C2, ApplyTy A1 F C1 -> ApplyTy A2 F C2 -> splu A A1 A2 ->
      exists C', ApplyTy A F C') /\
-    (NApplyTy A1 F \/ NApplyTy A2 F -> splu A A1 A2 ->
-     NApplyTy A F).
+    (NApplyTy A1 F \/ NApplyTy A2 F -> splu A A1 A2 -> NApplyTy A F).
 Proof with elia; solve_false; try eassumption.
   introv.
   indTypFtySize (size_typ A + size_Fty F).
   split.
 
-  intros HA1 HA2 HS.
+  introv HA1 HA2 HS.
   lets~ [?|(?&?&?&?&?)]: (ordu_or_split_Fty F). eauto.
   - inverts HS...
     + (* or *) exists*.
@@ -225,12 +225,11 @@ Proof with elia; solve_false; try eassumption.
       * (* Both *)  inverts HA2...
         ** exists*. applys* ApplyTyInterL. forwards~ : proj2 (IH F B) H1...
         ** forwards (?&?): proj1 (IH F B) H1... exists*.
-    + (* forall *) inverts HA1... inverts HA2... exists*. econstructor...
-      * instantiate_cofinites. applys lc_t_forall_exists x. eauto.
+    + (* forall *) inverts HA1... inverts HA2... exists*.
     + (* rcd *) inverts HA1...
   - subst.
     forwards: appty_splitu_arg_inv HA1 H0. forwards: appty_splitu_arg_inv HA2 H0.
-    destruct_conj. subst. inverts H1.
+    destruct_conj. subst.
     forwards (?&?): proj1 (IH (fty_StackArg x0) A) H4 H2...
     forwards (?&?): proj1 (IH (fty_StackArg x1) A) H5 H3...
     exists*.
@@ -242,7 +241,6 @@ Proof with elia; solve_false; try eassumption.
       * (* and *) inverts HA... forwards~ : proj2 (IH F A0) H1...
       * (* and *) inverts HA... forwards~ : proj2 (IH F B) H1...
       * (* forall *) inverts HA... constructor~.
-        ** instantiate_cofinites. applys lc_t_forall_exists x. eauto.
     + (* split *) forwards* [?|?]: nappty_splitu_inv HA.
       * forwards~ : proj2 (IH (fty_StackArg x0) A) HS... eauto.
       * forwards~ : proj2 (IH (fty_StackArg x1) A) HS... eauto.
@@ -250,7 +248,6 @@ Proof with elia; solve_false; try eassumption.
       * (* and *) inverts HA... forwards~ : proj2 (IH F A0) H1...
       * (* and *) inverts HA... forwards~ : proj2 (IH F B) H1...
       * (* forall *) inverts HA... constructor~.
-        ** instantiate_cofinites. applys lc_t_forall_exists x. eauto.
     + (* split *) forwards* [?|?]: nappty_splitu_inv HA.
       * forwards~ : proj2 (IH (fty_StackArg x0) A) HS... eauto.
       * forwards~ : proj2 (IH (fty_StackArg x1) A) HS... eauto.
@@ -258,6 +255,102 @@ Proof with elia; solve_false; try eassumption.
    Unshelve. all: apply t_top.
 Qed.
 
+Lemma appty_splitu_fun : forall A A1 A2 F C1 C2,
+    ApplyTy A1 F C1 -> ApplyTy A2 F C2 -> splu A A1 A2 -> exists C', ApplyTy A F C'.
+Proof.
+  intros.
+  forwards* (?&?): appty_splitu_fun_aux.
+Qed.
+
+Lemma nappty_splitu_fun : forall A A1 A2 F,
+    NApplyTy A1 F \/ NApplyTy A2 F -> splu A A1 A2 -> NApplyTy A F.
+Proof.
+  intros.
+  forwards* (?&?): appty_splitu_fun_aux.
+Qed.
+
+Lemma nappty_split_inv : forall A A1 A2 F,
+    NApplyTy A F -> spli A A1 A2 -> NApplyTy A1 F /\ NApplyTy A2 F.
+Proof with elia; try eassumption; eauto.
+  introv HN HS.
+  indTypFtySize (size_typ A + size_Fty F).
+  inverts HN; solve_false.
+  - (* rcd *) inverts HS; eauto.
+  - (* forall *) inverts HS. split; constructor~.
+  - (* arrow sub *) inverts~ HS.
+    assert (~ declarative_subtyping B A3). {
+      intros HF. apply H2. solve_dsub.
+    }
+    assert (~ declarative_subtyping B A4). {
+      intros HF. apply H2. solve_dsub.
+    }
+    eauto.
+  - (* arrow *) inverts~ HS.
+  - (* or *) forwards [ [?|?] | [?|?] ]: double_split HS. eauto.
+    all: destruct_conj.
+    all: try match goal with
+         | H1: NApplyTy ?A _, H2: spli ?A _ _ |- _ => forwards (?&?): IH H1 H2; elia
+             end.
+    all: split*.
+    all: applys nappty_splitu_fun; try eassumption; eauto.
+  - (* or *) forwards [ [?|?] | [?|?] ]: double_split HS. eauto.
+    all: destruct_conj.
+    all: try match goal with
+         | H1: NApplyTy ?A _, H2: spli ?A _ _ |- _ => forwards (?&?): IH H1 H2; elia
+             end.
+    all: split*.
+    all: applys nappty_splitu_fun...
+  - (* union argL *)
+    split.
+    all: applys NApplyTyUnionArgL...
+    all: applys IH HS...
+  - (* union argR *)
+    split.
+    all: applys NApplyTyUnionArgR...
+    all: applys IH HS...
+  - auto_unify...
+
+    Unshelve. all: apply t_top.
+Qed.
+
+
+Lemma appty_split_inv : forall A A1 A2 F C,
+    ApplyTy A F C -> spli A A1 A2 ->
+    (exists C1, ApplyTy A1 F C1) \/ (exists C2, ApplyTy A2 F C2).
+Proof with elia; try eassumption; eauto.
+  introv HA HS.
+  indTypFtySize (size_typ A + size_Fty F).
+  inverts HA; solve_false.
+  - (* forall *) inverts HS; eauto.
+  - (* arrow sub *) inverts~ HS.
+    + left*.
+    + inverts keep H0.
+      solve_dsub. forwards [?|?]: algo_sub_orlr_inv H1...
+      * left. exists. applys~ ApplyTyFun. solve_dsub...
+      * right. exists. applys~ ApplyTyFun. solve_dsub...
+  - (* or *) forwards [ [?|?] | [?|?] ]: double_split HS. eauto.
+    all: destruct_conj.
+    all: repeat match goal with
+             | H1: ApplyTy ?A _ _, H2: spli ?A _ _ |- _ =>
+               forwards [(?&?)|(?&?)]: IH H2 H1; elia; clear H2
+             | H1: ApplyTy ?A1 _ _, H2: ApplyTy ?A2 _ _, H3: splu _ ?A1 ?A2 |- _ =>
+               forwards* (?&?): appty_splitu_fun H1 H2 H3; elia; clear H3
+                end.
+    all: eauto.
+  - (* union argL *)
+    forwards [(?&?)|(?&?)]: IH H0...
+    forwards [(?&?)|(?&?)]: IH H1...
+(*
+Let B1 B2 be two ordu types
+
+apply (A1, B1) => apply (A1&A2, B1)
+apply (A2, B2) => apply (A1&A2, B2)
+
+together we have apply (A1&A2, B1 | B2)
+
+But neither apply (A1, B1|B2) or apply (A2, B1|B2) holds
+ *)
+    Abort.
 
 
 Lemma monotonicity_appty_1 : forall A A' F C,
@@ -289,6 +382,10 @@ Proof with try eassumption; solve_false.
         exists x0. split~.
       * (* or *) inverts HA...
         forwards [ [?|?] | [?|?] ]: double_split H0. eauto. all: destruct_conj.
+**
+        inverts H4...
+        appty_splitu_fun
+
 
         solve_dsub. applys* ASub_and.
 

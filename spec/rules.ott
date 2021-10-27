@@ -517,8 +517,7 @@ Appty :: '' ::=
   apply(forall X . A, B) =/>
 
   lc_typ A 
-  lc_typ B
-  ordinaryUFty Fty
+  ordinaryUFty B
   not (B <: A)
   ----------------------- :: NApplyTyFun
   apply(A -> A', B) =/>
