@@ -191,7 +191,12 @@ Proof.
   introv HA HS.
   inverts HA; solve_false; auto_unify; eauto.
 Qed.
-
+(*
+Lemma appty_inter_both : forall A1 A2 B C1 C2,
+    ApplyTy A1 (fty_StackArg B) C1 -> ApplyTy A2 (fty_StackArg B) C2 ->
+    exists C, ApplyTy (t_and A1 A2) (fty_StackArg B) C.
+Admitted.
+*)
 
 Lemma appty_splitu_fun : forall A A1 A2 F C,
     (ApplyTy A1 F C -> ApplyTy A2 F C -> splu A A1 A2 ->
@@ -212,13 +217,46 @@ Proof with elia; solve_false; try eassumption.
       * (* interR *) exists*. applys* ApplyTyInterR.
         forwards~ : proj2 (IH F A0) H1...
       * (* Both *)  inverts HA2...
-        ** exists*. applys* ApplyTyInterR.
-           forwards~ : proj2 (IH F A0) H1...
+        ** exists*. applys* ApplyTyInterR. forwards~ : proj2 (IH F A0) H1...
         ** forwards (?&?): proj1 (IH F A0) H1... exists*.
-    + admit.
-  - subst. forwards: appty_splitu_arg_inv HA H0. destruct_conj.
-    forwards (?&?): IH HS H1... forwards (?&?): IH HS H2...
+    + (* and *) inverts HA1...
+      * (* interL *) exists*. applys* ApplyTyInterL. forwards~ : proj2 (IH F B) H1...
+      * (* interBoth *) inverts HA2... forwards (?&?): proj1 (IH F B) H1... exists*.
+      * (* Both *)  inverts HA2...
+        ** exists*. applys* ApplyTyInterL. forwards~ : proj2 (IH F B) H1...
+        ** forwards (?&?): proj1 (IH F B) H1... exists*.
+    + (* forall *) inverts HA1... inverts HA2... exists*. econstructor...
+      * instantiate_cofinites. applys lc_t_forall_exists x. eauto.
+    + (* rcd *) inverts HA1...
+  - subst.
+    forwards: appty_splitu_arg_inv HA1 H0. forwards: appty_splitu_arg_inv HA2 H0.
+    destruct_conj. subst. inverts H1.
+    forwards (?&?): proj1 (IH (fty_StackArg x0) A) H4 H2...
+    forwards (?&?): proj1 (IH (fty_StackArg x1) A) H5 H3...
     exists*.
+
+  -
+    intros [HA|HA] HS;
+      lets~ [?|(?&?&?&?&?)]: (ordu_or_split_Fty F); subst; eauto.
+    + (* ord *) inverts~ HS...
+      * (* and *) inverts HA... forwards~ : proj2 (IH F A0) H1...
+      * (* and *) inverts HA... forwards~ : proj2 (IH F B) H1...
+      * (* forall *) inverts HA... constructor~.
+        ** instantiate_cofinites. applys lc_t_forall_exists x. eauto.
+    + (* split *) forwards* [?|?]: nappty_splitu_inv HA.
+      * forwards~ : proj2 (IH (fty_StackArg x0) A) HS... eauto.
+      * forwards~ : proj2 (IH (fty_StackArg x1) A) HS... eauto.
+    + (* ord *) inverts~ HS...
+      * (* and *) inverts HA... forwards~ : proj2 (IH F A0) H1...
+      * (* and *) inverts HA... forwards~ : proj2 (IH F B) H1...
+      * (* forall *) inverts HA... constructor~.
+        ** instantiate_cofinites. applys lc_t_forall_exists x. eauto.
+    + (* split *) forwards* [?|?]: nappty_splitu_inv HA.
+      * forwards~ : proj2 (IH (fty_StackArg x0) A) HS... eauto.
+      * forwards~ : proj2 (IH (fty_StackArg x1) A) HS... eauto.
+
+   Unshelve. all: apply t_top.
+Qed.
 
 
 
