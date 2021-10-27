@@ -884,12 +884,16 @@ Ltac auto_unify :=
   try solve [applys SpI_and];
   try solve [applys SpU_or];
   try repeat match goal with
-         | [ H1: spli ?A  _ _ , H2: spli ?A _ _ |- _ ] =>
-           (forwards (?&?): spli_unique H1 H2;
-            subst; clear H2)
-         | [ H1: splu ?A  _ _ , H2: splu ?A _ _ |- _ ] =>
-           (forwards (?&?): splu_unique H1 H2;
-            subst; clear H2)
+             | [ H1: spli (t_and _ _)  _ _  |- _ ] =>
+               inverts H1
+             | [ H1: splu (t_or _ _)  _ _  |- _ ] =>
+               inverts H1
+             | [ H1: spli ?A  _ _ , H2: spli ?A _ _ |- _ ] =>
+               (forwards (?&?): spli_unique H1 H2;
+                subst; clear H2)
+             | [ H1: splu ?A  _ _ , H2: splu ?A _ _ |- _ ] =>
+               (forwards (?&?): splu_unique H1 H2;
+                subst; clear H2)
          end.
 
 
