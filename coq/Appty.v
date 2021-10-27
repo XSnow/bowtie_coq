@@ -23,6 +23,7 @@ Proof with (simpl in *; eauto using typsubst_typ_spli_typ, typsubst_typ_splu_typ
 Qed.
 Admitted. *)
 
+Notation "A <: B" := (declarative_subtyping A B) (at level 0).
 
 Ltac solve_dsub := repeat match goal with
                           | H: declarative_subtyping _ _ |- _ => apply dsub2asub in H
@@ -256,11 +257,12 @@ Proof with elia; solve_false; try eassumption.
 Qed.
 
 Lemma appty_splitu_fun : forall A A1 A2 F C1 C2,
-    ApplyTy A1 F C1 -> ApplyTy A2 F C2 -> splu A A1 A2 -> exists C', ApplyTy A F C'.
+    ApplyTy A1 F C1 -> ApplyTy A2 F C2 -> splu A A1 A2 ->
+    exists C', ApplyTy A F C' /\ declarative_subtyping C' (t_or C1 C2).
 Proof.
   intros.
   forwards* (?&?): appty_splitu_fun_aux.
-Qed.
+Admitted.
 
 Lemma nappty_splitu_fun : forall A A1 A2 F,
     NApplyTy A1 F \/ NApplyTy A2 F -> splu A A1 A2 -> NApplyTy A F.
@@ -315,13 +317,14 @@ Qed.
 
 
 Lemma appty_split_inv : forall A A1 A2 F C,
-    ApplyTy A F C -> spli A A1 A2 ->
-    (exists C1, ApplyTy A1 F C1) \/ (exists C2, ApplyTy A2 F C2).
+    ApplyTy A F C -> spli A A1 A2 -> UnionOrdinaryFty F ->
+    (exists C1 C2, ApplyTy A1 F C1 /\ ApplyTy A2 F C2 /\ (t_and C1 C2) <: C) \/
+    (ApplyTy A1 F C \/ ApplyTy A2 F C).
 Proof with elia; try eassumption; eauto.
-  introv HA HS.
-  indTypFtySize (size_typ A + size_Fty F).
-  inverts HA; solve_false.
-  - (* forall *) inverts HS; eauto.
+  introv HA HS HU.
+  indTypFtySize (size_typ A).
+  inverts HA; solve_false; auto_unify...
+  - (* forall *) inverts HS; eauto.  Admitted. (*
   - (* arrow sub *) inverts~ HS.
     + left*.
     + inverts keep H0.
@@ -337,10 +340,10 @@ Proof with elia; try eassumption; eauto.
                forwards* (?&?): appty_splitu_fun H1 H2 H3; elia; clear H3
                 end.
     all: eauto.
-  - (* union argL *)
-    forwards [(?&?)|(?&?)]: IH H0...
-    forwards [(?&?)|(?&?)]: IH H1...
+Qed. *)
 (*
+The above lemma does not hold without ordu condition
+
 Let B1 B2 be two ordu types
 
 apply (A1, B1) => apply (A1&A2, B1)
@@ -350,14 +353,18 @@ together we have apply (A1&A2, B1 | B2)
 
 But neither apply (A1, B1|B2) or apply (A2, B1|B2) holds
  *)
-    Abort.
 
 
 Lemma monotonicity_appty_1 : forall A A' F C,
     ApplyTy A F C -> declarative_subtyping A' A -> exists C', declarative_subtyping C' C /\ ApplyTy A' F C'.
-Proof with try eassumption; solve_false.
+Proof with elia; try eassumption; solve_false.
   introv HA HS.
+  indTypFtySize (size_typ A + size_Fty F).
   lets~ [?|(?&?&?&?&?)]: (ordu_or_split_Fty F). eauto.
+  2: { subst. forwards : appty_splitu_arg_inv HA H0. destruct_conj.
+       subst. forwards (?&?&?): IH H1... forwards (?&?&?): IH H2...
+       exists. split. 2: applys~ ApplyTyUnionArg H0...
+       applys~ DSub_UnionL. applys* DSub_UnionRL. applys* DSub_UnionRR. }
   - (* ordinary F *)
     gen C. apply dsub2asub in HS. induction HS; intros.
     + (* refl *) exists. split. applys* DSub_Refl. easy.
@@ -382,6 +389,13 @@ Proof with try eassumption; solve_false.
         exists x0. split~.
       * (* or *) inverts HA...
         forwards [ [?|?] | [?|?] ]: double_split H0. eauto. all: destruct_conj.
+        ** forwards~ [?|?] : appty_split_inv H4 H1.
+           *** forwards (?&?&?): appty_splitu_fun H2...
+               forwards~ (?&?&?): IHHS1...
+               admit. admit. admit.
+
+               exists; split...
+
 **
         inverts H4...
         appty_splitu_fun

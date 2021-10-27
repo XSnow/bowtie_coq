@@ -812,7 +812,7 @@ Ltac elia :=
   try solve [pose proof (size_typ_min);
              let x := fresh "x" in
              pick fresh x; instantiate_cofinites_with x; (* forall x, x `notin` .. -> spli .. *)
-             spl_size; simpl in *;
+             spl_size; simpl in *; simpl;
              try repeat rewrite size_typ_open_typ_wrt_typ_var in *; (* spl A-^X ... *)
              try lia].
 (* eauto with typSize lngen ? *)
