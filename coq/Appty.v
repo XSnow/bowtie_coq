@@ -315,6 +315,12 @@ Proof with elia; try eassumption; eauto.
     Unshelve. all: apply t_top.
 Qed.
 
+(* this definition cannot work
+Lemma appty_split_inv : forall A A1 A2 F C,
+    ApplyTy A F C -> spli A A1 A2 -> UnionOrdinaryFty F ->
+    exists C1 C2,
+    (ApplyTy A1 F C1 /\ C <: C1) \/ ApplyTy A2 F C2.
+ *)
 
 Lemma appty_split_inv : forall A A1 A2 F C,
     ApplyTy A F C -> spli A A1 A2 -> UnionOrdinaryFty F ->
@@ -357,7 +363,7 @@ But neither apply (A1, B1|B2) or apply (A2, B1|B2) holds
 
 Lemma monotonicity_appty_1 : forall A A' F C,
     ApplyTy A F C -> declarative_subtyping A' A -> exists C', declarative_subtyping C' C /\ ApplyTy A' F C'.
-Proof with elia; try eassumption; solve_false.
+Proof with try eassumption; elia; solve_false; destruct_conj.
   introv HA HS.
   indTypFtySize (size_typ A + size_Fty F).
   lets~ [?|(?&?&?&?&?)]: (ordu_or_split_Fty F). eauto.
@@ -381,21 +387,32 @@ Proof with elia; try eassumption; solve_false.
         rewrite 2 (typsubst_typ_intro X _ B0); eauto.
       * eauto with lngen.
     + (* rcd *) inverts HA...
-    + (* split *) destruct B... all: try solve [inverts HA; solve_false].
+    + (* split *)
+      assert (ASSUME: ordu A) by admit.
+      destruct B... all: try solve [inverts HA; solve_false].
       * (* and *) auto_unify_2. inverts HA...
-        1,2: eauto.
-        forwards~ (?&?&?): IHHS1... forwards~ (?&?&?): IHHS2...
-        auto_unify_2.
-        exists x0. split~.
+        ** forwards: IHHS1...
+        ** forwards: IHHS2...
+        ** forwards~ (?&?&?): IHHS1...
+           forwards~ (?&?&?): IHHS2...
+           auto_unify_2.
+           exists x0. split~.
       * (* or *) inverts HA...
+        assert (EASY: algo_sub A (t_or B3 B4)) by admit.
+        forwards [Hd|Hd]: algo_sub_orlr_inv EASY ASSUME. eauto.
+        all: apply dsub2asub in Hd.
+        all: forwards: IH Hd...
+        all: exists x; split~.
+        all: admit. (* easy *)
+(* without ASSUME cannot prove
         forwards [ [?|?] | [?|?] ]: double_split H0. eauto. all: destruct_conj.
-        ** forwards~ [?|?] : appty_split_inv H4 H1.
+        ** forwards~ [?|?] : appty_split_inv H4 H1...
            *** forwards (?&?&?): appty_splitu_fun H2...
                forwards~ (?&?&?): IHHS1...
-               admit. admit. admit.
-
-               exists; split...
-
+               exists x4; split~.
+                 admit. admit. admit.
+*)
+      *
 **
         inverts H4...
         appty_splitu_fun
