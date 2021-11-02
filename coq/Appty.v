@@ -291,14 +291,14 @@ Proof with elia; try eassumption; eauto.
   - (* or *) forwards [ [?|?] | [?|?] ]: double_split HS. eauto.
     all: destruct_conj.
     all: try match goal with
-         | H1: NApplyTy ?A _, H2: spli ?A _ _ |- _ => forwards (?&?): IH H1 H2; elia
+             | H1: NApplyTy ?A _, H2: spli ?A _ _ |- _ => forwards (?&?): IH H1 H2; elia
              end.
     all: split*.
     all: applys nappty_splitu_fun; try eassumption; eauto.
   - (* or *) forwards [ [?|?] | [?|?] ]: double_split HS. eauto.
     all: destruct_conj.
     all: try match goal with
-         | H1: NApplyTy ?A _, H2: spli ?A _ _ |- _ => forwards (?&?): IH H1 H2; elia
+             | H1: NApplyTy ?A _, H2: spli ?A _ _ |- _ => forwards (?&?): IH H1 H2; elia
              end.
     all: split*.
     all: applys nappty_splitu_fun...
@@ -365,14 +365,79 @@ Lemma appty_soundness_1 : forall A B C,
     ApplyTy A (fty_StackArg B) C -> A <: (t_arrow B C).
 Admitted.
 
+Ltac inv_arrow :=
+  repeat match goal with
+         | H: algo_sub (t_arrow _ _) (t_arrow _ _) |- _ => forwards (?&?): algo_sub_arrow_inv H; clear H
+         | H: declarative_subtyping (t_arrow _ _) (t_arrow _ _) |- _ => apply dsub2asub in H
+         end.
+
+Ltac convert2asub :=
+  repeat match goal with
+           H: declarative_subtyping _ _ |- _ => apply dsub2asub in H
+           | |- declarative_subtyping _ _ => apply dsub2asub
+         end.
+
+Ltac convert2dsub :=
+  repeat match goal with
+           | H: algo_sub _ _ |- _ => apply dsub2asub in H
+           | |- algo_sub _ _ => apply dsub2asub
+         end.
+
+
 
 Lemma appty_completeness_1 : forall A B D,
-    A <: (t_arrow B D) ->
+    A <: (t_arrow B D) -> ordu B ->
          exists C, ApplyTy A (fty_StackArg B) C /\ (t_arrow B C) <: (t_arrow B D).
+Proof with try eassumption; elia; solve_false; destruct_conj.
+  introv HS Hord. apply dsub2asub in HS.
+  indTypFtySize (size_typ A + size_typ D).
+  forwards (?&?): algo_sub_lc HS. inverts_all_lc.
+  lets~ [?|(?&?&?)]: (ordi_or_split D).
+  - destruct H.
+    + (* algo_sub (t_tvar_f X) (t_arrow B D) -> False *) admit.
+    + (* algo_sub (t_rcd l5 A) (t_arrow B D) -> False *) admit.
+    + forwards~ [Ha|Ha]: algo_sub_andlr_inv HS;
+        forwards: IH Ha...
+      * forwards~ (?&[?|?]): appty_total A2 (fty_StackArg B).
+        inv_arrow.
+        exists (t_and x x0). split~. applys~ DSub_CovArr. applys~ DSub_InterLL.
+        admit. solve_dsub...
+        exists* x.
+      * admit. (* symmetric *)
+    + apply dsub2asub in HS.
+      assert (EASY1: A1 <: (t_arrow B D)) by applys~ DSub_Trans HS. apply dsub2asub in EASY1.
+      assert (EASY2: A2 <: (t_arrow B D)) by applys~ DSub_Trans HS. apply dsub2asub in EASY2.
+      forwards: IH B EASY1... forwards: IH B EASY2...
+      exists (t_or x x0). split~. inv_arrow. applys~ DSub_CovArr.
+      convert2dsub. applys~ DSub_UnionL.
+    + inv_arrow. convert2dsub. exists B0. split~.
+    + (* algo_sub (t_forall B0) (t_arrow B D) -> False *) admit.
+    + (* algo_sub t_top (t_arrow B D) -> False *) admit.
+    + exists*.
+  -  forwards~ (Ha1&Ha2): algo_sub_and_inv HS. eauto.
+     forwards: IH Ha1... forwards: IH Ha2... inv_arrow.
+     auto_unify_2. exists x2. split~. applys~ DSub_CovArr.
+     convert2asub. eauto.
 Admitted.
+
 
 Lemma monotonicity_appty_1 : forall A A' F C,
     ApplyTy A F C -> A' <: A -> exists C', C' <: C /\ ApplyTy A' F C'.
+Proof with try eassumption; elia; solve_false; destruct_conj.
+  introv HA HS.
+  indTypFtySize (size_typ A' + size_typ A + size_Fty F).
+  lets~ [HF|(?&?&?&?&?)]: (ordu_or_split_Fty F). eauto.
+  2: { subst. forwards : appty_splitu_arg_inv HA H0. destruct_conj.
+       subst. forwards (?&?&?): IH H1... forwards (?&?&?): IH H2...
+       exists. split. 2: applys~ ApplyTyUnionArg H0...
+       applys~ DSub_UnionL. applys* DSub_UnionRL. applys* DSub_UnionRR. }
+  inverts HF.
+  - forwards: appty_soundness_1 HA.
+    forwards HSN: DSub_Trans HS...
+    forwards~ : appty_completeness_1 HSN. destruct_conj.
+    inv_arrow. convert2dsub. exists* x.
+  -
+Qed.
 Proof.
   introv HA HS. destruct F.
   - forwards: appty_soundness_1 HA.
