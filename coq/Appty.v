@@ -325,7 +325,8 @@ Lemma appty_split_inv : forall A A1 A2 F C,
 Lemma appty_split_inv : forall A A1 A2 F C,
     ApplyTy A F C -> spli A A1 A2 -> UnionOrdinaryFty F ->
     (exists C1 C2, ApplyTy A1 F C1 /\ ApplyTy A2 F C2 /\ (t_and C1 C2) <: C) \/
-    (ApplyTy A1 F C \/ ApplyTy A2 F C).
+    ApplyTy A1 F C \/ ApplyTy A2 F C.
+(*    (ApplyTy A1 F C /\ NApplyTy A2 F \/ ApplyTy A2 F C /\ NApplyTy A2 F ). *)
 Proof with elia; try eassumption; eauto.
   introv HA HS HU.
   indTypFtySize (size_typ A).
@@ -360,22 +361,87 @@ together we have apply (A1&A2, B1 | B2)
 But neither apply (A1, B1|B2) or apply (A2, B1|B2) holds
  *)
 
+Lemma appty_soundness_1 : forall A B C,
+    ApplyTy A (fty_StackArg B) C -> A <: (t_arrow B C).
+Admitted.
+
+
+Lemma appty_completeness_1 : forall A B D,
+    A <: (t_arrow B D) ->
+         exists C, ApplyTy A (fty_StackArg B) C /\ (t_arrow B C) <: (t_arrow B D).
+Admitted.
 
 Lemma monotonicity_appty_1 : forall A A' F C,
-    ApplyTy A F C -> declarative_subtyping A' A -> exists C', declarative_subtyping C' C /\ ApplyTy A' F C'.
-Proof with try eassumption; elia; solve_false; destruct_conj.
+    ApplyTy A F C -> A' <: A -> exists C', C' <: C /\ ApplyTy A' F C'.
+Proof.
+  introv HA HS. destruct F.
+  - forwards: appty_soundness_1 HA.
+    lets HSN: DSub_Trans HS H.
+    forwards : appty_completeness_1 HSN.
+    destruct_conj.
+    apply dsub2asub in H1. forwards (?&?): algo_sub_arrow_inv H1.
+    apply dsub2asub in H3.
+    exists~ x.
+  - admit.
+
+Restart.
+   Proof with try eassumption; elia; solve_false; destruct_conj.
   introv HA HS.
-  indTypFtySize (size_typ A + size_Fty F).
+  indTypFtySize (size_typ A' + size_typ A + size_Fty F).
   lets~ [?|(?&?&?&?&?)]: (ordu_or_split_Fty F). eauto.
   2: { subst. forwards : appty_splitu_arg_inv HA H0. destruct_conj.
        subst. forwards (?&?&?): IH H1... forwards (?&?&?): IH H2...
        exists. split. 2: applys~ ApplyTyUnionArg H0...
        applys~ DSub_UnionL. applys* DSub_UnionRL. applys* DSub_UnionRR. }
   - (* ordinary F *)
-    gen C. apply dsub2asub in HS. induction HS; intros.
+    gen C. apply dsub2asub in HS. intros.
+    assert (Lc: lc_typ A') by eauto. destruct Lc.
+    1-2: admit.
+    + (* and *) lets~ [?|(?&?&?)]: (ordi_or_split A).
+      * forwards~ [Ha|Ha]: algo_sub_andlr_inv HS;
+          apply dsub2asub in Ha; forwards: IH Ha...
+        ** forwards~ (?&[?|?]): appty_total A2 F.
+           exists (t_and x x0). split. admit. eauto.
+           exists x. split*.
+        ** forwards~ (?&[?|?]): appty_total A1 F.
+           exists (t_and x0 x). split. admit. eauto.
+           exists x. split*.
+      * assert (EASY1: (t_and A1 A2) <: x) by admit.
+        assert (EASY2: (t_and A1 A2) <: x0) by admit.
+        forwards~ [?|?] : appty_split_inv HA...
+        ** forwards: IH F EASY1... forwards: IH F EASY2...
+           auto_unify_2. exists x4... admit.
+        (* problem : A1&A2 need applyty separately *)
+        (* solution: deterministic *)
+        ** destruct H1; destruct_conj.
+           forwards: IH F EASY1...
+           forwards: IH F EASY2...
+    + (* or *)
+      apply dsub2asub in HS.
+      assert (EASY1: A1 <: A) by admit.
+      assert (EASY2: A2 <: A) by admit.
+      forwards: IH F EASY1... forwards: IH F EASY2...
+      exists* (t_or x x0).
+    + (* arrow *) destruct F.
+      * forwards: appty_soundness_1 HA. apply dsub2asub in HS.
+        assert ((t_arrow A0 B) <: (t_arrow A1 C)). applys DSub_Trans...
+        apply dsub2asub in H1. forwards (?&?): algo_sub_arrow_inv H1.
+        exists B. split. solve_dsub... econstructor... solve_dsub...
+      * admit. (*false*)
+    + admit. (* algo_sub (t_forall B) A
+               ApplyTy A F C
+               -----------------------
+               F is tyArg *)
+    + exists t_top. split~. admit.
+
+        (* key: F must be ordu *
+(* F <: A -> A~A' /\ ordu A' *)
+
+
+    induction HS; intros.
     + (* refl *) exists. split. applys* DSub_Refl. easy.
     + (* top *) false. applys* appty_contradication HA.
-    + (* bot *) exists* t_bot.
+    + (* bot *) exists* t_bot.x
     + (* arrow *) apply dsub2asub in HS1. apply dsub2asub in HS2.
       inverts keep HA... exists A2. split*.
     + (* forall *)
