@@ -365,6 +365,11 @@ Lemma appty_soundness_1 : forall A B C,
     ApplyTy A (fty_StackArg B) C -> A <: (t_arrow B C).
 Admitted.
 
+Lemma appty_soundness_2 : forall A B C,
+    ApplyTy A (fty_StackTyArg B) C ->
+    exists X C', C = C'^-^B /\ ApplyTy A (fty_StackTyArg (t_tvar_f X)) (C'-^X) /\ A <: (t_forall C').
+Admitted.
+
 Ltac inv_arrow :=
   repeat match goal with
          | H: algo_sub (t_arrow _ _) (t_arrow _ _) |- _ => forwards (?&?): algo_sub_arrow_inv H; clear H
@@ -382,7 +387,6 @@ Ltac convert2dsub :=
            | H: algo_sub _ _ |- _ => apply dsub2asub in H
            | |- algo_sub _ _ => apply dsub2asub
          end.
-
 
 
 Lemma appty_completeness_1 : forall A B D,
@@ -420,6 +424,76 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
      convert2asub. eauto.
 Admitted.
 
+(* hard to define with current definition *)
+(*)
+Lemma appty_completeness_2 : forall A B,
+    A <: (t_forall B) ->
+         exists C, ApplyTy A (fty_StackTyArg B) C /\ C[B~>X]?? <: (t_forall B).
+*)
+
+(* no determinism if defined in this way
+
+  ------------------------------------ :: ApplyFunTy
+  apply(forall X . A, [B]) => A
+ *)
+
+Lemma appty_rename : forall A B X C,
+    ApplyTy A (fty_StackTyArg (t_tvar_f X)) B -> X `notin` [[A]] ->
+    ApplyTy A (fty_StackTyArg C) ( [X ~~> C] B).
+Admitted.
+
+Ltac simpl_rename H :=
+  match type of H with
+  | context [ [?X ~~> _] (_ -^ ?X) ] =>
+    rewrite typsubst_typ_spec in H; rewrite close_typ_wrt_typ_open_typ_wrt_typ in H
+  | context [ [?X ~~> _] ?A ] =>
+    rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ A X) in H;
+    rewrite typsubst_typ_spec in H; rewrite close_typ_wrt_typ_open_typ_wrt_typ in H
+  end.
+
+Ltac simpl_rename_goal :=
+  match goal with
+  | |- context [ [?X ~~> _] (_ -^ ?X) ] =>
+    rewrite typsubst_typ_spec; rewrite close_typ_wrt_typ_open_typ_wrt_typ
+  | |- context [ [?X ~~> _] ?A ] =>
+    rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ A X);
+    rewrite typsubst_typ_spec; rewrite close_typ_wrt_typ_open_typ_wrt_typ
+  end.
+
+Lemma appty_completeness_2 : forall A B,
+    A <: (t_forall B) ->
+         exists C L, forall X, X `notin` L ->
+             ApplyTy A (fty_StackTyArg (t_tvar_f X)) (C-^X) /\ (t_forall C) <: (t_forall B).
+Proof with try eassumption; elia; solve_false; destruct_conj.
+  introv HS. apply dsub2asub in HS.
+  indTypFtySize (size_typ A + size_typ B).
+  lets~ [?|(?&?&?)]: (ordi_or_split (t_forall B)).
+  - assert (lc_typ A) by eauto. destruct H0.
+    + (* algo_sub (t_tvar_f X) (t_forall B) -> False *) admit.
+    + (* algo_sub (t_rcd l5 A) (t_forall B) -> False *) admit.
+    + forwards~ [Ha|Ha]: algo_sub_andlr_inv HS;
+        forwards: IH Ha...
+      * pick fresh X for ([[A1]] `union` [[A2]] `union` x0 `union` [[x]]). forwards~ : H0 X.
+        forwards~ (?&[?|?]): appty_total A2 (fty_StackTyArg (t_tvar_f X)).
+        destruct_conj.
+        exists. intros Y Fry.
+        forwards~ HR1: appty_rename (t_tvar_f Y) H1. forwards~ HR2: appty_rename (t_tvar_f Y) H2.
+        simpl_rename HR1. simpl_rename HR2.
+        assert (Heq: forall Y, (t_and x (close_typ_wrt_typ X x1)) -^ Y = t_and (x -^ Y) (close_typ_wrt_typ X x1 -^ Y)) by eauto. rewrite Heq.
+        split~. applys DSub_CovAll. intros X0 Fry2.
+        apply dsub2asub in H3. forwards: algo_sub_forall_inv X0 H3.
+        rewrite Heq. applys~ DSub_InterLL.
+        admit. (* boring lc_typ *) solve_dsub...
+        admit. eauto.
+        admit.
+
+      * admit. (* symmetric *)
+    + apply dsub2asub in HS.
+      assert (EASY1: A1 <: (t_forall B)) by applys~ DSub_Trans HS. apply dsub2asub in EASY1.
+      assert (EASY2: A2 <: (t_forall B)) by applys~ DSub_Trans HS. apply dsub2asub in EASY2.
+      forwards: IH B EASY1... forwards: IH B EASY2...
+Admitted.
+
 
 Lemma monotonicity_appty_1 : forall A A' F C,
     ApplyTy A F C -> A' <: A -> exists C', C' <: C /\ ApplyTy A' F C'.
@@ -436,8 +510,21 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
     forwards HSN: DSub_Trans HS...
     forwards~ : appty_completeness_1 HSN. destruct_conj.
     inv_arrow. convert2dsub. exists* x.
-  -
+  - forwards: appty_soundness_2 HA. destruct_conj.
+    forwards HSN: DSub_Trans HS...
+    forwards~ : appty_completeness_2 HSN. destruct_conj.
+    pick fresh X for (x2 `union` {{x}} `union` [[x1]] `union` [[A']] `union` [[x0]]).
+    forwards~ : H3 X. destruct_conj.
+    eapply appty_rename in H4. exists. split...
+    simpl_rename_goal. subst~.
+    convert2asub.
+    forwards : algo_sub_forall_inv X H5.
+    eapply typsubst_typ_algo_sub in H0.
+    rewrite 2 typsubst_typ_spec in H0; rewrite 2 close_typ_wrt_typ_open_typ_wrt_typ in H0.
+    apply~ H0.
+    all: eauto.
 Qed.
+
 Proof.
   introv HA HS. destruct F.
   - forwards: appty_soundness_1 HA.
