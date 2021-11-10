@@ -652,34 +652,34 @@ NewAlgorithmicSubtyping :: '' ::=
   ------------------------ :: rcd
   In l A <n In l B
 
-  splitI B = B1 & B2
+  splitI B ~ B1 & B2
   A <n B1
   A <n B2
   --------------- :: and
   A <n B
   
-  splitI A = A1 & A2
+  splitI A ~ A1 & A2
   A1 <n B
   ------------------------- :: andl
   A <n B
 
-  splitI A = A1 & A2
+  splitI A ~ A1 & A2
   A2 <n B
   ------------------------- :: andr
   A <n B
 
-  splitU A = A1 | A2
+  splitU A ~ A1 | A2
   A1 <n B
   A2 <n B
   --------------- :: or
   A <n B  
   
-  splitU B = B1 | B2
+  splitU B ~ B1 | B2
   A <n B1
   ------------------------- :: orl
   A <n B
   
-  splitU B = B1 | B2
+  splitU B ~ B1 | B2
   A <n B2
   ------------------------- :: orr
   A <n B

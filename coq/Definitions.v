@@ -563,29 +563,29 @@ Inductive new_sub : typ -> typ -> Prop :=    (* defn new_sub *)
      new_sub A B ->
      new_sub (t_rcd l5 A) (t_rcd l5 B)
  | NSub_and : forall (A B B1 B2:typ),
-     spli B B1 B2 ->
+     new_spli B B1 B2 ->
      new_sub A B1 ->
      new_sub A B2 ->
      new_sub A B
  | NSub_andl : forall (A B A1 A2:typ),
-     spli A A1 A2 ->
+     new_spli A A1 A2 ->
      new_sub A1 B ->
      new_sub A B
  | NSub_andr : forall (A B A1 A2:typ),
-     spli A A1 A2 ->
+     new_spli A A1 A2 ->
      new_sub A2 B ->
      new_sub A B
  | NSub_or : forall (A B A1 A2:typ),
-     splu A A1 A2 ->
+     new_splu A A1 A2 ->
      new_sub A1 B ->
      new_sub A2 B ->
      new_sub A B
  | NSub_orl : forall (A B B1 B2:typ),
-     splu B B1 B2 ->
+     new_splu B B1 B2 ->
      new_sub A B1 ->
      new_sub A B
  | NSub_orr : forall (A B B1 B2:typ),
-     splu B B1 B2 ->
+     new_splu B B1 B2 ->
      new_sub A B2 ->
      new_sub A B.
 

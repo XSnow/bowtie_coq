@@ -32,8 +32,8 @@
 
 Require Import LibTactics.
 Require Import Coq.micromega.Lia.
-Require Export Definitions.
 Require Import LN_Lemmas.
+Require Export Definitions.
 
 Create HintDb AllHd.
 Create HintDb SizeHd.
@@ -603,7 +603,7 @@ Proof.
   intros. inverts* H.
 Qed.
 
-#[local] Hint Resolve lc_forall_inv : core.
+#[export] Hint Resolve lc_forall_inv : core.
 
 (*********************************** ord & split *******************************)
 #[export] Hint Extern 1 (ordi _) =>
@@ -643,7 +643,7 @@ Proof with (subst~; simpl in *; eauto).
   - (* forall *)
     pick fresh x for [[B]].
     forwards* [?|(?&?&?)]: H0 x.
-Qed.
+Defined.
 
 Lemma ordi_or_split: forall A,
     lc_typ A -> ordi A \/ exists B C, spli A B C.
@@ -659,7 +659,7 @@ Proof with (subst~; simpl in *; eauto).
   - (* forall *)
     pick fresh x for [[B]].
     forwards* [?|(?&?&?)]: H0 x.
-Qed.
+Defined.
 
 (********************************************)
 (*                                          *)
@@ -1323,7 +1323,7 @@ Proof with (elia; inverts_all_lc; try eassumption; simpl in *; solve_false; try 
     forwards [IHA1|IHA1] : IH A x...
     forwards [IHA2|IHA2] : IH A x0...
   Unshelve. applys empty.
-Qed.
+Defined.
 
 
 Lemma dsub_splu: forall A B C,
