@@ -3,6 +3,103 @@ Require Import Coq.micromega.Lia.
 Require Import LN_Lemmas.
 Require Export DistSubtyping.
 
+#[export] Hint Extern 1 (lc_typ (t_forall _)) =>
+let Y:= fresh "Y" in pick_fresh Y; instantiate_cofinites_with Y; applys lc_t_forall_exists Y : core.
+
+
+Ltac inv_arrow :=
+  repeat match goal with
+         | H: algo_sub (t_arrow _ _) (t_arrow _ _) |- _ => forwards (?&?): algo_sub_arrow_inv H; clear H
+         | H: declarative_subtyping (t_arrow _ _) (t_arrow _ _) |- _ => apply dsub2asub in H
+         end.
+
+Ltac inv_forall :=
+  repeat match goal with
+         | H: algo_sub (t_forall _) (t_forall _) |- _ => forwards : algo_sub_forall_inv H; clear H
+         | H: declarative_subtyping (t_forall _) (t_forall _) |- _ => apply dsub2asub in H
+         end.
+
+
+Ltac convert2asub :=
+  repeat match goal with
+           H: declarative_subtyping _ _ |- _ => apply dsub2asub in H
+           | |- declarative_subtyping _ _ => apply dsub2asub
+         end.
+
+Ltac convert2dsub :=
+  repeat match goal with
+           | H: algo_sub _ _ |- _ => apply dsub2asub in H
+           | |- algo_sub _ _ => apply dsub2asub
+         end.
+
+
+Lemma sub_inv_1 : forall X B D,
+    algo_sub (t_tvar_f X) (t_arrow B D) -> False.
+Proof.
+  introv H. indTypSize (size_typ (t_arrow B D)).
+  inverts H; solve_false.
+  all: inverts H0; applys IH; try eassumption; elia.
+Qed.
+
+Lemma sub_inv_2 : forall l5 A B D,
+    algo_sub (t_rcd l5 A) (t_arrow B D) -> False.
+Proof.
+  introv H. indTypSize (size_typ (t_rcd l5 A) + size_typ (t_arrow B D)).
+  inverts H; solve_false.
+  all: inverts H0; applys IH; try eassumption; elia.
+Qed.
+
+Lemma sub_inv_3 : forall B D,
+    algo_sub t_top (t_arrow B D) -> False.
+Proof.
+  introv H. indTypSize (size_typ (t_arrow B D)).
+  inverts H; solve_false.
+  all: inverts H0; applys IH; try eassumption; elia.
+Qed.
+
+Lemma sub_inv_4 : forall A B D,
+    algo_sub (t_forall A) (t_arrow B D) -> False.
+Proof.
+  introv H. indTypSize (size_typ (t_forall A) + size_typ (t_arrow B D)).
+  inverts H; solve_false.
+  all: inverts H0; applys IH; try eassumption; elia.
+Qed.
+
+Lemma sub_inv_5 : forall X B,
+    algo_sub (t_tvar_f X) (t_forall B) -> False.
+Proof.
+  introv H. indTypSize (size_typ (t_forall B)).
+  inverts H; solve_false.
+  all: inverts H0; applys IH; try eassumption; elia.
+Qed.
+
+Lemma sub_inv_6 : forall l5 A B,
+    algo_sub (t_rcd l5 A) (t_forall B) -> False.
+Proof.
+  introv H. indTypSize (size_typ (t_rcd l5 A) + size_typ (t_forall B)).
+  inverts H; solve_false.
+  all: inverts H0; applys IH; try eassumption; elia.
+Qed.
+
+Lemma sub_inv_7 : forall B,
+    algo_sub t_top (t_forall B) -> False.
+Proof.
+  introv H. indTypSize (size_typ (t_forall B)).
+  inverts H; solve_false.
+  all: inverts H0; applys IH; try eassumption; elia.
+Qed.
+
+Lemma sub_inv_8 : forall A B D,
+    algo_sub (t_arrow B D) (t_forall A) -> False.
+Proof.
+  introv H. indTypSize (size_typ (t_forall A) + size_typ (t_arrow B D)).
+  inverts H; solve_false.
+  all: inverts H0; applys IH; try eassumption; elia.
+Qed.
+
+#[export] Hint Resolve sub_inv_1 sub_inv_2 sub_inv_3 sub_inv_4
+  sub_inv_5 sub_inv_6 sub_inv_7 sub_inv_8 : FalseHd.
+
 (******** nondeterministic split & alternative subtyping definition *******)
 
 Lemma new_splu_lc_1 : forall A B C, new_splu A B C-> lc_typ A.
@@ -262,6 +359,7 @@ Ltac simpl_rename_goal :=
     rewrite typsubst_typ_spec; rewrite close_typ_wrt_typ_open_typ_wrt_typ
   end.
 
+(* Aborted *)
 Lemma typsubst_typ_splu : forall A B C X U,
     X `notin` [[A]] `union` [[B]] `union` [[C]] -> lc_typ U ->
     new_splu ( A -^ X ) ( B -^ X ) ( C -^ X ) ->
@@ -273,9 +371,7 @@ Proof with eauto with lngen.
     lets~ Heq2: open_typ_wrt_typ_inj x.
     assert (Heq3: (t_or B C) ^-^ U = t_or (B ^-^ U) (C ^-^ U)) by eauto.
     subst. rewrite Heq3. applys NSpU_or...
-  -
-    close_typ_var X. subst.
-    simpl...
+  - close_typ_var X. subst.
 Abort. (* the following alternative definition is simpler *)
 
 Lemma typsubst_typ_splu : forall A B C X U,
@@ -291,6 +387,18 @@ Proof with eauto with lngen.
     rewrite (typsubst_typ_fresh_eq (t_tvar_f Y) U X) in H0...
 Qed.
 
+Lemma typsubst_typ_spli : forall A B C X U,
+    new_spli A B C -> lc_typ U ->
+    new_spli ([X ~~> U] A) ([X ~~> U] B) ([X ~~> U] C).
+Proof with eauto using typsubst_typ_splu with lngen.
+  introv spl lc. induction spl; simpl.
+  1-4, 7: auto...
+  - applys NSpI_arrowUnion...
+  - applys NSpI_forall (L `union` [[A]] `union` [[A1]] `union` [[A2]] `union` {{X}}).
+    intros Y Fry. instantiate_cofinites_with Y.
+    rewrite 3 typsubst_typ_open_typ_wrt_typ in H0...
+    rewrite (typsubst_typ_fresh_eq (t_tvar_f Y) U X) in H0...
+Qed.
 
 Lemma typsubst_typ_new_sub : forall A B C X,
   new_sub A B -> lc_typ C ->
@@ -307,14 +415,23 @@ Proof with (simpl in *; eauto with lngen; eauto using typsubst_typ_lc_typ, typsu
     intros Y HF. instantiate_cofinites_with Y.
     rewrite 2 typsubst_typ_open_typ_wrt_typ_var...
     applys IH; elia...
-  - applys~ NSub_rcd... applys IH; elia...
-  - applys~ NSub_andr.
-
+  - applys~ NSub_rcd... applys IH; new_elia...
+  - applys~ NSub_and. applys typsubst_typ_spli H...
+    all: applys IH; new_elia...
+  - applys~ NSub_andl. applys typsubst_typ_spli H...
+    all: applys IH; new_elia...
+  - applys~ NSub_andr. applys typsubst_typ_spli H...
+    all: applys IH; new_elia...
+  - applys~ NSub_or. applys typsubst_typ_splu H...
+    all: applys IH; new_elia...
+  - applys~ NSub_orl. applys typsubst_typ_splu H...
+    all: applys IH; new_elia...
+  - applys~ NSub_orr. applys typsubst_typ_splu H...
+    all: applys IH; new_elia...
+Qed.
 
 (******** subtyping **********)
 
-#[export] Hint Extern 1 (lc_typ (t_forall _)) =>
-let Y:= fresh "Y" in pick_fresh Y; instantiate_cofinites_with Y; applys lc_t_forall_exists Y : core.
 
 Lemma typsubst_typ_algo_sub : forall A B C X,
   algo_sub A B -> lc_typ C ->
@@ -417,7 +534,7 @@ Lemma appty_lc_2 : forall A B C, ApplyTy A B C -> lc_Fty B.
 Proof.  introv H.  induction* H. Qed.
 
 Lemma appty_lc_3 : forall A B C, ApplyTy A B C -> lc_typ C.
-Proof.  introv H.  induction* H.  eauto with lngen. Qed.
+Proof.  introv H.  induction~ H. inverts H. eauto with lngen. Qed.
 
 #[export] Hint Immediate appty_lc_1 appty_lc_2 appty_lc_3 : core.
 
@@ -635,7 +752,7 @@ Proof with elia; try eassumption; eauto.
   - auto_unify...
 
     Unshelve. all: apply t_top.
-Qed.
+Abort.
 
 (* this definition cannot work
 Lemma appty_split_inv : forall A A1 A2 F C,
@@ -653,7 +770,7 @@ Proof with elia; try eassumption; eauto.
   introv HA HS HU.
   indTypFtySize (size_typ A).
   inverts HA; solve_false; auto_unify...
-  - (* forall *) inverts HS; eauto.  Admitted. (*
+  - (* forall *) inverts HS; eauto.  Abort. (*
   - (* arrow sub *) inverts~ HS.
     + left*.
     + inverts keep H0.
@@ -683,33 +800,82 @@ together we have apply (A1&A2, B1 | B2)
 But neither apply (A1, B1|B2) or apply (A2, B1|B2) holds
  *)
 
+
+Lemma appty_rename : forall A B X C,
+    ApplyTy A (fty_StackTyArg (t_tvar_f X)) B -> X `notin` [[A]] ->
+    ApplyTy A (fty_StackTyArg C) ( [X ~~> C] B).
+Admitted.
+
+Lemma nappty_rename : forall A B C,
+    NApplyTy A (fty_StackTyArg B) -> NApplyTy A (fty_StackTyArg C).
+Admitted.
+
+
 Lemma appty_soundness_1 : forall A B C,
     ApplyTy A (fty_StackArg B) C -> A <: (t_arrow B C).
-Admitted.
+Proof with try eassumption; try applys ASub_refl; try match goal with |- lc_typ _ => eauto with lngen end.
+  introv H. inductions H.
+  all: try match goal with
+           | H: UnionOrdinaryFty (_ _) |- _ => inverts H
+           end.
+  1-2: eauto.
+  all: try forwards~ : IHApplyTy.
+  all: try forwards~ : IHApplyTy1. all: try forwards~ : IHApplyTy2.
+  - convert2asub. split_l.
+    applys algo_trans H. applys ASub_arrow... use_left_r...
+    applys algo_trans H2. applys ASub_arrow... use_right_r...
+  - convert2asub.
+    applys algo_trans ((t_arrow B1 (B1' | B2'))&(t_arrow B2 (B1' | B2'))).
+    applys algo_trans ((t_arrow B1 B1')&(t_arrow B2 B2')). split_r...
+    + split_r... * use_left_l... applys ASub_arrow... use_left_r...
+      * use_right_l... applys ASub_arrow... use_right_r...
+    + applys asub2nsub. applys NSub_and. applys NSpI_arrowUnion...
+      applys splu2nsplu H. all: applys asub2nsub.
+      * use_left_l... * use_right_l...
+  - convert2asub. use_left_l...
+  - convert2asub. swap_and_l... use_left_l...
+  - convert2asub. split_r; eauto.
+Qed.
 
 Lemma appty_soundness_2 : forall A B C,
     ApplyTy A (fty_StackTyArg B) C ->
-    exists X C', C = C'^-^B /\ ApplyTy A (fty_StackTyArg (t_tvar_f X)) (C'-^X) /\ A <: (t_forall C').
-Admitted.
-
-Ltac inv_arrow :=
-  repeat match goal with
-         | H: algo_sub (t_arrow _ _) (t_arrow _ _) |- _ => forwards (?&?): algo_sub_arrow_inv H; clear H
-         | H: declarative_subtyping (t_arrow _ _) (t_arrow _ _) |- _ => apply dsub2asub in H
-         end.
-
-Ltac convert2asub :=
-  repeat match goal with
-           H: declarative_subtyping _ _ |- _ => apply dsub2asub in H
-           | |- declarative_subtyping _ _ => apply dsub2asub
-         end.
-
-Ltac convert2dsub :=
-  repeat match goal with
-           | H: algo_sub _ _ |- _ => apply dsub2asub in H
-           | |- algo_sub _ _ => apply dsub2asub
-         end.
-
+    exists C',  C = C'^-^B /\
+                forall X, X `notin` [[C]] -> ApplyTy A (fty_StackTyArg (t_tvar_f X)) (C'-^X) /\ A <: (t_forall C').
+Proof with simpl in *; try eassumption; try applys ASub_refl; try match goal with |- lc_typ _ => eauto with lngen end; destruct_conj.
+  introv H. inductions H.
+  all: try match goal with
+           | H: UnionOrdinaryFty (_ _) |- _ => inverts H
+           end.
+  all: try forwards~ : IHApplyTy.
+  all: try forwards~ : IHApplyTy1. all: try forwards~ : IHApplyTy2.
+  all: destruct_conj.
+  - exists t_bot. split~.
+  - exists A. split~.
+  - exists (x0|x). split~.
+    + assert (Heq: forall B C X, (t_or B C) ^-^ X = t_or (B ^-^ X) (C ^-^ X)) by eauto.
+      rewrite Heq. congruence.
+    + assert (Heq: forall B C X, (t_or B C) -^ X = t_or (B -^ X) (C -^ X)) by eauto.
+      intros X Fry... forwards~ : H5 X. forwards~ : H4 X...
+      split~. * rewrite Heq. applys~ ApplyTyUnion H6 H4.
+      * convert2asub. applys algo_trans ((t_forall x0) | (t_forall x)).
+        split_l. use_left_r... use_right_r...
+        split_l. use_left_r. eauto. auto... use_right_r. eauto. auto...
+  - exists. split... intros X Fry. forwards~ : H2 X...
+    split. eapply nappty_rename in H1. eauto.
+    convert2asub. use_left_l...
+  - exists. split... intros X Fry. forwards~ : H2 X...
+    split. eapply nappty_rename in H0. eauto.
+    convert2asub. swap_and_l... use_left_l...
+  - exists (x0 & x). split...
+    + assert (Heq: forall B C X, (t_and B C) ^-^ X = t_and (B ^-^ X) (C ^-^ X)) by eauto.
+      rewrite Heq. congruence.
+    + intros X Fry. forwards~ : H4 X... forwards~ : H5 X...
+      split.
+      * assert (Heq: forall B C X, (t_and B C) -^ X = t_and (B -^ X) (C -^ X)) by eauto.
+        rewrite Heq. eauto.
+      * convert2asub. split_r; eauto.
+  Unshelve. all: apply empty.
+Qed.
 
 Lemma appty_completeness_1 : forall A B D,
     A <: (t_arrow B D) -> ordu B ->
@@ -719,17 +885,19 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
   indTypFtySize (size_typ A + size_typ D).
   forwards (?&?): algo_sub_lc HS. inverts_all_lc.
   lets~ [?|(?&?&?)]: (ordi_or_split D).
-  - destruct H.
-    + (* algo_sub (t_tvar_f X) (t_arrow B D) -> False *) admit.
-    + (* algo_sub (t_rcd l5 A) (t_arrow B D) -> False *) admit.
+  - destruct H...
     + forwards~ [Ha|Ha]: algo_sub_andlr_inv HS;
         forwards: IH Ha...
       * forwards~ (?&[?|?]): appty_total A2 (fty_StackArg B).
         inv_arrow.
         exists (t_and x x0). split~. applys~ DSub_CovArr. applys~ DSub_InterLL.
-        admit. solve_dsub...
+        eauto with lngen. solve_dsub...
         exists* x.
-      * admit. (* symmetric *)
+      * forwards~ (?&[?|?]): appty_total A1 (fty_StackArg B).
+        inv_arrow.
+        exists (t_and x0 x). split~. applys~ DSub_CovArr. applys~ DSub_InterLR.
+        eauto with lngen. solve_dsub...
+        exists x. split~.
     + apply dsub2asub in HS.
       assert (EASY1: A1 <: (t_arrow B D)) by applys~ DSub_Trans HS. apply dsub2asub in EASY1.
       assert (EASY2: A2 <: (t_arrow B D)) by applys~ DSub_Trans HS. apply dsub2asub in EASY2.
@@ -737,14 +905,12 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
       exists (t_or x x0). split~. inv_arrow. applys~ DSub_CovArr.
       convert2dsub. applys~ DSub_UnionL.
     + inv_arrow. convert2dsub. exists B0. split~.
-    + (* algo_sub (t_forall B0) (t_arrow B D) -> False *) admit.
-    + (* algo_sub t_top (t_arrow B D) -> False *) admit.
     + exists*.
   -  forwards~ (Ha1&Ha2): algo_sub_and_inv HS. eauto.
      forwards: IH Ha1... forwards: IH Ha2... inv_arrow.
      auto_unify_2. exists x2. split~. applys~ DSub_CovArr.
      convert2asub. eauto.
-Admitted.
+Qed.
 
 (* hard to define with current definition *)
 (*)
@@ -759,11 +925,6 @@ Lemma appty_completeness_2 : forall A B,
   apply(forall X . A, [B]) => A
  *)
 
-Lemma appty_rename : forall A B X C,
-    ApplyTy A (fty_StackTyArg (t_tvar_f X)) B -> X `notin` [[A]] ->
-    ApplyTy A (fty_StackTyArg C) ( [X ~~> C] B).
-Admitted.
-
 
 Lemma appty_completeness_2 : forall A B,
     A <: (t_forall B) ->
@@ -773,30 +934,66 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
   introv HS. apply dsub2asub in HS.
   indTypFtySize (size_typ A + size_typ B).
   lets~ [?|(?&?&?)]: (ordi_or_split (t_forall B)).
-  - assert (lc_typ A) by eauto. destruct H0.
-    + (* algo_sub (t_tvar_f X) (t_forall B) -> False *) admit.
-    + (* algo_sub (t_rcd l5 A) (t_forall B) -> False *) admit.
+  - assert (lc_typ A) by eauto. destruct H0...
     + forwards~ [Ha|Ha]: algo_sub_andlr_inv HS;
         forwards: IH Ha...
       * pick fresh X for ([[A1]] `union` [[A2]] `union` x0 `union` [[x]]). forwards~ : H0 X.
-        forwards~ (?&[?|?]): appty_total A2 (fty_StackTyArg (t_tvar_f X)).
-        destruct_conj.
-        exists. intros Y Fry.
-        forwards~ HR1: appty_rename (t_tvar_f Y) H1. forwards~ HR2: appty_rename (t_tvar_f Y) H2.
-        simpl_rename HR1. simpl_rename HR2.
-        assert (Heq: forall Y, (t_and x (close_typ_wrt_typ X x1)) -^ Y = t_and (x -^ Y) (close_typ_wrt_typ X x1 -^ Y)) by eauto. rewrite Heq.
-        split~. applys DSub_CovAll. intros X0 Fry2.
-        apply dsub2asub in H3. forwards: algo_sub_forall_inv X0 H3.
-        rewrite Heq. applys~ DSub_InterLL.
-        admit. (* boring lc_typ *) solve_dsub...
-        admit. eauto.
-        admit.
+        forwards~ (?&[?|?]): appty_total A2 (fty_StackTyArg (t_tvar_f X)); destruct_conj.
+        ** exists. intros Y Fry.
+           forwards~ HR1: appty_rename (t_tvar_f Y) H1. forwards~ HR2: appty_rename (t_tvar_f Y) H2.
+           simpl_rename HR1. simpl_rename HR2.
+           assert (Heq: forall Y, (t_and x (close_typ_wrt_typ X x1)) -^ Y = t_and (x -^ Y) (close_typ_wrt_typ X x1 -^ Y)) by eauto. rewrite Heq.
+           split~. applys DSub_CovAll. intros X0 Fry2.
+           apply dsub2asub in H3. forwards: algo_sub_forall_inv X0 H3.
+           rewrite Heq. applys DSub_InterLL. admit. (* lc_typ *)
+           solve_dsub...
+           admit. (* not in close *) eauto.
+        ** exists. intros Y Fry.
+           forwards~ HR1: appty_rename (t_tvar_f Y) H1. simpl_rename HR1.
+           forwards~ HR2: nappty_rename (t_tvar_f Y) H2.
+           split. applys~ ApplyTyInterL HR1. auto. eauto with lngen.
+      * pick fresh X for ([[A1]] `union` [[A2]] `union` x0 `union` [[x]]). forwards~ : H0 X.
+        forwards~ (?&[?|?]): appty_total A1 (fty_StackTyArg (t_tvar_f X)); destruct_conj.
+        ** exists. intros Y Fry.
+           forwards~ HR1: appty_rename (t_tvar_f Y) H1. forwards~ HR2: appty_rename (t_tvar_f Y) H2.
+           simpl_rename HR1. simpl_rename HR2.
+           assert (Heq: forall Y, (t_and (close_typ_wrt_typ X x1) x) -^ Y = t_and (close_typ_wrt_typ X x1 -^ Y) (x -^ Y)) by eauto. rewrite Heq.
+           split~. applys DSub_CovAll. intros X0 Fry2.
+           apply dsub2asub in H3. forwards: algo_sub_forall_inv X0 H3.
+           rewrite Heq. applys DSub_InterLL. applys algo_sub_lc H4.
+           admit. (* boring lc_typ *) solve_dsub...
+           admit. eauto.
+        ** exists. intros Y Fry.
+           forwards~ HR1: appty_rename (t_tvar_f Y) H1. simpl_rename HR1.
+           forwards~ HR2: nappty_rename (t_tvar_f Y) H2.
+           split. applys~ ApplyTyInterR HR1. auto. eauto with lngen.
 
-      * admit. (* symmetric *)
     + apply dsub2asub in HS.
       assert (EASY1: A1 <: (t_forall B)) by applys~ DSub_Trans HS. apply dsub2asub in EASY1.
       assert (EASY2: A2 <: (t_forall B)) by applys~ DSub_Trans HS. apply dsub2asub in EASY2.
       forwards: IH B EASY1... forwards: IH B EASY2...
+      exists (t_or x x1).
+      exists (union x0
+                 (union x2
+                    (union [[B]]
+                           (union [[A1]] (union [[A2]] (union [[x]] [[x1]])))))).
+      intros. instantiate_cofinites.
+      assert (Heq:forall X, (x | x1 -^ X) = (x -^ X) | (x1-^X)) by eauto. rewrite Heq.
+      split~. applys DSub_CovAll. intros. rewrite Heq. inv_forall.
+      convert2dsub. applys~ DSub_UnionL H3 H6.
+    + exists B0. exists (union [[B]] [[B0]]). convert2dsub. split~.
+    + exists t_bot. exists. split~. eauto.
+  -  forwards~ (Ha1&Ha2): algo_sub_and_inv HS... inverts H.
+     forwards: IH Ha1... forwards: IH Ha2...
+     exists x. exists (x0 `union` x2 `union` [[x]] `union` [[x1]]).
+     intros. instantiate_cofinites.
+     auto_unify_2. forwards~ : open_typ_wrt_typ_inj H5.
+     subst. split~.
+     convert2asub. applys ASub_forall. intros Y Fry.
+     instantiate_cofinites_with Y.
+     inv_forall. applys* ASub_and H1.
+
+     Unshelve. all: apply empty.
 Admitted.
 
 
@@ -815,20 +1012,21 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
     forwards HSN: DSub_Trans HS...
     forwards~ : appty_completeness_1 HSN. destruct_conj.
     inv_arrow. convert2dsub. exists* x.
-  - forwards: appty_soundness_2 HA. destruct_conj.
+  - forwards: appty_soundness_2 HA...
+    pick_fresh Y. forwards~ : H1 Y...
     forwards HSN: DSub_Trans HS...
-    forwards~ : appty_completeness_2 HSN. destruct_conj.
-    pick fresh X for (x2 `union` {{x}} `union` [[x1]] `union` [[A']] `union` [[x0]]).
-    forwards~ : H3 X. destruct_conj.
-    eapply appty_rename in H4. exists. split...
+    forwards~ : appty_completeness_2 HSN...
+    pick fresh X.
+    forwards~ : H4 X. destruct_conj.
+    eapply appty_rename in H5. exists. split...
     simpl_rename_goal. subst~.
     convert2asub.
-    forwards : algo_sub_forall_inv X H5.
+    forwards : algo_sub_forall_inv X H6.
     eapply typsubst_typ_algo_sub in H0.
     rewrite 2 typsubst_typ_spec in H0; rewrite 2 close_typ_wrt_typ_open_typ_wrt_typ in H0.
     apply~ H0.
     all: eauto.
-
+Qed. (*
 Restart. Proof.
   introv HA HS. destruct F.
   - forwards: appty_soundness_1 HA.
@@ -931,46 +1129,7 @@ Restart.
                exists x4; split~.
                  admit. admit. admit.
 *)
-      *
-**
-        inverts H4...
-        appty_splitu_fun
-
-
-        solve_dsub. applys* ASub_and.
-
-        destruct A.
-        eauto. eauto.
-
-        applys* ASub_andr.
-        eauto
-
-
-        simpl in *;
-  try solve [applys SpI_and];
-  try solve [applys SpU_or];
-  try repeat match goal with
-             | [ H1: spli (t_and _ _)  _ _  |- _ ] =>
-               inverts H1
-             | [ H1: splu (t_or _ _)  _ _  |- _ ] =>
-               inverts H1
-             | [ H1: spli ?A  _ _ , H2: spli ?A _ _ |- _ ] =>
-               (forwards (?&?): spli_unique H1 H2;
-                subst; clear H2)
-             | [ H1: splu ?A  _ _ , H2: splu ?A _ _ |- _ ] =>
-               (forwards (?&?): splu_unique H1 H2;
-                subst; clear H2)
-             end.
-        auto_unify_2. inverts H0.
-    a+
-
-      Search (open_typ_wrt_typ _ _ = _).
-
-      rewrite 2 typsubst_typ_spec in H2.
-
-      constructor*. applys~ DSub_Trans HS1.
-
-
+*)
 
 Lemma monotonicity_appty_2 : forall A B B' C,
     ApplyTy A B C -> declarative_subtyping B' B -> exists C', declarative_subtyping C' C /\ ApplyTy A B' C'.
