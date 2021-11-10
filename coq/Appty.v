@@ -9,10 +9,24 @@ Require Import LN_Lemmas.
 let Y:= fresh "Y" in pick_fresh Y; instantiate_cofinites_with Y; applys lc_t_forall_exists Y : core.
 
 Lemma typsubst_typ_algo_sub : forall A B C X,
-  algo_sub A B ->
+  algo_sub A B -> lc_typ C ->
   algo_sub ([X ~~> C] A) ([X ~~> C] B).
-Proof with (simpl in *; eauto using typsubst_typ_spli_typ, typsubst_typ_splu_typ).
-  introv s.
+Proof with (simpl in *; eauto using typsubst_typ_lc_typ, typsubst_typ_spli_typ, typsubst_typ_splu_typ).
+  introv s lc.
+  indTypSize (size_typ A + size_typ B).
+  inverts s; simpl.
+  - applys ASub_refl...
+  - applys~ ASub_top...
+  - applys~ ASub_bot...
+  - applys~ ASub_arrow... all: applys IH; elia...
+  - applys~ ASub_forall (L `union` {{X}} `union` [[C]])...
+    intros Y HF. instantiate_cofinites_with Y.
+    rewrite 2 typsubst_typ_open_typ_wrt_typ_var...
+    applys IH; elia...
+  - applys~ ASub_rcd... applys IH; elia...
+  - applys~ ASub_andr.
+    (* split subst any type may not keep the structure because it prioritizes some rules *)
+
   Admitted. (*
   induction s; intros...
   - applys~ (ASub_forall (L \u {{X}})).
@@ -523,18 +537,13 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
     rewrite 2 typsubst_typ_spec in H0; rewrite 2 close_typ_wrt_typ_open_typ_wrt_typ in H0.
     apply~ H0.
     all: eauto.
-Qed.
 
-Proof.
+Restart. Proof.
   introv HA HS. destruct F.
   - forwards: appty_soundness_1 HA.
     lets HSN: DSub_Trans HS H.
     forwards : appty_completeness_1 HSN.
     destruct_conj.
-    apply dsub2asub in H1. forwards (?&?): algo_sub_arrow_inv H1.
-    apply dsub2asub in H3.
-    exists~ x.
-  - admit.
 
 Restart.
    Proof with try eassumption; elia; solve_false; destruct_conj.
@@ -562,7 +571,7 @@ Restart.
         assert (EASY2: (t_and A1 A2) <: x0) by admit.
         forwards~ [?|?] : appty_split_inv HA...
         ** forwards: IH F EASY1... forwards: IH F EASY2...
-           auto_unify_2. exists x4... admit.
+           auto_unify_2. exists x4... split~.  admit.
         (* problem : A1&A2 need applyty separately *)
         (* solution: deterministic *)
         ** destruct H1; destruct_conj.
@@ -584,12 +593,13 @@ Restart.
                ApplyTy A F C
                -----------------------
                F is tyArg *)
-    + exists t_top. split~. admit.
+    + exfalso. admit.
+    + exists t_bot. split~. admit.
 
-        (* key: F must be ordu *
+        (* key: F must be ordu *)
 (* F <: A -> A~A' /\ ordu A' *)
 
-
+Restart.
     induction HS; intros.
     + (* refl *) exists. split. applys* DSub_Refl. easy.
     + (* top *) false. applys* appty_contradication HA.
