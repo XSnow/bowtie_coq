@@ -3,6 +3,96 @@ Require Import Coq.micromega.Lia.
 Require Export DistSubtyping.
 Require Import LN_Lemmas.
 
+(******** nondeterministic split & alternative subtyping definition *******)
+
+Lemma splu2nsplu : forall A B1 B2,
+    splu A B1 B2 -> new_splu A B1 B2.
+Proof.
+  introv H. induction* H.
+Qed.
+
+Lemma spli2nspli : forall A B1 B2,
+    spli A B1 B2 -> new_spli A B1 B2.
+Proof.
+  introv H. induction* H.
+  eauto using splu2nsplu.
+Qed.
+
+#[export] Hint Resolve splu2nsplu spli2nspli : core.
+
+Lemma asub2nsub : forall A B,
+    algo_sub A B <-> new_sub A B.
+Proof.
+  introv; split; intro H.
+  - induction H.
+    all: now eauto.
+  - induction H.
+    all: now eauto.
+Qed.
+
+(*********************** binding ********************************)
+
+Ltac close_typ_var X :=
+  repeat match goal with
+         | H: ?A = ?B -^ X |- _ =>
+           let H' := fresh "Heq" in
+           forwards~ H': close_typ_wrt_typ_open_typ_wrt_typ B;
+           rewrite <- H in H'; clear H
+         end.
+
+Ltac simpl_rename H :=
+  match type of H with
+  | context [ [?X ~~> _] (_ -^ ?X) ] =>
+    rewrite typsubst_typ_spec in H; rewrite close_typ_wrt_typ_open_typ_wrt_typ in H
+  | context [ [?X ~~> _] ?A ] =>
+    rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ A X) in H;
+    rewrite typsubst_typ_spec in H; rewrite close_typ_wrt_typ_open_typ_wrt_typ in H
+  end.
+
+Ltac simpl_rename_goal :=
+  match goal with
+  | |- context [ [?X ~~> _] (_ -^ ?X) ] =>
+    rewrite typsubst_typ_spec; rewrite close_typ_wrt_typ_open_typ_wrt_typ
+  | |- context [ [?X ~~> _] ?A ] =>
+    rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ A X);
+    rewrite typsubst_typ_spec; rewrite close_typ_wrt_typ_open_typ_wrt_typ
+  end.
+
+Lemma typsubst_typ_splu : forall A B C X U,
+    X `notin` [[A]] `union` [[B]] `union` [[C]] -> lc_typ U ->
+    new_splu ( A -^ X ) ( B -^ X ) ( C -^ X ) ->
+    new_splu ( A ^-^ U ) ( B ^-^ U ) ( C ^-^ U ).
+Proof with eauto with lngen.
+  introv Fry Lc Hs. inductions Hs; simpl.
+  - assert (Heq: (t_or B C) -^ X = t_or (B -^ X) (C -^ X)) by eauto.
+    rewrite <- Heq in x.
+    lets~ Heq2: open_typ_wrt_typ_inj x.
+    assert (Heq3: (t_or B C) ^-^ U = t_or (B ^-^ U) (C ^-^ U)) by eauto.
+    subst. rewrite Heq3. applys NSpU_or...
+  -
+    close_typ_var X. subst.
+    simpl...
+Abort. (* the following alternative definition is simpler *)
+
+Lemma typsubst_typ_splu : forall A B C X U,
+    new_splu A B C -> lc_typ U ->
+    new_splu ([X ~~> U] A) ([X ~~> U] B) ([X ~~> U] C).
+Proof with eauto with lngen.
+  introv spl lc. induction spl; simpl.
+  all: auto...
+  -
+    applys NSpU_forall (L `union` [[A]] `union` [[A1]] `union` [[A2]] `union` {{X}}).
+    intros Y Fry. instantiate_cofinites_with Y.
+    rewrite 3 typsubst_typ_open_typ_wrt_typ in H0...
+    rewrite (typsubst_typ_fresh_eq (t_tvar_f Y) U X) in H0...
+Qed.
+
+
+Lemma typsubst_typ_new_sub : forall A B C X,
+  new_sub A B -> lc_typ C ->
+  new_sub ([X ~~> C] A) ([X ~~> C] B).
+
+
 (******** subtyping **********)
 
 #[export] Hint Extern 1 (lc_typ (t_forall _)) =>
@@ -456,23 +546,6 @@ Lemma appty_rename : forall A B X C,
     ApplyTy A (fty_StackTyArg C) ( [X ~~> C] B).
 Admitted.
 
-Ltac simpl_rename H :=
-  match type of H with
-  | context [ [?X ~~> _] (_ -^ ?X) ] =>
-    rewrite typsubst_typ_spec in H; rewrite close_typ_wrt_typ_open_typ_wrt_typ in H
-  | context [ [?X ~~> _] ?A ] =>
-    rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ A X) in H;
-    rewrite typsubst_typ_spec in H; rewrite close_typ_wrt_typ_open_typ_wrt_typ in H
-  end.
-
-Ltac simpl_rename_goal :=
-  match goal with
-  | |- context [ [?X ~~> _] (_ -^ ?X) ] =>
-    rewrite typsubst_typ_spec; rewrite close_typ_wrt_typ_open_typ_wrt_typ
-  | |- context [ [?X ~~> _] ?A ] =>
-    rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ A X);
-    rewrite typsubst_typ_spec; rewrite close_typ_wrt_typ_open_typ_wrt_typ
-  end.
 
 Lemma appty_completeness_2 : forall A B,
     A <: (t_forall B) ->

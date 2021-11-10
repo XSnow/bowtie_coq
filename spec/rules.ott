@@ -552,3 +552,134 @@ Appty :: '' ::=
   apply(A1 & A2, Fty) =/>
 
   
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% alternative non-deterministic definition
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+NewSplit :: '' ::=
+
+  defn splitI A ~ B1 & B2 :: :: new_spli :: NSpI_
+  by
+
+  -------------------- :: and
+  splitI A & B ~ A & B
+
+  splitI A ~ A1 & A2
+  ---------------------------------- :: orl
+  splitI A | B ~ A1 | B & A2 | B
+
+  splitI B ~ B1 & B2
+  ---------------------------------- :: orr
+  splitI A | B ~ A | B1 & A | B2
+
+  splitI B ~ B1 & B2
+  --------------------------------- :: arrow
+  splitI A -> B ~ A -> B1 & A -> B2
+
+  splitU A ~ A1 | A2
+  --------------------------------- :: arrowUnion
+  splitI A -> B ~ A1 -> B & A2 -> B
+
+  splitI A ~ A1 & A2
+  --------------------------------------------------- :: forall
+  splitI forall X . A ~ forall X . A1 & forall X . A2
+
+  splitI A ~ A1 & A2 
+  --------------------------------- :: in
+  splitI In l A ~ In l A1 & In l A2
+
+
+  defn splitU A ~ B1 | B2 :: :: new_splu :: NSpU_
+  by
+
+  -------------------- :: or
+  splitU A | B ~ A | B
+
+  splitU A ~ A1 | A2
+  ------------------------------ :: andl
+  splitU A & B ~ A1 & B | A2 & B
+
+  splitU B ~ B1 | B2
+  ------------------------------ :: andr
+  splitU A & B ~ A & B1 | A & B2
+
+%  splitU B ~ B1 | B2
+%  --------------------------------- :: SpUFunR
+%  splitU A -> B ~ A -> B1 | A -> B2
+%
+%  splitI A ~ A1 & A2
+%  --------------------------------- :: SpUFunL
+%  splitU A -> B ~ A1 -> B | A2 -> B
+%
+  splitU A ~ A1 | A2
+  --------------------------------------------------- :: forall
+  splitU forall X . A ~ forall X . A1 | forall X . A2
+
+  splitU A ~ A1 | A2 
+  --------------------------------- :: in
+  splitU In l A ~ In l A1 | In l A2
+
+
+defns
+NewAlgorithmicSubtyping :: '' ::=
+
+  defn
+  A <n B  :: :: new_sub :: NSub_
+  {{ com New Algorithmic Subtyping }}
+  by
+  
+  
+  ---------------------- :: refl
+  A <n A
+  
+  ---------------------- :: top
+  A <n Top
+  
+  ---------------------- :: bot
+  Empty <n  A
+
+  B1 <n A1
+  A2 <n B2
+  ------------------------ :: arrow
+  A1 -> A2 <n B1 -> B2
+  
+  A <n B
+  ---------------------------- :: forall
+  forall X. A <n forall X. B
+
+  A <n B
+  ------------------------ :: rcd
+  In l A <n In l B
+
+  splitI B = B1 & B2
+  A <n B1
+  A <n B2
+  --------------- :: and
+  A <n B
+  
+  splitI A = A1 & A2
+  A1 <n B
+  ------------------------- :: andl
+  A <n B
+
+  splitI A = A1 & A2
+  A2 <n B
+  ------------------------- :: andr
+  A <n B
+
+  splitU A = A1 | A2
+  A1 <n B
+  A2 <n B
+  --------------- :: or
+  A <n B  
+  
+  splitU B = B1 | B2
+  A <n B1
+  ------------------------- :: orl
+  A <n B
+  
+  splitU B = B1 | B2
+  A <n B2
+  ------------------------- :: orr
+  A <n B

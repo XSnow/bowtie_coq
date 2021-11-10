@@ -493,8 +493,104 @@ with NApplyTy : typ -> Fty -> Prop :=    (* defn NApplyTy *)
      NApplyTy A2 Fty5 ->
      NApplyTy (t_and A1 A2) Fty5.
 
+(* defns NewSplit *)
+Inductive new_spli : typ -> typ -> typ -> Prop :=    (* defn new_spli *)
+ | NSpI_and : forall (A B:typ),
+     lc_typ A ->
+     lc_typ B ->
+     new_spli (t_and A B) A B
+ | NSpI_orl : forall (A B A1 A2:typ),
+     lc_typ B ->
+     new_spli A A1 A2 ->
+     new_spli (t_or A B) (t_or A1 B) (t_or A2 B)
+ | NSpI_orr : forall (A B B1 B2:typ),
+     lc_typ A ->
+     new_spli B B1 B2 ->
+     new_spli (t_or A B) (t_or A B1) (t_or A B2)
+ | NSpI_arrow : forall (A B B1 B2:typ),
+     lc_typ A ->
+     new_spli B B1 B2 ->
+     new_spli (t_arrow A B) (t_arrow A B1) (t_arrow A B2)
+ | NSpI_arrowUnion : forall (A B A1 A2:typ),
+     lc_typ B ->
+     new_splu A A1 A2 ->
+     new_spli (t_arrow A B) (t_arrow A1 B) (t_arrow A2 B)
+ | NSpI_forall : forall (L:vars) (A A1 A2:typ),
+      ( forall X , X \notin  L  -> new_spli  ( open_typ_wrt_typ A (t_tvar_f X) )   ( open_typ_wrt_typ A1 (t_tvar_f X) )   ( open_typ_wrt_typ A2 (t_tvar_f X) )  )  ->
+     new_spli (t_forall A) (t_forall A1) (t_forall A2)
+ | NSpI_in : forall (l5:l) (A A1 A2:typ),
+     new_spli A A1 A2 ->
+     new_spli (t_rcd l5 A) (t_rcd l5 A1) (t_rcd l5 A2)
+with new_splu : typ -> typ -> typ -> Prop :=    (* defn new_splu *)
+ | NSpU_or : forall (A B:typ),
+     lc_typ A ->
+     lc_typ B ->
+     new_splu (t_or A B) A B
+ | NSpU_andl : forall (A B A1 A2:typ),
+     lc_typ B ->
+     new_splu A A1 A2 ->
+     new_splu (t_and A B) (t_and A1 B) (t_and A2 B)
+ | NSpU_andr : forall (A B B1 B2:typ),
+     lc_typ A ->
+     new_splu B B1 B2 ->
+     new_splu (t_and A B) (t_and A B1) (t_and A B2)
+ | NSpU_forall : forall (L:vars) (A A1 A2:typ),
+      ( forall X , X \notin  L  -> new_splu  ( open_typ_wrt_typ A (t_tvar_f X) )   ( open_typ_wrt_typ A1 (t_tvar_f X) )   ( open_typ_wrt_typ A2 (t_tvar_f X) )  )  ->
+     new_splu (t_forall A) (t_forall A1) (t_forall A2)
+ | NSpU_in : forall (l5:l) (A A1 A2:typ),
+     new_splu A A1 A2 ->
+     new_splu (t_rcd l5 A) (t_rcd l5 A1) (t_rcd l5 A2).
+
+(* defns NewAlgorithmicSubtyping *)
+Inductive new_sub : typ -> typ -> Prop :=    (* defn new_sub *)
+ | NSub_refl : forall (A:typ),
+     lc_typ A ->
+     new_sub A A
+ | NSub_top : forall (A:typ),
+     lc_typ A ->
+     new_sub A t_top
+ | NSub_bot : forall (A:typ),
+     lc_typ A ->
+     new_sub t_bot A
+ | NSub_arrow : forall (A1 A2 B1 B2:typ),
+     new_sub B1 A1 ->
+     new_sub A2 B2 ->
+     new_sub (t_arrow A1 A2) (t_arrow B1 B2)
+ | NSub_forall : forall (L:vars) (A B:typ),
+      ( forall X , X \notin  L  -> new_sub  ( open_typ_wrt_typ A (t_tvar_f X) )   ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
+     new_sub (t_forall A) (t_forall B)
+ | NSub_rcd : forall (l5:l) (A B:typ),
+     new_sub A B ->
+     new_sub (t_rcd l5 A) (t_rcd l5 B)
+ | NSub_and : forall (A B B1 B2:typ),
+     spli B B1 B2 ->
+     new_sub A B1 ->
+     new_sub A B2 ->
+     new_sub A B
+ | NSub_andl : forall (A B A1 A2:typ),
+     spli A A1 A2 ->
+     new_sub A1 B ->
+     new_sub A B
+ | NSub_andr : forall (A B A1 A2:typ),
+     spli A A1 A2 ->
+     new_sub A2 B ->
+     new_sub A B
+ | NSub_or : forall (A B A1 A2:typ),
+     splu A A1 A2 ->
+     new_sub A1 B ->
+     new_sub A2 B ->
+     new_sub A B
+ | NSub_orl : forall (A B B1 B2:typ),
+     splu B B1 B2 ->
+     new_sub A B1 ->
+     new_sub A B
+ | NSub_orr : forall (A B B1 B2:typ),
+     splu B B1 B2 ->
+     new_sub A B2 ->
+     new_sub A B.
+
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub lc_typ lc_Fty : core.
 
 
