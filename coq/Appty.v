@@ -452,7 +452,7 @@ Proof with (simpl in *; eauto using typsubst_typ_lc_typ, typsubst_typ_spli_typ, 
   - applys~ ASub_andr.
     (* split subst any type may not keep the structure because it prioritizes some rules *)
 
-  Admitted. (*
+  Abort. (*
   induction s; intros...
   - applys~ (ASub_forall (L \u {{X}})).
     introv Fr. forwards* HS: H0 X0 X Y.
@@ -701,7 +701,7 @@ Lemma appty_splitu_fun : forall A A1 A2 F C1 C2,
 Proof.
   intros.
   forwards* (?&?): appty_splitu_fun_aux.
-Admitted.
+Abort.
 
 Lemma nappty_splitu_fun : forall A A1 A2 F,
     NApplyTy A1 F \/ NApplyTy A2 F -> splu A A1 A2 -> NApplyTy A F.
@@ -1022,9 +1022,10 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
     simpl_rename_goal. subst~.
     convert2asub.
     forwards : algo_sub_forall_inv X H6.
-    eapply typsubst_typ_algo_sub in H0.
+    eapply asub2nsub in H0.
+    eapply typsubst_typ_new_sub in H0.
     rewrite 2 typsubst_typ_spec in H0; rewrite 2 close_typ_wrt_typ_open_typ_wrt_typ in H0.
-    apply~ H0.
+    apply asub2nsub. apply~ H0.
     all: eauto.
 Qed. (*
 Restart. Proof.
@@ -1131,5 +1132,31 @@ Restart.
 *)
 *)
 
-Lemma monotonicity_appty_2 : forall A B B' C,
-    ApplyTy A B C -> declarative_subtyping B' B -> exists C', declarative_subtyping C' C /\ ApplyTy A B' C'.
+Lemma monotonicity_appty_2_1 : forall A B B' C,
+    ApplyTy A (fty_StackArg B) C -> declarative_subtyping B' B ->
+    exists C', declarative_subtyping C' C /\ ApplyTy A (fty_StackArg B') C'.
+Proof with try eassumption; elia; solve_false; destruct_conj.
+  introv HA HS.
+  indTypFtySize (size_typ A + size_typ B' + size_typ B).
+  lets~ [HF|(?&?&?)]: (ordu_or_split B'). eauto.
+  - forwards: appty_soundness_1 HA.
+    forwards HSN: DSub_Trans H... applys DSub_FunCon HS. eauto.
+    forwards~ : appty_completeness_1 HSN. destruct_conj.
+    inv_arrow. convert2dsub. exists* x.
+  - assert (S1: x <: B). {
+      applys~ DSub_Trans HS.
+      convert2asub. use_left_r... applys ASub_refl. eauto.
+    }
+    forwards: IH S1...
+    assert (S2: x0 <: B). {
+      applys~ DSub_Trans HS.
+      convert2asub. use_right_r... applys ASub_refl. eauto.
+    }
+    forwards: IH S2...
+    exists (x1|x2). split~. applys~ ApplyTyUnionArg H.
+Qed.
+
+Lemma monotonicity_appty_2_2 : forall A B B' C,
+    ApplyTy A (fty_StackTyArg B) C -> declarative_subtyping B' B ->
+    exists C', declarative_subtyping C' C /\ ApplyTy A (fty_StackTyArg B') C'.
+Proof with try eassumption; elia; solve_false; destruct_conj.
