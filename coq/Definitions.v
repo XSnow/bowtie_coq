@@ -48,13 +48,13 @@ Fixpoint open_typ_wrt_typ_rec (k:nat) (A_5:typ) (A__6:typ) {struct A__6}: typ :=
   | t_bot => t_bot 
 end.
 
-Definition open_Fty_wrt_typ_rec (k:nat) (A5:typ) (Fty5:Fty) : Fty :=
-  match Fty5 with
+Definition open_Fty_wrt_typ_rec (k:nat) (A5:typ) (Ftyalt5:Fty) : Fty :=
+  match Ftyalt5 with
   | (fty_StackArg A) => fty_StackArg (open_typ_wrt_typ_rec k A5 A)
   | (fty_StackTyArg A) => fty_StackTyArg (open_typ_wrt_typ_rec k A5 A)
 end.
 
-Definition open_Fty_wrt_typ A5 Fty5 := open_Fty_wrt_typ_rec 0 Fty5 A5.
+Definition open_Fty_wrt_typ A5 Ftyalt5 := open_Fty_wrt_typ_rec 0 Ftyalt5 A5.
 
 Definition open_typ_wrt_typ A_5 A__6 := open_typ_wrt_typ_rec 0 A__6 A_5.
 
@@ -110,8 +110,8 @@ Fixpoint typefv_typ (A_5:typ) : vars :=
   | t_bot => {}
 end.
 
-Definition typefv_Fty (Fty5:Fty) : vars :=
-  match Fty5 with
+Definition typefv_Fty (Ftyalt5:Fty) : vars :=
+  match Ftyalt5 with
   | (fty_StackArg A) => (typefv_typ A)
   | (fty_StackTyArg A) => (typefv_typ A)
 end.
@@ -130,8 +130,8 @@ Fixpoint typsubst_typ (A_5:typ) (X5:typevar) (A__6:typ) {struct A__6} : typ :=
   | t_bot => t_bot 
 end.
 
-Definition typsubst_Fty (A5:typ) (X5:typevar) (Fty5:Fty) : Fty :=
-  match Fty5 with
+Definition typsubst_Fty (A5:typ) (X5:typevar) (Ftyalt5:Fty) : Fty :=
+  match Ftyalt5 with
   | (fty_StackArg A) => fty_StackArg (typsubst_typ A5 X5 A)
   | (fty_StackTyArg A) => fty_StackTyArg (typsubst_typ A5 X5 A)
 end.
@@ -254,6 +254,134 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
  | DSub_Top : forall (A:typ),
      lc_typ A ->
      declarative_subtyping A t_top.
+
+(* defns NegTyp *)
+Inductive NegativeTypes : typ -> Prop :=    (* defn NegativeTypes *)
+ | NTypFun : forall (A B:typ),
+     lc_typ A ->
+     lc_typ B ->
+     NegativeTypes (t_arrow A B)
+ | NTypRec : forall (l5:l) (A:typ),
+     lc_typ A ->
+     NegativeTypes (t_rcd l5 A)
+ | NTypForall : forall (A:typ),
+     lc_typ (t_forall A) ->
+     NegativeTypes (t_forall A)
+ | NTypIntersection : forall (A B:typ),
+     NegativeTypes A ->
+     NegativeTypes B ->
+     NegativeTypes (t_and A B)
+ | NTypUnion : forall (A B:typ),
+     NegativeTypes A ->
+     NegativeTypes B ->
+     NegativeTypes (t_or A B)
+ | NTypTop : 
+     NegativeTypes t_top
+ | NTypEmpty : 
+     NegativeTypes t_bot.
+
+(* defns PSub *)
+Inductive PositiveSubtyping : typ -> typ -> Prop :=    (* defn PositiveSubtyping *)
+ | PSubIn : forall (l5:l) (V A:typ),
+     PositiveSubtyping V A ->
+     PositiveSubtyping (t_rcd l5 V) (t_rcd l5 A)
+ | PSubTop : forall (V:typ),
+     lc_typ V ->
+     PositiveSubtyping V t_top
+ | PSubUnionL : forall (V A B:typ),
+     lc_typ B ->
+     PositiveSubtyping V A ->
+     PositiveSubtyping V (t_or A B)
+ | PSubUnionR : forall (V A B:typ),
+     lc_typ A ->
+     PositiveSubtyping V B ->
+     PositiveSubtyping V (t_or A B)
+ | PSubIntersect : forall (V A B:typ),
+     PositiveSubtyping V A ->
+     PositiveSubtyping V B ->
+     PositiveSubtyping V (t_and A B)
+ | PSubNeg : forall (V Aneg:typ),
+     lc_typ V ->
+     NegativeTypes Aneg ->
+     PositiveSubtyping V Aneg.
+
+(* defns NSub *)
+Inductive NegativeSubtyping : typ -> Fty -> Prop :=    (* defn NegativeSubtyping *)
+ | NSubFun : forall (A B V:typ),
+     lc_typ B ->
+     PositiveSubtyping V A ->
+     NegativeSubtyping (t_arrow A B) (fty_StackArg V)
+ | NSubTyFun : forall (A B:typ),
+     lc_typ (t_forall A) ->
+     lc_typ B ->
+     NegativeSubtyping (t_forall A) (fty_StackTyArg B)
+ | NSubUnion : forall (Aneg1 Aneg2:typ) (Ftyalt:Fty),
+     NegativeSubtyping Aneg1 Ftyalt ->
+     NegativeSubtyping Aneg2 Ftyalt ->
+     NegativeSubtyping (t_or Aneg1 Aneg2) Ftyalt
+ | NSubEmpty : forall (Fty5:Fty),
+     lc_Fty Fty5 ->
+     NegativeSubtyping t_bot Fty5
+ | NSubIntersectL : forall (Aneg1 Aneg2:typ) (Ftyalt:Fty),
+     lc_typ Aneg2 ->
+     NegativeSubtyping Aneg1 Ftyalt ->
+     NegativeSubtyping (t_and Aneg1 Aneg2) Ftyalt
+ | NSubIntersectR : forall (Aneg1 Aneg2:typ) (Ftyalt:Fty),
+     lc_typ Aneg1 ->
+     NegativeSubtyping Aneg2 Ftyalt ->
+     NegativeSubtyping (t_and Aneg1 Aneg2) Ftyalt.
+
+(* defns MatchTy *)
+Inductive MatchTy : l -> typ -> typ -> Prop :=    (* defn MatchTy *)
+ | MatchTyTop : forall (l5:l),
+     MatchTy l5 t_top t_top
+ | MatchTyIn : forall (l5:l) (A:typ),
+     lc_typ A ->
+     MatchTy l5 (t_rcd l5 A) A
+ | MatchTyUnionL : forall (l5:l) (A1 A2 B1:typ),
+     MatchTy l5 A1 B1 ->
+     NMatchTy l5 A2 ->
+     MatchTy l5 (t_or A1 A2) B1
+ | MatchTyUnionR : forall (l5:l) (A1 A2 B2:typ),
+     NMatchTy l5 A1 ->
+     MatchTy l5 A2 B2 ->
+     MatchTy l5 (t_or A1 A2) B2
+ | MatchTyUnion : forall (l5:l) (A1 A2 B1 B2:typ),
+     MatchTy l5 A1 B1 ->
+     MatchTy l5 A2 B2 ->
+     MatchTy l5 (t_or A1 A2) (t_or B1 B2)
+ | MatchTyIntersection : forall (l5:l) (A1 A2 B1 B2:typ),
+     MatchTy l5 A1 B1 ->
+     MatchTy l5 A2 B2 ->
+     MatchTy l5 (t_and A1 A2) (t_and B1 B2)
+with NMatchTy : l -> typ -> Prop :=    (* defn NMatchTy *)
+ | NMatchTyEmpty : forall (l5:l),
+     NMatchTy l5 t_bot
+ | NMatchTyVar : forall (l5:l) (X:typevar),
+     NMatchTy l5 (t_tvar_f X)
+ | NMatchTyFun : forall (l5:l) (A B:typ),
+     lc_typ A ->
+     lc_typ B ->
+     NMatchTy l5 (t_arrow A B)
+ | NMatchTyAll : forall (l5:l) (B:typ),
+     lc_typ (t_forall B) ->
+     NMatchTy l5 (t_forall B)
+ | NMatchTyIn : forall (l1 l2:l) (A:typ),
+     lc_typ A ->
+      l1  <>  l2  ->
+     NMatchTy l1 (t_rcd l2 A)
+ | NMatchTyUnion : forall (l5:l) (A1 A2:typ),
+     NMatchTy l5 A1 ->
+     NMatchTy l5 A2 ->
+     NMatchTy l5 (t_or A1 A2)
+ | NMatchTyIntersectionL : forall (l5:l) (A1 A2:typ),
+     lc_typ A2 ->
+     NMatchTy l5 A1 ->
+     NMatchTy l5 (t_and A1 A2)
+ | NMatchTyIntersectionR : forall (l5:l) (A1 A2:typ),
+     lc_typ A1 ->
+     NMatchTy l5 A2 ->
+     NMatchTy l5 (t_and A1 A2).
 
 (* defns Ordinary *)
 Inductive ordu : typ -> Prop :=    (* defn ordu *)
@@ -444,17 +572,17 @@ Inductive ApplyTy : typ -> Fty -> typ -> Prop :=    (* defn ApplyTy *)
      ApplyTy A2 Fty5 A2' ->
      ApplyTy (t_and A1 A2) Fty5 (t_and A1' A2')
 with NApplyTy : typ -> Fty -> Prop :=    (* defn NApplyTy *)
- | NApplyTop : forall (Fty5:Fty),
+ | NApplyTyTop : forall (Fty5:Fty),
      lc_Fty Fty5 ->
      NApplyTy t_top Fty5
- | NApplyVar : forall (X:typevar) (Fty5:Fty),
+ | NApplyTyVar : forall (X:typevar) (Fty5:Fty),
      lc_Fty Fty5 ->
      NApplyTy (t_tvar_f X) Fty5
- | NApplyIn : forall (l5:l) (A:typ) (Fty5:Fty),
+ | NApplyTyIn : forall (l5:l) (A:typ) (Fty5:Fty),
      lc_typ A ->
      lc_Fty Fty5 ->
      NApplyTy (t_rcd l5 A) Fty5
- | NApplyFunTy : forall (A B:typ),
+ | NApplyTyAll : forall (A B:typ),
      lc_typ (t_forall A) ->
      lc_typ B ->
      NApplyTy (t_forall A) (fty_StackArg B)
@@ -591,6 +719,6 @@ Inductive new_sub : typ -> typ -> Prop :=    (* defn new_sub *)
 
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping NegativeTypes PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub lc_typ lc_Fty : core.
 
 

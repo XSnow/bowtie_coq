@@ -1,6 +1,7 @@
 -R . Top
-Appty.v
+ApplyTy.v
 Definitions.v
 DistSubtyping.v
 LibTactics.v
 LN_Lemmas.v
+MatchTy.v

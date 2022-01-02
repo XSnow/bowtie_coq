@@ -14,7 +14,7 @@ l, k :: 'lbl_' ::=
   | tright :: :: TagRight {{ tex \mathrm{right} }}
   
 
-typ, A , B , C :: 't_' ::= {{ com value type }}
+typ, A , B , C, V, Aneg :: 't_' ::= {{ com value type }}
   | X                                ::  :: tvar
   | In l A                           ::  :: rcd      {{ tex \tytag{[[l]]}{[[A]]} }}
   | A1 & A2                          ::  :: and
@@ -38,7 +38,7 @@ typ, A , B , C :: 't_' ::= {{ com value type }}
 %   | [-] | A             :: :: TCovUnionL
 %   | A | [-]             :: :: TCovUnionR
 
-Fty {{ tex \hat{A} }} :: 'fty_' ::= {{ com elimination type }}
+Fty {{ tex \hat{A} }}, Ftyalt {{ tex \hat{B} }} :: 'fty_' ::= {{ com elimination type }}
   | A       :: :: StackArg
   | [ A ]   :: :: StackTyArg
   
@@ -52,11 +52,15 @@ terminals :: 'terminals_' ::=
   | notin        ::    :: notin     {{ tex \notin }}
   | Top          ::    :: topty     {{ tex \tytop }}
   | Empty        ::    :: emptyty   {{ tex \tyempty }}
-  | <a           ::    :: algosub   {{ tex <_a }}
+  | <:           ::    :: decsub    {{ tex \subtype }}
+  | <a           ::    :: algsub    {{ tex \subtype_a }}
+  | <p           ::    :: possub    {{ tex \subtype_+ }}
+  | <n           ::    :: negsub    {{ tex \subtype_- }}
 
 formula :: formula_ ::=  
    | judgement                       ::   :: judgement
    | l != l'                         ::   :: labNeq
+     {{ coq [[l]] <> [[l']] }}
    | l = l'                          ::   :: labEq
    | lc_typ A                        ::   :: lcTyp
      {{ tex }}
@@ -99,6 +103,9 @@ parsing
 % end.
 % }}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% subtyping & positive / negative subtyping
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 defns
 DSub :: '' ::=
@@ -237,7 +244,188 @@ DSub :: '' ::=
 
   --------- :: Top
   A <: Top
+  
 
+defns
+NegTyp :: '' ::=
+
+  defn
+  neg Aneg
+  :: :: NegativeTypes :: NTyp
+  {{ com Negative Types }}
+  by
+
+  ---------------- :: Fun
+  neg A -> B
+
+  ---------------- :: Rec
+  neg In l A
+
+  ------------------ :: Forall
+  neg forall X . A
+
+  neg A
+  neg B
+  ------------------ :: Intersection
+  neg A & B
+
+  neg A
+  neg B
+  ------------------ :: Union
+  neg A | B
+
+  ------------------ :: Top
+  neg Top
+
+  ------------------ :: Empty
+  neg Empty
+  
+
+
+defns
+PSub :: '' ::=
+
+  defn
+  V <p A
+  :: :: PositiveSubtyping :: PSub
+  {{ com Positive Subtyping }}
+  by
+
+  V <p A
+  ---------------- :: In
+  In l V <p In l A 
+
+  -------- :: Top
+  V <p Top
+
+  V <p A
+  ---------- :: UnionL
+  V <p A | B
+
+  V <p B
+  ---------- :: UnionR
+  V <p A | B
+
+  V <p A
+  V <p B
+  ---------- :: Intersect
+  V <p A & B
+
+  neg Aneg
+  --------- :: Neg
+  V <p Aneg
+
+defns
+NSub :: '' ::=
+
+  defn
+  Aneg <n Fty
+  :: :: NegativeSubtyping :: NSub
+  {{ com Negative Subtyping }}
+  by
+
+  V <p A
+  ----------- :: Fun
+  A -> B <n V
+
+  ------------------- :: TyFun
+  forall X . A <n [B]
+
+  Aneg1 <n Ftyalt
+  Aneg2 <n Ftyalt
+  -------------------- :: Union
+  Aneg1 | Aneg2 <n Ftyalt
+
+  -------------------- :: Empty
+  Empty <n Fty
+
+  Aneg1 <n Ftyalt
+  -------------------- :: IntersectL
+  Aneg1 & Aneg2 <n Ftyalt
+
+  Aneg2 <n Ftyalt
+  -------------------- :: IntersectR
+  Aneg1 & Aneg2 <n Ftyalt
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% abstract matching
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+MatchTy :: '' ::=
+
+  defn
+  match ( l , A ) => B
+  :: :: MatchTy :: ''
+  {{ tex \matchty{[[ A ]]}{[[ l ]]}{[[ B ]]}  }}
+  by
+
+  -------------------- :: MatchTyTop
+  match(l, Top) => Top
+
+  --------------------- :: MatchTyIn
+  match(l, In l A) => A
+
+  match(l, A1) => B1
+  match(l, A2) =/>
+  ----------------------- :: MatchTyUnionL
+  match(l, A1 | A2) => B1
+
+  match(l, A1) =/>
+  match(l, A2) => B2
+  ----------------------- :: MatchTyUnionR
+  match(l, A1 | A2) => B2
+
+  match(l, A1) => B1
+  match(l, A2) => B2
+  ---------------------------- :: MatchTyUnion
+  match(l, A1 | A2) => B1 | B2
+
+  match(l, A1) => B1
+  match(l, A2) => B2
+  ---------------------------- :: MatchTyIntersection
+  match(l, A1 & A2) => B1 & B2
+
+  defn
+  match ( l , A ) =/>
+  :: :: NMatchTy :: ''
+  {{ tex \nmatchty{[[ A ]]}{[[ l ]]}  }}
+  by
+
+  ------------------------ :: NMatchTyEmpty
+  match(l, Empty) =/>
+
+  ------------------------ :: NMatchTyVar
+  match(l, X) =/>
+
+  ------------------------ :: NMatchTyFun
+  match(l, A->B) =/>
+
+  ------------------------ :: NMatchTyAll
+  match(l, forall X . B) =/>
+
+  l1 != l2
+  ------------------------ :: NMatchTyIn
+  match(l1, In l2 A) =/>
+
+  match(l, A1) =/>
+  match(l, A2) =/>
+  ----------------------- :: NMatchTyUnion
+  match(l, A1 | A2) =/>
+
+  match(l, A1) =/>
+  ---------------------------- :: NMatchTyIntersectionL
+  match(l, A1 & A2) =/>
+
+  match(l, A2) =/>
+  ---------------------------- :: NMatchTyIntersectionR
+  match(l, A1 & A2) =/>
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% algorithmic subtyping
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 defns
 Ordinary :: '' ::=
@@ -504,16 +692,16 @@ Appty :: '' ::=
   {{ tex \napplyty{[[ A ]]}{[[ Fty ]]} }}
   by
 
-  ---------------------------------- :: NApplyTop
+  ---------------------------------- :: NApplyTyTop
   apply(Top, Fty) =/>
   
-  ---------------------------------- :: NApplyVar
+  ---------------------------------- :: NApplyTyVar
   apply(X, Fty) =/>
   
-  ---------------------------------- :: NApplyIn
+  ---------------------------------- :: NApplyTyIn
   apply(In l A, Fty) =/>
   
-  ---------------------------------- :: NApplyFunTy
+  ---------------------------------- :: NApplyTyAll
   apply(forall X . A, B) =/>
 
   lc_typ A 
@@ -625,61 +813,61 @@ defns
 NewAlgorithmicSubtyping :: '' ::=
 
   defn
-  A <n B  :: :: new_sub :: NSub_
+  A <na B  :: :: new_sub :: NSub_
   {{ com New Algorithmic Subtyping }}
   by
   
   
   ---------------------- :: refl
-  A <n A
+  A <na A
   
   ---------------------- :: top
-  A <n Top
+  A <na Top
   
   ---------------------- :: bot
-  Empty <n  A
+  Empty <na  A
 
-  B1 <n A1
-  A2 <n B2
+  B1 <na A1
+  A2 <na B2
   ------------------------ :: arrow
-  A1 -> A2 <n B1 -> B2
+  A1 -> A2 <na B1 -> B2
   
-  A <n B
+  A <na B
   ---------------------------- :: forall
-  forall X. A <n forall X. B
+  forall X. A <na forall X. B
 
-  A <n B
+  A <na B
   ------------------------ :: rcd
-  In l A <n In l B
+  In l A <na In l B
 
   splitI B ~ B1 & B2
-  A <n B1
-  A <n B2
+  A <na B1
+  A <na B2
   --------------- :: and
-  A <n B
+  A <na B
   
   splitI A ~ A1 & A2
-  A1 <n B
+  A1 <na B
   ------------------------- :: andl
-  A <n B
+  A <na B
 
   splitI A ~ A1 & A2
-  A2 <n B
+  A2 <na B
   ------------------------- :: andr
-  A <n B
+  A <na B
 
   splitU A ~ A1 | A2
-  A1 <n B
-  A2 <n B
+  A1 <na B
+  A2 <na B
   --------------- :: or
-  A <n B  
+  A <na B  
   
   splitU B ~ B1 | B2
-  A <n B1
+  A <na B1
   ------------------------- :: orl
-  A <n B
+  A <na B
   
   splitU B ~ B1 | B2
-  A <n B2
+  A <na B2
   ------------------------- :: orr
-  A <n B
+  A <na B
