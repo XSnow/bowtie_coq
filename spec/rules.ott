@@ -277,8 +277,8 @@ NegTyp :: '' ::=
   ------------------ :: Top
   neg Top
 
-  ------------------ :: Empty
-  neg Empty
+%  ------------------ :: Empty
+%  neg Empty
   
 
 
