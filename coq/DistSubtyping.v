@@ -145,11 +145,13 @@ Lemma splu_decrease_size: forall A B C,
 Proof with (pose proof (size_typ_min); simpl in *; try lia).
   introv H.
   induction H; simpl in *; eauto...
+Qed.
+(*
   pick fresh X. forwards* (?&?): H0.
   rewrite 2 size_typ_open_typ_wrt_typ_var in H3.
   rewrite 2 size_typ_open_typ_wrt_typ_var in H2.
-  eauto...
-Qed.
+  eauto... *)
+
 
 Lemma spli_decrease_size: forall A B C,
     spli A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A.
@@ -511,11 +513,8 @@ Lemma rename_ordu : forall A X Y,
 Proof with (simpl in *; eauto).
   introv Ord. gen X Y. induction Ord; intros...
   - destruct (X==X0)...
-  - applys~ (OrdU_forall (L \u {{X}})).
-    introv Fr. forwards* Ord: H0 X0 X Y.
-    rewrite typsubst_typ_open_typ_wrt_typ in Ord...
-    case_eq (@eq_dec typevar EqDec_eq_of_X X0 X); intuition...
-    rewrite H1 in Ord...
+  - econstructor.
+    forwards~: typsubst_typ_lc_typ (t_forall A) (t_tvar_f Y) X H.
 Qed.
 
 Lemma rename_ordi : forall A X Y,
@@ -539,12 +538,12 @@ Lemma rename_splu : forall A B C X Y,
 Proof with (simpl in *; eauto).
   introv Spl. gen X Y.
   induction Spl; intros...
-  - applys~ (SpU_forall (L \u {{X}})).
+Qed.
+(*  - applys~ (SpU_forall (L \u {{X}})).
     introv Fr. forwards* Spl: H0 X0 X Y.
     rewrite 3 typsubst_typ_open_typ_wrt_typ in Spl...
     case_eq (@eq_dec typevar EqDec_eq_of_X X0 X); intuition...
-    rewrite H1 in Spl...
-Qed.
+    rewrite H1 in Spl... *)
 
 Lemma rename_spli : forall A B C X Y,
   spli A B C->
@@ -674,8 +673,9 @@ Lemma ordu_forall_exists : forall X B,
   ordu (open_typ_wrt_typ B (t_tvar_f X)) ->
   ordu (t_forall B).
 Proof with (simpl in *; eauto).
-  introv Fr Ord.
-  applys~ OrdU_forall (typefv_typ B).
+  introv Fr Ord. eauto.
+  (*
+  applys~ OrdU_forall (typefv_typ B). *)
 Qed.
 
 Lemma ordi_forall_exists : forall X B,
@@ -707,14 +707,14 @@ Lemma splu_fv_1 : forall A B C,
 Proof with (subst; simpl in *).
   introv Hspl.
   induction Hspl; simpl in *; try fsetdec.
-  remember ((typefv_typ A) \u (typefv_typ A1)).
+(*  remember ((typefv_typ A) \u (typefv_typ A1)).
   pick fresh X.
   forwards~ Aux1: H0 X.
   lets* Aux2: typefv_typ_open_typ_wrt_typ_upper A (t_tvar_f X).
   lets* Aux3: typefv_typ_open_typ_wrt_typ_lower A1 (t_tvar_f X).
   assert (HS: typefv_typ A1 [<=] union (typefv_typ (t_tvar_f X)) (typefv_typ A)) by fsetdec.
   clear Aux1 Aux2 Aux3...
-  fsetdec.
+  fsetdec. *)
 Qed.
 
 Lemma splu_fv_2 : forall A B C,
@@ -722,14 +722,14 @@ Lemma splu_fv_2 : forall A B C,
 Proof with (subst; simpl in *).
   introv Hspl.
   induction Hspl; simpl in *; try fsetdec.
-  remember ((typefv_typ A) \u (typefv_typ A2)).
+(*  remember ((typefv_typ A) \u (typefv_typ A2)).
   pick fresh X.
   forwards~ Aux1: H0 X.
   lets* Aux2: typefv_typ_open_typ_wrt_typ_upper A (t_tvar_f X).
   lets* Aux3: typefv_typ_open_typ_wrt_typ_lower A2 (t_tvar_f X).
   assert (HS: typefv_typ A2 [<=] union (typefv_typ (t_tvar_f X)) (typefv_typ A)) by fsetdec.
   clear Aux1 Aux2 Aux3...
-  fsetdec.
+  fsetdec. *)
 Qed.
 
 Lemma splu_forall_exists : forall X B B1 B2,
@@ -740,11 +740,12 @@ Proof with (simpl in *; eauto).
   introv Fr H.
   rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ B1 X) in H.
   rewrite <- (open_typ_wrt_typ_close_typ_wrt_typ B2 X) in H.
-  applys SpU_forall. intros. applys splu_rename_open H.
+Abort.
+(*  applys SpU_forall. intros. applys splu_rename_open H.
   repeat rewrite typefv_typ_close_typ_wrt_typ.
   solve_notin.
   Unshelve. applys empty.
-Qed.
+Qed. *)
 
 Lemma spli_fv_1 : forall A B C,
     spli A B C -> (typefv_typ B) [<=] (typefv_typ A).
@@ -799,16 +800,16 @@ Hint Extern 1 =>
 match goal with
 | H: spli (?B -^ ?X) ?B1 ?B2 |-
   spli (t_forall ?B) (t_forall ?A (close_typ_wrt_typ ?X ?B1)) (t_forall ?A (close_typ_wrt_typ ?X ?B2)) =>
-  applys spli_forall_exists H; solve_notin
+  applys spli_forall_exists H; solve_notin (*
 | H: splu (?B -^ ?X) ?B1 ?B2 |-
   splu (t_forall ?B) (t_forall ?A (close_typ_wrt_typ ?X ?B1)) (t_forall ?A (close_typ_wrt_typ ?X ?B2)) =>
-  applys splu_forall_exists H; solve_notin
+  applys splu_forall_exists H; solve_notin *)
 | H: spli (?B -^ ?X) _ _ |-
   spli (t_forall ?B) _ _ =>
-  apply spli_forall_exists in H; try rewrite close_typ_wrt_typ_open_typ_wrt_typ in *; try solve_notin
+  apply spli_forall_exists in H; try rewrite close_typ_wrt_typ_open_typ_wrt_typ in *; try solve_notin (*
 | H: splu (?B -^ ?X) _ _ |-
   splu (t_forall ?B) _ _ =>
-  apply splu_forall_exists in H; try rewrite close_typ_wrt_typ_open_typ_wrt_typ in *; try solve_notin
+  apply splu_forall_exists in H; try rewrite close_typ_wrt_typ_open_typ_wrt_typ in *; try solve_notin *)
 end : core.
 
 
@@ -845,13 +846,13 @@ Lemma ordu_or_split: forall A,
     lc_typ A -> ordu A \/ exists B C, splu A B C.
 Proof with (subst~; simpl in *; eauto).
   introv Lc. induction Lc...
-  - forwards* [?|(?&?&?)]: IHLc.
+(*  - forwards* [?|(?&?&?)]: IHLc. *)
   - (* and *)
     forwards* [?|(?&?&?)]: IHLc1.
     forwards* [?|(?&?&?)]: IHLc2.
-  - (* forall *)
+(*  - (* forall *)
     pick fresh x for [[B]].
-    forwards* [?|(?&?&?)]: H0 x.
+    forwards* [?|(?&?&?)]: H0 x. *)
 Defined.
 
 Lemma ordi_or_split: forall A,
@@ -951,14 +952,14 @@ Proof with eauto.
   induction s1; intros;
     inverts* s2;
     try solve [forwards* (eq1&eq2): IHs1; subst; split*]; solve_false.
-  pick fresh X.
-  forwards* HS: H2 X.
-  forwards* (eq1&eq2): H0 HS.
-  open_typ_by_var_in_goal A1 X.
-  open_typ_by_var_in_goal A2 X.
-  open_typ_by_var_in_goal A4 X.
-  open_typ_by_var_in_goal A5 X.
-  rewrite eq1. rewrite eq2. split*.
+(*   pick fresh X. *)
+(*   forwards* HS: H2 X. *)
+(*   forwards* (eq1&eq2): H0 HS. *)
+(*   open_typ_by_var_in_goal A1 X. *)
+(*   open_typ_by_var_in_goal A2 X. *)
+(*   open_typ_by_var_in_goal A4 X. *)
+(*   open_typ_by_var_in_goal A5 X. *)
+(*   rewrite eq1. rewrite eq2. split*. *)
 Qed.
 
 Lemma spli_unique : forall T A1 A2 B1 B2,
@@ -1133,12 +1134,12 @@ Proof with exists; repeat split*.
   - (* spli or *) left. right...
   - (* splu and *) right. left...
   - (* splu and *) right. right...
-  - (* forall *) pick fresh X. instantiate_cofinites_with X.
-    forwards [ [?|?] | [?|?] ] : IH (A -^ X); try eassumption; elia; destruct_conj.
-    left; left... left; right... right; left... right; right...
-  - (* rcd *) inverts_all_spl.
-    forwards [ [?|?] | [?|?] ] : IH A; try eassumption; elia; destruct_conj.
-    left; left... left; right... right; left... right; right...
+  (* - (* forall *) pick fresh X. instantiate_cofinites_with X. *)
+  (*   forwards [ [?|?] | [?|?] ] : IH (A -^ X); try eassumption; elia; destruct_conj. *)
+  (*   left; left... left; right... right; left... right; right... *)
+  (* - (* rcd *) inverts_all_spl. *)
+  (*   forwards [ [?|?] | [?|?] ] : IH A; try eassumption; elia; destruct_conj. *)
+  (*   left; left... left; right... right; left... right; right... *)
 Qed.
 
 
@@ -1150,15 +1151,15 @@ Proof with (auto_unify; auto; try eassumption; elia; try solve [split; auto]; ea
   indTypSize (size_typ A + size_typ B).
   inverts Hsub; inverts_all_spl; inverts_all_ord; solve_false; auto_unify; auto.
   - split*.
-  - (* forall *)
-    split; applys ASub_forall (L `union` L0); intros X Fry; instantiate_cofinites_with X.
-    all: match goal with
-              H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; elia
-         end; eauto.
-  - (* rcd *)
-    match goal with
-              H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; elia
-    end; split; eauto.
+  (* - (* forall *) *)
+  (*   split; applys ASub_forall (L `union` L0); intros X Fry; instantiate_cofinites_with X. *)
+  (*   all: match goal with *)
+  (*             H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; elia *)
+  (*        end; eauto. *)
+  (* - (* rcd *) *)
+  (*   match goal with *)
+  (*             H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; elia *)
+  (*   end; split; eauto. *)
   - (* spli B *)
     repeat match goal with
               H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; clear H1; elia
@@ -1194,15 +1195,15 @@ Proof with (solve_false; auto_unify; try eassumption; elia; eauto 3).
   introv Hsub Hspl.
   indTypSize (size_typ A + size_typ B).
   inverts Hsub; inverts_all_spl; inverts_all_ord; solve_false; auto_unify; auto.
-  - (* forall *)
-    pick fresh X. instantiate_cofinites_with X.
-    match goal with
-              H0: ordu ?A, H1 : algo_sub ?A ?B, H2 : splu ?B _ _ |- _ => forwards [?|?]: IH H0 H1 H2; elia
-    end; eauto.
-  - (* rcd *)
-    match goal with
-              H0: ordu ?A, H1 : algo_sub ?A ?B, H2 : splu ?B _ _ |- _ => forwards [?|?]: IH H0 H1 H2; elia
-    end; eauto.
+  (* - (* forall *) *)
+  (*   pick fresh X. instantiate_cofinites_with X. *)
+  (*   match goal with *)
+  (*             H0: ordu ?A, H1 : algo_sub ?A ?B, H2 : splu ?B _ _ |- _ => forwards [?|?]: IH H0 H1 H2; elia *)
+  (*   end; eauto. *)
+  (* - (* rcd *) *)
+  (*   match goal with *)
+  (*             H0: ordu ?A, H1 : algo_sub ?A ?B, H2 : splu ?B _ _ |- _ => forwards [?|?]: IH H0 H1 H2; elia *)
+  (*   end; eauto. *)
   - (* double split *)
     forwards [ [?|?] | [?|?] ]: double_split H; try eassumption; destruct_conj;
       repeat match goal with
@@ -1441,8 +1442,8 @@ Lemma dsub_splu: forall A B C,
 Proof.
   introv H.
   induction H; try solve [intuition; eauto 3].
-  - split; applys DSub_CovAll; intros X Fry; instantiate_cofinites_with X;
-    eauto.
+  (* - split; applys DSub_CovAll; intros X Fry; instantiate_cofinites_with X; *)
+  (*   eauto. *)
 Qed.
 
 Lemma dsub_spli: forall A B C,
@@ -1474,11 +1475,11 @@ Proof.
   - eauto.
   - applys DSub_Trans. 2: { applys~ DSub_CovDistUInterL. } eauto.
   - applys DSub_Trans. 2: { applys~ DSub_CovDistUInterR. } eauto.
-  - applys DSub_Trans. applys DSub_CovAll (t_or A1 A2).
-    intros X Fry. unfolds open_typ_wrt_typ. simpl. auto.
-    applys~ DSub_CovDistUAll.
-  - applys DSub_Trans. applys~ DSub_CovIn (t_or A1 A2).
-    applys~ DSub_CovDistUIn.
+  (* - applys DSub_Trans. applys DSub_CovAll (t_or A1 A2). *)
+  (*   intros X Fry. unfolds open_typ_wrt_typ. simpl. auto. *)
+  (*   applys~ DSub_CovDistUAll. *)
+  (* - applys DSub_Trans. applys~ DSub_CovIn (t_or A1 A2). *)
+  (*   applys~ DSub_CovDistUIn. *)
 Qed.
 
 Lemma dsub_and: forall A B C,
@@ -1521,9 +1522,9 @@ Ltac split_inter_constructors :=
   applys* SpI_in + applys* SpI_arrow + applys* SpI_orl +
   (applys* SpI_forall; intros; autorewrite with open; auto).
 Ltac split_union_constructors :=
-  applys* SpU_or + applys* SpU_andl +
-  applys* SpU_in +
-  (applys* SpU_forall; intros; autorewrite with open; auto).
+  applys* SpU_or + applys* SpU_andl.
+  (* applys* SpU_in + *)
+  (* (applys* SpU_forall; intros; autorewrite with open; auto). *)
 
 Ltac swap_or_r := applys algo_trans; [ | applys asub_symm_or ].
 Ltac swap_and_l := applys algo_trans; [ (applys asub_symm_and) | ].
@@ -1700,11 +1701,11 @@ Lemma new_splu_decrease_size: forall A B C,
 Proof with (pose proof (size_typ_min); simpl in *; try lia).
   introv H.
   induction H; simpl in *; eauto...
-  pick fresh X. forwards* (?&?): H0.
+Qed.
+(*  pick fresh X. forwards* (?&?): H0.
   rewrite 2 size_typ_open_typ_wrt_typ_var in H3.
   rewrite 2 size_typ_open_typ_wrt_typ_var in H2.
-  eauto...
-Qed.
+  eauto... *)
 
 Lemma new_spli_decrease_size: forall A B C,
     new_spli A B C -> size_typ B < size_typ A /\ size_typ C < size_typ A.
@@ -1763,8 +1764,8 @@ Lemma nsplu2splu : forall A B1 B2,
 Proof with destruct_conj; eauto.
   introv H. induction H...
   - destruct* (ordu_or_split A)...
-  - pick fresh Y for (L `union` [[A]]). instantiate_cofinites. exists.
-    applys splu_forall_exists Y...
+  (* - pick fresh Y for (L `union` [[A]]). instantiate_cofinites. exists. *)
+  (*   applys splu_forall_exists Y... *)
 Qed.
 
 Lemma nspli2spli : forall A B1 B2,
@@ -1805,12 +1806,12 @@ Proof with try applys ASub_refl; try match goal with |- lc_typ _ => eauto with l
     + applys* ASub_orl.
     + swap_or_r... split_r. applys* ASub_andr.
       swap_or_r... applys* ASub_andl.
-  - applys algo_trans; [ | applys dsub2asub; applys DSub_CovDistUAll ]...
-    econstructor. intros. instantiate_cofinites.
-    applys algo_trans H0. autorewrite with open.
-    auto.
-  - applys algo_trans; [ | applys dsub2asub; applys DSub_CovDistUIn ]...
-    econstructor. easy.
+  (* - applys algo_trans; [ | applys dsub2asub; applys DSub_CovDistUAll ]... *)
+  (*   econstructor. intros. instantiate_cofinites. *)
+  (*   applys algo_trans H0. autorewrite with open. *)
+  (*   auto. *)
+  (* - applys algo_trans; [ | applys dsub2asub; applys DSub_CovDistUIn ]... *)
+  (*   econstructor. easy. *)
   - split_l.
     + split_r.
       * use_left_l. applys algo_trans IHnew_splu. use_left_r...
@@ -1825,15 +1826,15 @@ Proof with try applys ASub_refl; try match goal with |- lc_typ _ => eauto with l
     + split_r.
       * use_left_l...
       * applys algo_trans IHnew_splu. use_right_r... use_right_l...
-  - applys algo_trans (t_forall (A1|A2))...
-    + split_l; applys ASub_forall; intros; instantiate_cofinites;
-       autorewrite with open...
-      use_left_r... use_right_r...
-    + applys ASub_forall; intros; instantiate_cofinites;
-       autorewrite with open... easy.
-  - applys algo_trans (t_rcd l5 (A1|A2))...
-    + split_l; applys ASub_rcd. use_left_r... use_right_r...
-    + applys ASub_rcd. easy.
+  (* - applys algo_trans (t_forall (A1|A2))... *)
+  (*   + split_l; applys ASub_forall; intros; instantiate_cofinites; *)
+  (*      autorewrite with open... *)
+  (*     use_left_r... use_right_r... *)
+  (*   + applys ASub_forall; intros; instantiate_cofinites; *)
+  (*      autorewrite with open... easy. *)
+  (* - applys algo_trans (t_rcd l5 (A1|A2))... *)
+  (*   + split_l; applys ASub_rcd. use_left_r... use_right_r... *)
+  (*   + applys ASub_rcd. easy. *)
 Qed.
 
 Lemma nspli_isomorphic : forall A B1 B2,
@@ -1926,11 +1927,11 @@ Lemma typsubst_typ_splu : forall A B C X U,
 Proof with eauto with lngen.
   introv spl lc. induction spl; simpl.
   all: auto...
-  -
-    applys NSpU_forall (L `union` [[A]] `union` [[A1]] `union` [[A2]] `union` {{X}}).
-    intros Y Fry. instantiate_cofinites_with Y.
-    rewrite 3 typsubst_typ_open_typ_wrt_typ in H0...
-    rewrite (typsubst_typ_fresh_eq (t_tvar_f Y) U X) in H0...
+  (* - *)
+  (*   applys NSpU_forall (L `union` [[A]] `union` [[A1]] `union` [[A2]] `union` {{X}}). *)
+  (*   intros Y Fry. instantiate_cofinites_with Y. *)
+  (*   rewrite 3 typsubst_typ_open_typ_wrt_typ in H0... *)
+  (*   rewrite (typsubst_typ_fresh_eq (t_tvar_f Y) U X) in H0... *)
 Qed.
 
 Lemma typsubst_typ_spli : forall A B C X U,

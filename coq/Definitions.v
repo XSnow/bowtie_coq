@@ -201,14 +201,6 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
      lc_typ (t_forall A) ->
      lc_typ (t_forall B) ->
      declarative_subtyping (t_and  (t_forall A)   (t_forall B) )  (t_forall (t_and A B)) 
- | DSub_CovDistUIn : forall (l5:l) (A B:typ),
-     lc_typ A ->
-     lc_typ B ->
-     declarative_subtyping (t_rcd l5  (t_or A B) ) (t_or  (t_rcd l5 A)   (t_rcd l5 B) )
- | DSub_CovDistUAll : forall (A B:typ),
-     lc_typ (t_forall  (t_or A B) ) ->
-     lc_typ (t_forall  (t_or A B) ) ->
-     declarative_subtyping (t_forall  (t_or A B) ) (t_or  (t_forall A)   (t_forall B) )
  | DSub_CovDistUInterL : forall (A B C:typ),
      lc_typ A ->
      lc_typ B ->
@@ -426,10 +418,10 @@ Inductive ordu : typ -> Prop :=    (* defn ordu *)
      ordu B ->
      ordu (t_and A B)
  | OrdU_rcd : forall (l5:l) (A:typ),
-     ordu A ->
+     lc_typ A ->
      ordu (t_rcd l5 A)
- | OrdU_forall : forall (L:vars) (A:typ),
-      ( forall X , X \notin  L  -> ordu  ( open_typ_wrt_typ A (t_tvar_f X) )  )  ->
+ | OrdU_forall : forall (A:typ),
+     lc_typ (t_forall A) ->
      ordu (t_forall A)
 with ordi : typ -> Prop :=    (* defn ordi *)
  | OrdI_var : forall (X:typevar),
@@ -493,13 +485,7 @@ with splu : typ -> typ -> typ -> Prop :=    (* defn splu *)
  | SpU_andr : forall (A B B1 B2:typ),
      ordu A ->
      splu B B1 B2 ->
-     splu (t_and A B) (t_and A B1) (t_and A B2)
- | SpU_forall : forall (L:vars) (A A1 A2:typ),
-      ( forall X , X \notin  L  -> splu  ( open_typ_wrt_typ A (t_tvar_f X) )   ( open_typ_wrt_typ A1 (t_tvar_f X) )   ( open_typ_wrt_typ A2 (t_tvar_f X) )  )  ->
-     splu (t_forall A) (t_forall A1) (t_forall A2)
- | SpU_in : forall (l5:l) (A A1 A2:typ),
-     splu A A1 A2 ->
-     splu (t_rcd l5 A) (t_rcd l5 A1) (t_rcd l5 A2).
+     splu (t_and A B) (t_and A B1) (t_and A B2).
 
 (* defns AlgorithmicSubtyping *)
 Inductive algo_sub : typ -> typ -> Prop :=    (* defn algo_sub *)
@@ -687,13 +673,7 @@ with new_splu : typ -> typ -> typ -> Prop :=    (* defn new_splu *)
  | NSpU_andr : forall (A B B1 B2:typ),
      lc_typ A ->
      new_splu B B1 B2 ->
-     new_splu (t_and A B) (t_and A B1) (t_and A B2)
- | NSpU_forall : forall (L:vars) (A A1 A2:typ),
-      ( forall X , X \notin  L  -> new_splu  ( open_typ_wrt_typ A (t_tvar_f X) )   ( open_typ_wrt_typ A1 (t_tvar_f X) )   ( open_typ_wrt_typ A2 (t_tvar_f X) )  )  ->
-     new_splu (t_forall A) (t_forall A1) (t_forall A2)
- | NSpU_in : forall (l5:l) (A A1 A2:typ),
-     new_splu A A1 A2 ->
-     new_splu (t_rcd l5 A) (t_rcd l5 A1) (t_rcd l5 A2).
+     new_splu (t_and A B) (t_and A B1) (t_and A B2).
 
 (* defns NewAlgorithmicSubtyping *)
 Inductive new_sub : typ -> typ -> Prop :=    (* defn new_sub *)

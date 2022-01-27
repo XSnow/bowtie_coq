@@ -178,8 +178,8 @@ Proof with elia; solve_false; try eassumption.
       * (* Both *)  inverts HA2...
         ** exists*. applys* ApplyTyInterL. forwards~ : proj2 (IH F B) H1...
         ** forwards (?&?): proj1 (IH F B) H1... exists*.
-    + (* forall *) inverts HA1... inverts HA2... exists*.
-    + (* rcd *) inverts HA1...
+    (* + (* forall *) inverts HA1... inverts HA2... exists*. *)
+    (* + (* rcd *) inverts HA1... *)
   - subst.
     forwards: applyty_splitu_arg_inv HA1 H0. forwards: applyty_splitu_arg_inv HA2 H0.
     destruct_conj. subst.
@@ -193,14 +193,14 @@ Proof with elia; solve_false; try eassumption.
     + (* ord *) inverts~ HS...
       * (* and *) inverts HA... forwards~ : proj2 (IH F A0) H1...
       * (* and *) inverts HA... forwards~ : proj2 (IH F B) H1...
-      * (* forall *) inverts HA... constructor~.
+      (* * (* forall *) inverts HA... constructor~. *)
     + (* split *) forwards* [?|?]: napplyty_splitu_inv HA.
       * forwards~ : proj2 (IH (fty_StackArg x0) A) HS... eauto.
       * forwards~ : proj2 (IH (fty_StackArg x1) A) HS... eauto.
     + (* ord *) inverts~ HS...
       * (* and *) inverts HA... forwards~ : proj2 (IH F A0) H1...
       * (* and *) inverts HA... forwards~ : proj2 (IH F B) H1...
-      * (* forall *) inverts HA... constructor~.
+      (* * (* forall *) inverts HA... constructor~. *)
     + (* split *) forwards* [?|?]: napplyty_splitu_inv HA.
       * forwards~ : proj2 (IH (fty_StackArg x0) A) HS... eauto.
       * forwards~ : proj2 (IH (fty_StackArg x1) A) HS... eauto.
@@ -279,7 +279,9 @@ Proof with simpl in *; try eassumption; try applys ASub_refl; try match goal wit
       split~.
       * rewrite Heq. applys~ ApplyTyUnion H6 H4.
       * convert2asub.
-        split_l. use_left_r...  use_right_r...
+        (* BROKEN: t_forall x0 | t_forall x <:: t_forall (x0 | x) *)
+        admit.
+        (* split_l. use_left_r...  use_right_r... *)
   - exists. split... intros X Fry. forwards~ : H2 X...
     split. eapply napplyty_rename in H1. eauto. eauto.
     convert2asub. use_left_l...
@@ -295,7 +297,7 @@ Proof with simpl in *; try eassumption; try applys ASub_refl; try match goal wit
         rewrite Heq. eauto.
       * convert2asub. split_r; eauto.
   Unshelve. all: apply empty.
-Qed.
+Abort.
 
 Lemma applyty_completeness_1 : forall A B D,
     A <: (t_arrow B D) -> ordu B ->
@@ -404,36 +406,36 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
 Qed.
 
 
-Lemma monotonicity_applyty_1 : forall A A' F C,
-    ApplyTy A F C -> A' <: A -> exists C', C' <: C /\ ApplyTy A' F C'.
+Lemma monotonicity_applyty_1 : forall A A' B C,
+    ApplyTy A (fty_StackArg B) C -> A' <: A -> exists C', C' <: C /\ ApplyTy A' (fty_StackArg B) C'.
 Proof with try eassumption; elia; solve_false; destruct_conj.
   introv HA HS.
-  indTypFtySize (size_typ A' + size_typ A + size_Fty F).
-  lets~ [HF|(?&?&?&?&?)]: (ordu_or_split_Fty F). eauto.
-  2: { subst. forwards : applyty_splitu_arg_inv HA H0. destruct_conj.
+  indTypFtySize (size_typ A' + size_typ A + size_typ B).
+  lets~ [HF|(?&?&?)]: (ordu_or_split B).
+  { forwards Lc: applyty_lc_2 HA. inverts~ Lc. }
+  2: { subst. forwards : applyty_splitu_arg_inv HA H. destruct_conj.
        subst. forwards (?&?&?): IH H1... forwards (?&?&?): IH H2...
-       exists. split. 2: applys~ ApplyTyUnionArg H0...
+       exists. split. 2: applys~ ApplyTyUnionArg H...
        applys~ DSub_UnionL. }
-  inverts HF.
   - forwards: applyty_soundness_1 HA.
     forwards HSN: DSub_Trans HS...
     forwards~ : applyty_completeness_1 HSN. destruct_conj.
     inv_arrow. convert2dsub. exists* x.
-  - forwards: applyty_soundness_2 HA...
-    pick_fresh Y. forwards~ : H1 Y...
-    forwards HSN: DSub_Trans HS...
-    forwards~ : applyty_completeness_2 HSN...
-    pick fresh X.
-    forwards~ : H4 X. destruct_conj.
-    eapply applyty_rename in H5. exists. split...
-    simpl_rename_goal. subst~.
-    convert2asub.
-    forwards : algo_sub_forall_inv X H6.
-    eapply asub2nsub in H0.
-    eapply typsubst_typ_new_sub in H0.
-    rewrite 2 typsubst_typ_spec in H0; rewrite 2 close_typ_wrt_typ_open_typ_wrt_typ in H0.
-    apply asub2nsub. apply~ H0.
-    all: eauto.
+  (* - forwards: applyty_soundness_2 HA... *)
+  (*   pick_fresh Y. forwards~ : H1 Y... *)
+  (*   forwards HSN: DSub_Trans HS... *)
+  (*   forwards~ : applyty_completeness_2 HSN... *)
+  (*   pick fresh X. *)
+  (*   forwards~ : H4 X. destruct_conj. *)
+  (*   eapply applyty_rename in H5. exists. split... *)
+  (*   simpl_rename_goal. subst~. *)
+  (*   convert2asub. *)
+  (*   forwards : algo_sub_forall_inv X H6. *)
+  (*   eapply asub2nsub in H0. *)
+  (*   eapply typsubst_typ_new_sub in H0. *)
+  (*   rewrite 2 typsubst_typ_spec in H0; rewrite 2 close_typ_wrt_typ_open_typ_wrt_typ in H0. *)
+  (*   apply asub2nsub. apply~ H0. *)
+  (*   all: eauto. *)
 Qed.
 
 Lemma monotonicity_applyty_2_1 : forall A B B' C,
