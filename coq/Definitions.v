@@ -9,7 +9,7 @@ Inductive l : Set :=
  | lbl_TagLeft : l
  | lbl_TagRight : l.
 
-Inductive typ : Set :=  (*r value type *)
+Inductive typ : Set :=  (*r type *)
  | t_tvar_b (_:nat)
  | t_tvar_f (X:typevar)
  | t_rcd (l5:l) (A:typ)
@@ -256,77 +256,103 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
      declarative_subtyping A t_top.
 
 (* defns NegTyp *)
-Inductive NegativeTypes : typ -> Prop :=    (* defn NegativeTypes *)
+Inductive isNegTyp : typ -> Prop :=    (* defn isNegTyp *)
  | NTypFun : forall (A B:typ),
      lc_typ A ->
      lc_typ B ->
-     NegativeTypes (t_arrow A B)
+     isNegTyp (t_arrow A B)
  | NTypRec : forall (l5:l) (A:typ),
      lc_typ A ->
-     NegativeTypes (t_rcd l5 A)
+     isNegTyp (t_arrow  (t_rcd l5 t_top)  A)
  | NTypForall : forall (A:typ),
      lc_typ (t_forall A) ->
-     NegativeTypes (t_forall A)
+     isNegTyp (t_forall A)
  | NTypIntersection : forall (A B:typ),
-     NegativeTypes A ->
-     NegativeTypes B ->
-     NegativeTypes (t_and A B)
+     isNegTyp A ->
+     isNegTyp B ->
+     isNegTyp (t_and A B)
  | NTypUnion : forall (A B:typ),
-     NegativeTypes A ->
-     NegativeTypes B ->
-     NegativeTypes (t_or A B)
+     isNegTyp A ->
+     isNegTyp B ->
+     isNegTyp (t_or A B)
  | NTypTop : 
-     NegativeTypes t_top
- | NTypEmpty : 
-     NegativeTypes t_bot.
+     isNegTyp t_top.
+
+(* defns ValTyp *)
+Inductive isValTyp : typ -> Prop :=    (* defn isValTyp *)
+ | VTypIn : forall (l5:l) (V:typ),
+     isValTyp V ->
+     isValTyp (t_rcd l5 V)
+ | VTypFun : forall (A B:typ),
+     lc_typ A ->
+     lc_typ B ->
+     isValTyp (t_arrow A B)
+ | VTypRec : forall (l5:l) (A:typ),
+     lc_typ A ->
+     isValTyp (t_arrow  (t_rcd l5 t_top)  A)
+ | VTypForall : forall (A:typ),
+     lc_typ (t_forall A) ->
+     isValTyp (t_forall A)
+ | VTypIntersection : forall (A B:typ),
+     isNegTyp A ->
+     isNegTyp B ->
+     isValTyp (t_and A B)
+ | VTypUnion : forall (A B:typ),
+     isNegTyp A ->
+     isNegTyp B ->
+     isValTyp (t_or A B)
+ | VTypTop : 
+     isValTyp t_top.
 
 (* defns PSub *)
 Inductive PositiveSubtyping : typ -> typ -> Prop :=    (* defn PositiveSubtyping *)
- | PSubIn : forall (l5:l) (V A:typ),
+ | PSub_In : forall (l5:l) (V A:typ),
+     isValTyp V ->
      PositiveSubtyping V A ->
      PositiveSubtyping (t_rcd l5 V) (t_rcd l5 A)
- | PSubTop : forall (V:typ),
-     lc_typ V ->
+ | PSub_Top : forall (V:typ),
+     isValTyp V ->
      PositiveSubtyping V t_top
- | PSubUnionL : forall (V A B:typ),
+ | PSub_UnionL : forall (V A B:typ),
      lc_typ B ->
+     isValTyp V ->
      PositiveSubtyping V A ->
      PositiveSubtyping V (t_or A B)
- | PSubUnionR : forall (V A B:typ),
+ | PSub_UnionR : forall (V A B:typ),
      lc_typ A ->
+     isValTyp V ->
      PositiveSubtyping V B ->
      PositiveSubtyping V (t_or A B)
- | PSubIntersect : forall (V A B:typ),
+ | PSub_Intersect : forall (V A B:typ),
+     isValTyp V ->
      PositiveSubtyping V A ->
      PositiveSubtyping V B ->
      PositiveSubtyping V (t_and A B)
- | PSubNeg : forall (V Aneg:typ),
-     lc_typ V ->
-     NegativeTypes Aneg ->
+ | PSub_Neg : forall (V Aneg:typ),
+     isValTyp V ->
+     isNegTyp Aneg ->
      PositiveSubtyping V Aneg.
 
 (* defns NSub *)
 Inductive NegativeSubtyping : typ -> Fty -> Prop :=    (* defn NegativeSubtyping *)
- | NSubFun : forall (A B V:typ),
+ | NSub_Fun : forall (A B V:typ),
      lc_typ B ->
+     isValTyp V ->
      PositiveSubtyping V A ->
      NegativeSubtyping (t_arrow A B) (fty_StackArg V)
- | NSubTyFun : forall (A B:typ),
+ | NSub_TyFun : forall (A B:typ),
      lc_typ (t_forall A) ->
      lc_typ B ->
      NegativeSubtyping (t_forall A) (fty_StackTyArg B)
- | NSubUnion : forall (Aneg1 Aneg2:typ) (Ftyalt:Fty),
+ | NSub_Union : forall (Aneg1 Aneg2:typ) (Ftyalt:Fty),
      NegativeSubtyping Aneg1 Ftyalt ->
      NegativeSubtyping Aneg2 Ftyalt ->
      NegativeSubtyping (t_or Aneg1 Aneg2) Ftyalt
- | NSubEmpty : forall (Fty5:Fty),
-     lc_Fty Fty5 ->
-     NegativeSubtyping t_bot Fty5
- | NSubIntersectL : forall (Aneg1 Aneg2:typ) (Ftyalt:Fty),
+ | NSub_IntersectL : forall (Aneg1 Aneg2:typ) (Ftyalt:Fty),
      lc_typ Aneg2 ->
      NegativeSubtyping Aneg1 Ftyalt ->
      NegativeSubtyping (t_and Aneg1 Aneg2) Ftyalt
- | NSubIntersectR : forall (Aneg1 Aneg2:typ) (Ftyalt:Fty),
+ | NSub_IntersectR : forall (Aneg1 Aneg2:typ) (Ftyalt:Fty),
      lc_typ Aneg1 ->
      NegativeSubtyping Aneg2 Ftyalt ->
      NegativeSubtyping (t_and Aneg1 Aneg2) Ftyalt.
@@ -719,6 +745,6 @@ Inductive new_sub : typ -> typ -> Prop :=    (* defn new_sub *)
 
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping NegativeTypes PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping isNegTyp isValTyp PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub lc_typ lc_Fty : core.
 
 

@@ -14,7 +14,7 @@ l, k :: 'lbl_' ::=
   | tright :: :: TagRight {{ tex \mathrm{right} }}
   
 
-typ, A , B , C, V, Aneg :: 't_' ::= {{ com value type }}
+typ, A , B , C, V, Aneg :: 't_' ::= {{ com type }}
   | X                                ::  :: tvar
   | In l A                           ::  :: rcd      {{ tex \tytag{[[l]]}{[[A]]} }}
   | A1 & A2                          ::  :: and
@@ -251,15 +251,15 @@ NegTyp :: '' ::=
 
   defn
   neg Aneg
-  :: :: NegativeTypes :: NTyp
+  :: :: isNegTyp :: NTyp
   {{ com Negative Types }}
   by
 
   ---------------- :: Fun
   neg A -> B
 
-  ---------------- :: Rec
-  neg In l A
+  ------------------ :: Rec
+  neg (In l Top)->A
 
   ------------------ :: Forall
   neg forall X . A
@@ -281,36 +281,78 @@ NegTyp :: '' ::=
 %  neg Empty
   
 
+defns
+ValTyp :: '' ::=
+
+  defn
+  val V
+  :: :: isValTyp :: VTyp
+  {{ com Negative Types }}
+  by
+  
+  val V
+  ---------------- :: In
+  val In l V
+
+  ---------------- :: Fun
+  val A -> B
+
+  ------------------ :: Rec
+  val (In l Top)->A
+
+  ------------------ :: Forall
+  val forall X . A
+
+  neg A
+  neg B
+  ------------------ :: Intersection
+  val A & B
+
+  neg A
+  neg B
+  ------------------ :: Union
+  val A | B
+
+  ------------------ :: Top
+  val Top
+
+
 
 defns
 PSub :: '' ::=
 
   defn
   V <p A
-  :: :: PositiveSubtyping :: PSub
+  :: :: PositiveSubtyping :: PSub_
   {{ com Positive Subtyping }}
   by
 
+  val V
   V <p A
   ---------------- :: In
   In l V <p In l A 
 
+  val V
   -------- :: Top
   V <p Top
 
+  val V
   V <p A
   ---------- :: UnionL
   V <p A | B
 
+  val V
   V <p B
   ---------- :: UnionR
   V <p A | B
 
+  val V
   V <p A
   V <p B
   ---------- :: Intersect
   V <p A & B
 
+  val V
   neg Aneg
   --------- :: Neg
   V <p Aneg
@@ -320,10 +362,11 @@ NSub :: '' ::=
 
   defn
   Aneg <n Fty
-  :: :: NegativeSubtyping :: NSub
+  :: :: NegativeSubtyping :: NSub_
   {{ com Negative Subtyping }}
   by
 
+  val V
   V <p A
   ----------- :: Fun
   A -> B <n V
@@ -336,8 +379,8 @@ NSub :: '' ::=
   -------------------- :: Union
   Aneg1 | Aneg2 <n Ftyalt
 
-  -------------------- :: Empty
-  Empty <n Fty
+%  -------------------- :: Empty
+%  Empty <n Fty
 
   Aneg1 <n Ftyalt
   -------------------- :: IntersectL
