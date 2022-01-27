@@ -38,7 +38,7 @@ typ, A , B , C, V, Aneg :: 't_' ::= {{ com type }}
 %   | [-] | A             :: :: TCovUnionL
 %   | A | [-]             :: :: TCovUnionR
 
-Fty {{ tex \hat{A} }}, Ftyalt {{ tex \hat{B} }} :: 'fty_' ::= {{ com elimination type }}
+Fty {{ tex \hat{A} }}, FVty {{ tex \hat{V} }}, Ftyalt {{ tex \hat{B} }} :: 'fty_' ::= {{ com elimination type }}
   | A       :: :: StackArg
   | [ A ]   :: :: StackTyArg
   
@@ -317,6 +317,22 @@ ValTyp :: '' ::=
   val Top
 
 
+defns
+ValFty :: '' ::=
+
+  defn
+  valF FVty
+  :: :: isValFty :: VFty
+  {{ com value elimination types }}
+  by
+  
+  ---------------- :: TypArg
+  valF [A]
+
+  val V
+  ---------------- :: Arg
+  valF V
+
 
 defns
 PSub :: '' ::=
@@ -361,7 +377,7 @@ defns
 NSub :: '' ::=
 
   defn
-  Aneg <n Fty
+  Aneg <n FVty
   :: :: NegativeSubtyping :: NSub_
   {{ com Negative Subtyping }}
   by
@@ -374,21 +390,21 @@ NSub :: '' ::=
   ------------------- :: TyFun
   forall X . A <n [B]
 
-  Aneg1 <n Ftyalt
-  Aneg2 <n Ftyalt
+  Aneg1 <n FVty
+  Aneg2 <n FVty
   -------------------- :: Union
-  Aneg1 | Aneg2 <n Ftyalt
+  Aneg1 | Aneg2 <n FVty
 
 %  -------------------- :: Empty
 %  Empty <n Fty
 
-  Aneg1 <n Ftyalt
+  Aneg1 <n FVty
   -------------------- :: IntersectL
-  Aneg1 & Aneg2 <n Ftyalt
+  Aneg1 & Aneg2 <n FVty
 
-  Aneg2 <n Ftyalt
+  Aneg2 <n FVty
   -------------------- :: IntersectR
-  Aneg1 & Aneg2 <n Ftyalt
+  Aneg1 & Aneg2 <n FVty
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
