@@ -48,13 +48,13 @@ Fixpoint open_typ_wrt_typ_rec (k:nat) (A_5:typ) (A__6:typ) {struct A__6}: typ :=
   | t_bot => t_bot 
 end.
 
-Definition open_Fty_wrt_typ_rec (k:nat) (A5:typ) (Ftyalt5:Fty) : Fty :=
-  match Ftyalt5 with
+Definition open_Fty_wrt_typ_rec (k:nat) (A5:typ) (FVty5:Fty) : Fty :=
+  match FVty5 with
   | (fty_StackArg A) => fty_StackArg (open_typ_wrt_typ_rec k A5 A)
   | (fty_StackTyArg A) => fty_StackTyArg (open_typ_wrt_typ_rec k A5 A)
 end.
 
-Definition open_Fty_wrt_typ A5 Ftyalt5 := open_Fty_wrt_typ_rec 0 Ftyalt5 A5.
+Definition open_Fty_wrt_typ A5 FVty5 := open_Fty_wrt_typ_rec 0 FVty5 A5.
 
 Definition open_typ_wrt_typ A_5 A__6 := open_typ_wrt_typ_rec 0 A__6 A_5.
 
@@ -110,8 +110,8 @@ Fixpoint typefv_typ (A_5:typ) : vars :=
   | t_bot => {}
 end.
 
-Definition typefv_Fty (Ftyalt5:Fty) : vars :=
-  match Ftyalt5 with
+Definition typefv_Fty (FVty5:Fty) : vars :=
+  match FVty5 with
   | (fty_StackArg A) => (typefv_typ A)
   | (fty_StackTyArg A) => (typefv_typ A)
 end.
@@ -130,8 +130,8 @@ Fixpoint typsubst_typ (A_5:typ) (X5:typevar) (A__6:typ) {struct A__6} : typ :=
   | t_bot => t_bot 
 end.
 
-Definition typsubst_Fty (A5:typ) (X5:typevar) (Ftyalt5:Fty) : Fty :=
-  match Ftyalt5 with
+Definition typsubst_Fty (A5:typ) (X5:typevar) (FVty5:Fty) : Fty :=
+  match FVty5 with
   | (fty_StackArg A) => fty_StackArg (typsubst_typ A5 X5 A)
   | (fty_StackTyArg A) => fty_StackTyArg (typsubst_typ A5 X5 A)
 end.
@@ -303,6 +303,15 @@ Inductive isValTyp : typ -> Prop :=    (* defn isValTyp *)
      isValTyp (t_or A B)
  | VTypTop : 
      isValTyp t_top.
+
+(* defns ValFty *)
+Inductive isValFty : Fty -> Prop :=    (* defn isValFty *)
+ | VFtyTypArg : forall (A:typ),
+     lc_typ A ->
+     isValFty (fty_StackTyArg A)
+ | VFtyArg : forall (V:typ),
+     isValTyp V ->
+     isValFty (fty_StackArg V).
 
 (* defns PSub *)
 Inductive PositiveSubtyping : typ -> typ -> Prop :=    (* defn PositiveSubtyping *)
@@ -745,6 +754,6 @@ Inductive new_sub : typ -> typ -> Prop :=    (* defn new_sub *)
 
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping isNegTyp isValTyp PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub lc_typ lc_Fty : core.
 
 

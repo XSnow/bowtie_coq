@@ -172,6 +172,29 @@ Proof.
   all: inverts_psub Sub; eauto.
 Qed.
 
+Hint Immediate psub_spli_left psub_spli_right psub_splu_left psub_splu_right : core.
+
+Lemma psub_splu_valtyp_left : forall A A1 A2,
+    splu A A1 A2 -> isValTyp A -> A <p A1.
+Proof.
+  introv Spl Val.
+  induction Spl; inverts Val; eauto.
+  all: try forwards*: IHSpl.
+  - constructor*. applys~ psub_spli_left.
+  - constructor*. applys~ psub_spli_right.
+  - constructor*.
+Qed.
+
+Lemma psub_splu_valtyp_right : forall A A1 A2,
+    splu A A1 A2 -> isValTyp A -> A <p A2.
+Proof.
+  introv Spl Val.
+  induction Spl; inverts Val; eauto.
+  all: try forwards*: IHSpl.
+  - constructor*. applys~ psub_spli_left.
+  - constructor*. applys~ psub_spli_right.
+  - constructor*.
+Qed.
 
 Lemma psub_negtyp : forall V1 V2 A,
     V1 <p A -> isNegTyp V1 -> isNegTyp V2 -> V2 <p A.
@@ -211,6 +234,7 @@ Proof.
   inductions Sub1; intros; eauto.
 Abort.
 
+
 Lemma psub_merge_union : forall A A1 A2 B,
     splu A A1 A2 -> isValTyp A -> A1 <p B -> A2 <p B -> A <p B.
 Proof with try eassumption; elia.
@@ -227,27 +251,10 @@ Proof with try eassumption; elia.
     inverts Sub1; try inverts_typ; eauto.
     + inverts_psub Sub2. injection H0; intros; subst~.
       forwards: IH H... eauto.
-    + inverts_psub Sub2.
-      * applys~ PSub_UnionL. applys* IH H2 H1...
-(*  COUNTER EXAMPLE: Box_l (Box_r1 T | Box_r2 T) <p Box_l Box_r1 T | Box_l Box_r2 T *)
-Restart.
-  introv Spl Val Sub1 Sub2. gen B.
-  induction* Spl; intros.
-  - (* union at left *) inverts_typ. applys~ psub_negtyp Sub1.
-  - (* inter at left *) inverts_typ. inverts_typ.
-    applys~ psub_negtyp Sub1.
-  - (* inter at left *) inverts_typ. inverts_typ.
-    applys~ psub_negtyp Sub1.
-  - applys~ psub_forall Sub1.
-  - (* record *)
-    inverts Sub1; try inverts_typ; eauto.
-    + inverts_psub Sub2. injection H; intros; subst~.
-    + inverts_psub Sub2.
-      * applys~ PSub_UnionL.
-        assert (t_rcd l5 A <p t_rcd l5 (A1&A2)). admit.
-        inverts_psub H2.
-        injection H4; intros; subst~.
-Abort.
+    + applys psub_rcd Sub2. applys* psub_splu_valtyp_right. inverts~ Val.
+    + applys psub_rcd Sub2. applys* psub_splu_valtyp_right. inverts~ Val.
+    + applys psub_rcd Sub2. applys* psub_splu_valtyp_right. inverts~ Val.
+Qed.
 
 (*------------------------------ Lemma B.1 -----------------------------------*)
 
@@ -265,12 +272,58 @@ Proof.
   - (* intersect on the right *) applys~ psub_merge_intersection H.
   - (* on the left *) applys~ psub_spli_left H.
   - (* on the left *) applys~ psub_spli_right H.
-  - (*  COUNTER EXAMPLE: Box_l (Box_r1 T | Box_r2 T) <p Box_l Box_r1 T | Box_l Box_r2 T *)
-    admit.
+  - applys~ psub_merge_union H.
   - applys* psub_splu_left H.
   - applys* psub_splu_right H.
-Admitted.
+Qed.
+
+
+Lemma nsub_merge_union : forall A B B1 B2,
+    splu B B1 B2 -> isNegTyp A -> isValTyp B ->
+    A <n (fty_StackArg B1) -> A <n (fty_StackArg B2) -> A <n (fty_StackArg B).
+Proof.
+  introv Spl Neg Val Sub1 Sub2.
+  induction Neg.
+  - (* arrow *) inverts Sub1; inverts Sub2.
+    forwards~ : psub_merge_union Spl H6.
+    (* PREVIOUSLY BROKEN isValTyp B1 -> isValTyp B2 -> splu B B1 B2 -> isValTyp B *)
+  - (* {l:A} encode by arrow *) inverts Sub1; inverts Sub2.
+    forwards~ : psub_merge_union Spl H5.
+    (* PREVIOUSLY BROKEN isValTyp B1 -> isValTyp B2 -> splu B B1 B2 -> isValTyp B *)
+  - (* forall *) inverts* Sub1.
+  - (* and *)
+    inverts Val; inverts Spl.
+    + inverts Sub1; inverts* Sub2; inverts_typ.
+      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
+      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
+    + inverts Sub1; inverts* Sub2; inverts_typ.
+      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
+      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
+    + inverts Sub1; inverts* Sub2; try inverts_typ.
+      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
+      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
+  - (* or *)
+    inverts Sub1; inverts* Sub2.
+  - (* top *)
+    inverts Sub1; inverts* Sub2.
+Qed.
 
 Lemma apply2nsub : forall A F C,
-    isNegTyp A -> ApplyTy A F C -> A <n F.
-Abort.
+    isNegTyp A -> isValFty F -> ApplyTy A F C -> A <n F.
+Proof.
+  introv Neg Val App.
+  induction App; try solve [inverts Neg]; inverts Val.
+  - (* forall *) eauto.
+  - (* arrow *)
+    inverts* H0. constructor~.
+    applys~ sub2psub.
+  - (* union *) inverts* Neg.
+  - (* union *) inverts* Neg.
+  - (* splu *) inverts_typ. applys* nsub_merge_union.
+  - (* intersection *) inverts* Neg.
+  - (* intersection *) inverts* Neg.
+  - (* intersection *) inverts* Neg.
+  - (* intersection *) inverts* Neg.
+  - (* intersection *) inverts* Neg.
+  - (* intersection *) inverts* Neg.
+Qed.

@@ -38,7 +38,7 @@ typ, A , B , C, V, Aneg :: 't_' ::= {{ com type }}
 %   | [-] | A             :: :: TCovUnionL
 %   | A | [-]             :: :: TCovUnionR
 
-Fty {{ tex \hat{A} }}, Ftyalt {{ tex \hat{B} }} :: 'fty_' ::= {{ com elimination type }}
+Fty {{ tex \hat{A} }}, FVty {{ tex \hat{V} }}, Ftyalt {{ tex \hat{B} }} :: 'fty_' ::= {{ com elimination type }}
   | A       :: :: StackArg
   | [ A ]   :: :: StackTyArg
   
@@ -316,6 +316,22 @@ ValTyp :: '' ::=
   ------------------ :: Top
   val Top
 
+
+defns
+ValFty :: '' ::=
+
+  defn
+  valF FVty
+  :: :: isValFty :: VFty
+  {{ com value elimination types }}
+  by
+  
+  ---------------- :: TypArg
+  valF [A]
+
+  val V
+  ---------------- :: Arg
+  valF V
 
 
 defns
