@@ -364,23 +364,101 @@ Definition iso A B := A <: B /\ B <: A.
 Notation "A ~= B"        := (iso A B)
                               (at level 65, B at next level, no associativity) : type_scope.
 
+Lemma iso_symm : forall A B,
+    A ~= B -> B ~= A.
+Proof.
+  introv (H1&H2).
+  split~.
+Qed.
+
 Lemma iso_refl : forall A,
-    A ~= A.
-Admitted.
+    lc_typ A -> A ~= A.
+Proof.
+  introv H. induction H; split.
+  all: applys~ DSub_Refl.
+Qed.
 
 Lemma iso_or : forall A B C,
     A ~= B -> A ~= C -> A ~= B|C.
-Admitted.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; constructor~.
+Qed.
+
+Lemma iso_or_2 : forall A B C,
+    A ~= C -> B ~= C -> A|B ~= C.
+Proof.
+  introv H1 H2. eauto using iso_or, iso_symm.
+Qed.
+
+Lemma iso_or_match : forall A1 A2 B1 B2,
+    A1 ~= B1 -> A2 ~= B2 -> A1|A2 ~= B1|B2.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; convert2asub; match_or; auto.
+Qed.
 
 Lemma iso_and : forall A B C,
     A ~= B -> A ~= C -> A ~= B&C.
-Admitted.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; constructor~.
+Qed.
+
+Lemma iso_and_match : forall A1 A2 B1 B2,
+    A1 ~= B1 -> A2 ~= B2 -> A1&A2 ~= B1&B2.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; convert2asub; match_and; auto.
+Qed.
+
+Hint Immediate iso_symm iso_refl iso_or iso_or_2 iso_and iso_or_match iso_and_match : core.
 
 Lemma applyty_bot : forall B C,
     ApplyTy t_bot B C -> C ~= t_bot.
-Admitted.
+Proof.
+  introv H. inductions H; auto.
+  - forwards~ : IHApplyTy1. forwards~ : IHApplyTy2.
+Qed.
 
 Hint Resolve iso_refl iso_or iso_and : core.
+
+Lemma isnegtyp_lc : forall A, isNegTyp A -> lc_typ A.
+Proof. introv H. induction~ H. Qed.
+
+Lemma isvaltyp_lc : forall A, isValTyp A -> lc_typ A.
+Proof. introv H. induction H; auto using isnegtyp_lc. Qed.
+
+Hint Immediate isnegtyp_lc isvaltyp_lc : core.
+
+Lemma applyty_iso : forall A B1 C1 B2 C2,
+    ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2
+    -> C1 ~= C2.
+Proof with elia.
+  introv HA1 HA2.
+  indTypSize (size_typ A + size_typ B1 + size_typ B2).
+  inverts keep HA1; inverts keep HA2; auto.
+  all: repeat match goal with
+              | H: ApplyTy _ _ ?A |- _ ~= ?A|?B => forwards~ : IH HA1 H; elia; clear H
+              | H: ApplyTy _ _ ?B |- _ ~= ?A|?B => forwards~ : IH HA1 H; elia; clear H
+              | H: ApplyTy _ _ ?A |- ?A|?B ~= _ => forwards~ : IH H HA2; elia; clear H
+              | H: ApplyTy _ _ ?B |- ?A|?B ~= _ => forwards~ : IH H HA2; elia; clear H
+              end.
+  all: clear HA1 HA2.
+  all: repeat match goal with
+              | H1: ApplyTy _ _ ?A1, H2: ApplyTy _ _ ?B1 |- ?A1|?A2 ~= ?B1|?B2 =>
+                forwards~ : IH H1 H2; elia; clear H1 H2
+              | H1: ApplyTy _ _ ?A2, H2: ApplyTy _ _ ?B2 |- ?A1|?A2 ~= ?B1|?B2 =>
+                forwards~ : IH H1 H2; elia; clear H1 H2
+              | H1: ApplyTy _ _ ?A, H2: ApplyTy _ _ ?B |- ?A ~= ?B =>
+                forwards~ : IH H1 H2; elia; clear H1 H2
+              end.
+
+  [ (Forall X.B) -> C1 ]  & [ (A->B) -> C2 ]
+
+                                       (Forall X.B) | (A->B)
+  - forwards~ : IH HA1 H2... forwards~ : IH HA1 H4...
+  -
 
 Definition isAtomic B := forall A B1 B2 C1 C2, splu B B1 B2 -> ApplyTy A (fty_StackArg B1) C1
                                                -> ApplyTy A (fty_StackArg B2) C2 -> C1 ~= C2.
@@ -389,13 +467,14 @@ Lemma dispatch : forall A, isValTyp A -> isAtomic A.
 Proof.
   introv Val.
   indTypSize (size_typ A).
-  forwards* [?|(?&?&?)]: ordu_or_split A. { admit. }
+  forwards* [?|(?&?&?)]: ordu_or_split A.
   - unfolds. intros. solve_false.
   - inverts_typ.
     forwards Val1: IH H0; elia. forwards Val2: IH H1; elia.
     unfolds; intros.
     lets App1: H3. lets App2: H4. clear H3 H4.
-    destruct A0.
+    forwards Lc: applyty_lc_1 App1.
+    induction Lc.
     inverts keep App1; inverts keep App2; auto.
     + admit.
     +
