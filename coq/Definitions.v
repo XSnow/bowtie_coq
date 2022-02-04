@@ -20,6 +20,8 @@ Inductive typ : Set :=  (*r type *)
  | t_top : typ
  | t_bot : typ.
 
+Definition tctx : Set := list ( atom * typ ).
+
 Inductive Fty : Set :=  (*r elimination type *)
  | fty_StackArg (A:typ)
  | fty_StackTyArg (A:typ).
@@ -732,8 +734,115 @@ Inductive new_sub : typ -> typ -> Prop :=    (* defn new_sub *)
      new_sub A B2 ->
      new_sub A B.
 
+(* defns DistinguishabilityAx *)
+Inductive DistinguishabilityAx : typ -> typ -> Prop :=    (* defn DistinguishabilityAx *)
+ | DistAxIn : forall (l1:l) (A:typ) (l2:l) (B:typ),
+     lc_typ A ->
+     lc_typ B ->
+      l1  <>  l2  ->
+     DistinguishabilityAx (t_rcd l1 A) (t_rcd l2 B)
+ | DistAxEmptyL : forall (B:typ),
+     lc_typ B ->
+     DistinguishabilityAx t_bot B.
+
+(* defns Distinguishability *)
+Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishability *)
+ | DistIn : forall (l5:l) (A B:typ),
+     Distinguishability A B ->
+     Distinguishability (t_rcd l5 A) (t_rcd l5 B)
+ | DistUnion : forall (A A' B:typ),
+     Distinguishability A B ->
+     Distinguishability A' B ->
+     Distinguishability (t_or A A') B
+ | DistIntersectL : forall (A A' B:typ),
+     lc_typ A' ->
+     Distinguishability A B ->
+     Distinguishability (t_and A A') B
+ | DistIntersectR : forall (A A' B:typ),
+     lc_typ A ->
+     Distinguishability A' B ->
+     Distinguishability (t_and A A') B
+ | DistAx : forall (A B:typ),
+     DistinguishabilityAx A B ->
+     Distinguishability A B
+ | DistSym : forall (A B:typ),
+     Distinguishability B A ->
+     Distinguishability A B.
+
+(* defns MergeabilityAx *)
+Inductive MergeabilityAx : typ -> typ -> Prop :=    (* defn MergeabilityAx *)
+ | MergeAxTopL : forall (B:typ),
+     lc_typ B ->
+     MergeabilityAx t_top B
+ | MergeAxFunTyp : forall (A A' B:typ),
+     lc_typ A ->
+     lc_typ A' ->
+     lc_typ (t_forall B) ->
+     MergeabilityAx (t_arrow A A') (t_forall B).
+
+(* defns Mergeability *)
+Inductive Mergeability : typ -> typ -> Prop :=    (* defn Mergeability *)
+ | MergeIn : forall (l5:l) (A B:typ),
+     Mergeability A B ->
+     Mergeability (t_rcd l5 A) (t_rcd l5 B)
+ | MergeFunL : forall (A A' B B':typ),
+     lc_typ A' ->
+     lc_typ B' ->
+     Distinguishability A B ->
+     Mergeability (t_arrow A A') (t_arrow B B')
+ | MergeFunR : forall (A B B':typ),
+     lc_typ A ->
+     Mergeability B B' ->
+     Mergeability (t_arrow A B) (t_arrow A B')
+ | MergeForall : forall (L:vars) (A B:typ),
+      ( forall X , X \notin  L  -> Mergeability  ( open_typ_wrt_typ A (t_tvar_f X) )   ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
+     Mergeability (t_forall A) (t_forall B)
+ | MergeIntersect : forall (A A' B:typ),
+     Mergeability A B ->
+     Mergeability A' B ->
+     Mergeability (t_and A A') B
+ | MergeUnion : forall (A A' B:typ),
+     Mergeability A B ->
+     Mergeability A' B ->
+     Mergeability (t_or A A') B
+ | MergeSym : forall (A B:typ),
+     Mergeability B A ->
+     Mergeability A B
+ | MergeAx : forall (A B:typ),
+     MergeabilityAx A B ->
+     Mergeability A B.
+
+(* defns TypeWellformedness *)
+Inductive TypeWF : tctx -> typ -> Prop :=    (* defn TypeWF *)
+ | TyWfVar : forall (D:tctx) (X:typevar),
+      binds  X t_top D  ->
+     TypeWF D (t_tvar_f X)
+ | TyWfIn : forall (D:tctx) (l5:l) (A:typ),
+     TypeWF D A ->
+     TypeWF D (t_rcd l5 A)
+ | TyWfInter : forall (D:tctx) (A1 A2:typ),
+     TypeWF D A1 ->
+     TypeWF D A2 ->
+     Mergeability A1 A2 ->
+     TypeWF D (t_and A1 A2)
+ | TyWfUnion : forall (D:tctx) (A1 A2:typ),
+     TypeWF D A1 ->
+     TypeWF D A2 ->
+     TypeWF D (t_or A1 A2)
+ | TyWfFun : forall (D:tctx) (A B:typ),
+     TypeWF D A ->
+     TypeWF D B ->
+     TypeWF D (t_arrow A B)
+ | TyWfTyFun : forall (L:vars) (D:tctx) (B:typ),
+      ( forall X , X \notin  L  -> TypeWF  (cons ( X ,t_top)  D )   ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
+     TypeWF D (t_forall B)
+ | TyWfTop : forall (D:tctx),
+     TypeWF D t_top
+ | TyWfEmpty : forall (D:tctx),
+     TypeWF D t_bot.
+
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub DistinguishabilityAx Distinguishability MergeabilityAx Mergeability TypeWF lc_typ lc_Fty : core.
 
 
