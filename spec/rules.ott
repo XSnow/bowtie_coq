@@ -6,6 +6,8 @@ metavar typevar, X , Y ::= {{ repr-locally-nameless }}
 metavar I, J, h, i, j, n, m ::= {{ coq nat }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% GRAMMAR (LNgen portion)
+
 grammar
 
 l, k :: 'lbl_' ::=
@@ -41,7 +43,33 @@ typ, A , B , C, V, Aneg :: 't_' ::= {{ com type }}
 Fty {{ tex \hat{A} }}, FVty {{ tex \hat{V} }}, Ftyalt {{ tex \hat{B} }} :: 'fty_' ::= {{ com elimination type }}
   | A       :: :: StackArg
   | [ A ]   :: :: StackTyArg
+
+%contextrules
+%  Tcov _:: typ :: typ
+
+substitutions
+  single typ X   :: typsubst
+
+freevars
+  typ X      :: typefv
   
+parsing
+  t_arrow <= t_and
+  t_forall <= t_and
+  t_arrow <= t_or
+  t_forall <= t_or
+  t_arrow right t_arrow
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% GRAMMAR  (non LNgen portion)
+
+grammar
+
+tctx, D {{ tex \Delta }} :: 'tctx_' ::= {{ com type context }} {{ coq list ( atom * typ ) }}
+  | []           ::  :: empty      {{ coq nil }}
+                                   {{ tex \cdot }}
+  | D , X        ::  :: cons       {{ coq (cons ([[X]],t_top) [[D]]) }}
+
 terminals :: 'terminals_' ::=
   | [-]          ::    :: hole      {{ tex \hole }}
   | &            ::    :: intersect {{ tex \sqcap }}
@@ -62,6 +90,8 @@ formula :: formula_ ::=
    | l != l'                         ::   :: labNeq
      {{ coq [[l]] <> [[l']] }}
    | l = l'                          ::   :: labEq
+   | X in D                          ::   :: inD
+    {{ coq binds [[X]]t_top[[D]] }}
    | lc_typ A                        ::   :: lcTyp
      {{ tex }}
      {{ coq lc_typ [[A]] }}
@@ -70,22 +100,6 @@ formula :: formula_ ::=
    | not formula                     :: M :: not
     {{ tex \neg [[formula]] }}
     {{ coq not ([[formula]]) }}
-
-%contextrules
-%  Tcov _:: typ :: typ
-
-substitutions
-  single typ X   :: typsubst
-
-freevars
-  typ X      :: typefv
-  
-parsing
-  t_arrow <= t_and
-  t_forall <= t_and
-  t_arrow <= t_or
-  t_forall <= t_or
-  t_arrow right t_arrow
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % embed
@@ -930,3 +944,159 @@ NewAlgorithmicSubtyping :: '' ::=
   A <na B2
   ------------------------- :: orr
   A <na B
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+DistinguishabilityAx :: '' ::=
+
+  defn
+  |-ax A <> B
+  :: :: DistinguishabilityAx :: ''
+  {{ tex \distax{[[A]]}{[[B]]} }}
+  by
+
+  l1 != l2
+  ------------------ :: DistAxIn
+  |-ax In l1 A <> In l2 B
+
+  ----------- :: DistAxEmptyL
+  |-ax Empty <> B
+
+
+defns
+Distinguishability :: '' ::=
+
+  defn
+  |- A <> B
+  :: :: Distinguishability :: ''
+  {{ tex \dist{[[A]]}{[[B]]} }}
+  by
+
+  |- A <> B
+  --------------------- :: DistIn
+  |- In l A <> In l B
+
+  |- A  <> B
+  |- A' <> B
+  ---------------- :: DistUnion
+  |- A | A' <> B
+
+  |- A <> B
+  ---------------- :: DistIntersectL
+  |- A & A' <> B
+
+  |- A' <> B
+  ---------------- :: DistIntersectR
+  |- A & A' <> B
+
+  |-ax A <> B
+  ----------- :: DistAx
+  |- A <> B
+
+  |- B <> A
+  ----------- :: DistSym
+  |- A <> B
+
+
+defns
+MergeabilityAx :: '' ::=
+  
+  defn
+  |-ax A >< B
+  :: :: MergeabilityAx :: ''
+  {{ tex \mergeableax{[[ A ]]}{[[ B ]]} }}
+  by
+
+  -------- :: MergeAxTopL
+  |-ax Top >< B
+  
+  ----------------------------- :: MergeAxFunTyp
+  |-ax A -> A' >< forall X . B
+
+
+defns
+Mergeability :: '' ::=
+
+  defn
+  |- A >< B
+  :: :: Mergeability :: ''
+  {{ tex \judgmerg{[[A]]}{[[B]]} }}
+  by
+  
+  |- A >< B
+  --------------------- :: MergeIn
+  |- In l A >< In l B
+
+  |- A <> B
+  ----------------------- :: MergeFunL
+  |- A -> A' >< B -> B'
+
+  |- B >< B'
+  ----------------------- :: MergeFunR
+  |- A -> B >< A -> B'
+
+  |- A >< B
+  --------------------------------- :: MergeForall
+  |- forall X . A >< forall X . B
+
+  |- A  >< B
+  |- A' >< B
+  ---------------- :: MergeIntersect
+  |- A & A' >< B
+
+  |- A  >< B
+  |- A'  >< B
+  ---------------- :: MergeUnion
+  |- A | A' >< B
+
+  |- B >< A
+  ----------- :: MergeSym
+  |- A >< B
+  
+  |-ax A >< B
+  ----------- :: MergeAx
+  |- A >< B
+
+defns
+TypeWellformedness :: '' ::=
+
+  defn
+  D |- A
+  :: :: TypeWF :: ''
+  {{ com well-formed types }}
+  by
+
+  X in D
+  --------- :: TyWfVar
+  D |- X
+
+  D |- A
+  ----------- :: TyWfIn
+  D |- In l A
+  
+  D |- A1
+  D |- A2
+  |- A1 >< A2
+  ------------ :: TyWfInter
+  D |- A1 & A2
+
+  D |- A1
+  D |- A2
+  ------------ :: TyWfUnion
+  D |- A1 | A2
+
+  D |- A
+  D |- B
+  ----------- :: TyWfFun
+  D |- A -> B
+
+  D, X |- B
+  ----------------- :: TyWfTyFun
+  D |- forall X . B
+
+  -------- :: TyWfTop
+  D |- Top
+
+  ---------- :: TyWfEmpty
+  D |- Empty

@@ -73,6 +73,8 @@ Ltac inverts_typ :=
   | H1: isNegTyp ?A, H2: splu ?A _ _ |- _ => forwards (?&?): negtyp_splu_inv H1 H2
   | H1: isValTyp ?A, H2: spli ?A _ _ |- _ => forwards (?&?): valtyp_spli_inv H1 H2
   | H1: isValTyp ?A, H2: splu ?A _ _ |- _ => forwards (?&?): valtyp_splu_inv H1 H2
+  | H1: isValFty (fty_StackArg (_ & _)) |- _ => inverts H1
+  | H1: isValFty (fty_StackArg (_ | _)) |- _ => inverts H1
   end.
 
 Lemma psub_valtyp : forall A B,
@@ -83,6 +85,20 @@ Proof.
 Qed.
 
 #[export] Hint Immediate psub_valtyp : core.
+
+Lemma nsub_valfty : forall A B,
+    A <n B -> isValFty B.
+Proof.
+  introv H. induction~ H.
+Qed.
+
+Lemma nsub_valtyp : forall A B,
+    A <n (fty_StackArg B) -> isValTyp B.
+Proof.
+  introv H. inductions H; eauto.
+Qed.
+
+#[export] Hint Immediate nsub_valfty nsub_valtyp : core.
 
 (*-------------------------- psub inversion lemmas  -------------------------*)
 
@@ -235,25 +251,59 @@ Proof.
 Abort.
 
 
-Lemma psub_merge_union : forall A A1 A2 B,
-    splu A A1 A2 -> isValTyp A -> A1 <p B -> A2 <p B -> A <p B.
+Lemma psub_unionL : forall A A1 A2 B,
+    splu A A1 A2 -> isValTyp A -> A1 <p B -> A <p B.
 Proof with try eassumption; elia.
-  introv Spl Val Sub1 Sub2.
+  introv Spl Val Sub.
   indTypFtySize (size_typ A + size_typ B).
   inverts Spl; intros.
-  - (* union at left *) inverts_typ. applys~ psub_negtyp Sub1.
+  - (* union at left *) inverts_typ. applys~ psub_negtyp Sub.
   - (* inter at left *) inverts_typ. inverts_typ.
-    applys~ psub_negtyp Sub1.
+    applys~ psub_negtyp Sub.
   - (* inter at left *) inverts_typ. inverts_typ.
-    applys~ psub_negtyp Sub1.
-  - (* forall *) applys~ psub_forall Sub1.
+    applys~ psub_negtyp Sub.
+  - (* forall *) applys~ psub_forall Sub.
   -(* record *)
-    inverts Sub1; try inverts_typ; eauto.
-    + inverts_psub Sub2. injection H0; intros; subst~.
-      forwards: IH H... eauto.
-    + applys psub_rcd Sub2. applys* psub_splu_valtyp_right. inverts~ Val.
-    + applys psub_rcd Sub2. applys* psub_splu_valtyp_right. inverts~ Val.
-    + applys psub_rcd Sub2. applys* psub_splu_valtyp_right. inverts~ Val.
+    inverts Sub; try inverts_typ; eauto.
+    + forwards: IH H... eauto.
+    + applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_left. inverts~ Val.
+    + applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_left. inverts~ Val.
+    + applys~ PSub_Intersect.
+      * applys psub_rcd H1. applys* psub_splu_valtyp_left. inverts~ Val.
+      * applys psub_rcd H2. applys* psub_splu_valtyp_left. inverts~ Val.
+Qed.
+
+Lemma psub_unionR : forall A A1 A2 B,
+    splu A A1 A2 -> isValTyp A -> A2 <p B -> A <p B.
+Proof with try eassumption; elia.
+  introv Spl Val Sub.
+  indTypFtySize (size_typ A + size_typ B).
+  inverts Spl; intros.
+  - (* union at left *) inverts_typ. applys~ psub_negtyp Sub.
+  - (* inter at left *) inverts_typ. inverts_typ.
+    applys~ psub_negtyp Sub.
+  - (* inter at left *) inverts_typ. inverts_typ.
+    applys~ psub_negtyp Sub.
+  - (* forall *) applys~ psub_forall Sub.
+  -(* record *)
+    inverts Sub; try inverts_typ; eauto.
+    + forwards: IH H... eauto.
+    + applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_right. inverts~ Val.
+    + applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_right. inverts~ Val.
+    + applys~ PSub_Intersect.
+      * applys psub_rcd H1. applys* psub_splu_valtyp_right. inverts~ Val.
+      * applys psub_rcd H2. applys* psub_splu_valtyp_right. inverts~ Val.
+Qed.
+
+Lemma psub_merge_union : forall A A1 A2 B,
+    splu A A1 A2 -> isValTyp A -> A1 <p B -> A2 <p B -> A <p B.
+Abort. (* weak than the above two *)
+
+Lemma nsub_negtyp : forall V1 V2 A,
+    A <n (fty_StackArg V1) -> isNegTyp V1 -> isNegTyp V2 -> A <n (fty_StackArg V2).
+Proof.
+  introv Sub Neg1 Neg2. gen V2.
+  inductions Sub; try solve [inverts Neg1]; intros; eauto using psub_negtyp.
 Qed.
 
 (*------------------------------ Lemma B.1 -----------------------------------*)
@@ -272,41 +322,58 @@ Proof.
   - (* intersect on the right *) applys~ psub_merge_intersection H.
   - (* on the left *) applys~ psub_spli_left H.
   - (* on the left *) applys~ psub_spli_right H.
-  - applys~ psub_merge_union H.
+  - applys~ psub_unionL H.
   - applys* psub_splu_left H.
   - applys* psub_splu_right H.
 Qed.
 
+Lemma nsub_unionL : forall A B B1 B2,
+    splu B B1 B2 -> isNegTyp A -> isValTyp B ->
+    A <n (fty_StackArg B1) -> A <n (fty_StackArg B).
+Proof.
+  introv Spl Neg Val Sub.
+  induction Neg.
+  - (* arrow *) inverts Sub.
+    forwards~ : psub_unionL Spl H6.
+  - (* {l:A} encode by arrow *) inverts Sub.
+    forwards~ : psub_unionL Spl H5.
+  - (* forall *) inverts* Sub.
+  - (* and *)
+    inverts Val; inverts Spl.
+    1,3,4: inverts Sub; inverts_typ; [ applys* NSub_IntersectL | applys* NSub_IntersectR].
+    all: applys nsub_negtyp; try eassumption; eauto.
+  - (* or *)
+    inverts* Sub.
+  - (* top *)
+    inverts* Sub.
+Qed.
+
+
+Lemma nsub_unionR : forall A B B1 B2,
+    splu B B1 B2 -> isNegTyp A -> isValTyp B ->
+    A <n (fty_StackArg B2) -> A <n (fty_StackArg B).
+Proof.
+  introv Spl Neg Val Sub.
+  induction Neg.
+  - (* arrow *) inverts Sub.
+    forwards~ : psub_unionR Spl H6.
+  - (* {l:A} encode by arrow *) inverts Sub.
+    forwards~ : psub_unionR Spl H5.
+  - (* forall *) inverts* Sub.
+  - (* and *)
+    inverts Val; inverts Spl.
+    1,3,4: inverts Sub; inverts_typ; [ applys* NSub_IntersectL | applys* NSub_IntersectR].
+    all: applys nsub_negtyp; try eassumption; eauto.
+  - (* or *)
+    inverts* Sub.
+  - (* top *)
+    inverts* Sub.
+Qed.
 
 Lemma nsub_merge_union : forall A B B1 B2,
     splu B B1 B2 -> isNegTyp A -> isValTyp B ->
     A <n (fty_StackArg B1) -> A <n (fty_StackArg B2) -> A <n (fty_StackArg B).
-Proof.
-  introv Spl Neg Val Sub1 Sub2.
-  induction Neg.
-  - (* arrow *) inverts Sub1; inverts Sub2.
-    forwards~ : psub_merge_union Spl H6.
-    (* PREVIOUSLY BROKEN isValTyp B1 -> isValTyp B2 -> splu B B1 B2 -> isValTyp B *)
-  - (* {l:A} encode by arrow *) inverts Sub1; inverts Sub2.
-    forwards~ : psub_merge_union Spl H5.
-    (* PREVIOUSLY BROKEN isValTyp B1 -> isValTyp B2 -> splu B B1 B2 -> isValTyp B *)
-  - (* forall *) inverts* Sub1.
-  - (* and *)
-    inverts Val; inverts Spl.
-    + inverts Sub1; inverts* Sub2; inverts_typ.
-      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
-      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
-    + inverts Sub1; inverts* Sub2; inverts_typ.
-      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
-      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
-    + inverts Sub1; inverts* Sub2; try inverts_typ.
-      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
-      * econstructor; eauto. applys nsub_negtyp; try eassumption; eauto.
-  - (* or *)
-    inverts Sub1; inverts* Sub2.
-  - (* top *)
-    inverts Sub1; inverts* Sub2.
-Qed.
+Abort. (* weak than the above two *)
 
 Lemma apply2nsub : forall A F C,
     isNegTyp A -> isValFty F -> ApplyTy A F C -> A <n F.
@@ -319,7 +386,7 @@ Proof.
     applys~ sub2psub.
   - (* union *) inverts* Neg.
   - (* union *) inverts* Neg.
-  - (* splu *) inverts_typ. applys* nsub_merge_union.
+  - (* splu *) inverts_typ. applys* nsub_unionL.
   - (* intersection *) inverts* Neg.
   - (* intersection *) inverts* Neg.
   - (* intersection *) inverts* Neg.
@@ -327,3 +394,177 @@ Proof.
   - (* intersection *) inverts* Neg.
   - (* intersection *) inverts* Neg.
 Qed.
+
+(*------------------------------ Lemma B.9 -----------------------------------*)
+Definition iso A B := A <: B /\ B <: A.
+
+Notation "A ~= B"        := (iso A B)
+                              (at level 65, B at next level, no associativity) : type_scope.
+
+Lemma iso_symm : forall A B,
+    A ~= B -> B ~= A.
+Proof.
+  introv (H1&H2).
+  split~.
+Qed.
+
+Lemma iso_refl : forall A,
+    lc_typ A -> A ~= A.
+Proof.
+  introv H. induction H; split.
+  all: applys~ DSub_Refl.
+Qed.
+
+Lemma iso_or : forall A B C,
+    A ~= B -> A ~= C -> A ~= B|C.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; constructor~.
+Qed.
+Lemma iso_or_2 : forall A B C,
+    A ~= C -> B ~= C -> A|B ~= C.
+Proof.
+  introv H1 H2. eauto using iso_or, iso_symm.
+Qed.
+
+Lemma iso_or_match : forall A1 A2 B1 B2,
+    A1 ~= B1 -> A2 ~= B2 -> A1|A2 ~= B1|B2.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; convert2asub; match_or; auto.
+Qed.
+
+Lemma iso_and : forall A B C,
+    A ~= B -> A ~= C -> A ~= B&C.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; constructor~.
+Qed.
+
+Lemma iso_and_match : forall A1 A2 B1 B2,
+    A1 ~= B1 -> A2 ~= B2 -> A1&A2 ~= B1&B2.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; convert2asub; match_and; auto.
+Qed.
+
+Hint Immediate iso_symm iso_refl iso_or iso_or_2 iso_and iso_or_match iso_and_match : core.
+
+Lemma applyty_bot : forall B C,
+    ApplyTy t_bot B C -> C ~= t_bot.
+Proof. introv H. inductions H; eauto using iso_or_2. Qed.
+
+Lemma isnegtyp_lc : forall A, isNegTyp A -> lc_typ A.
+Proof. introv H. induction~ H. Qed.
+
+Lemma isvaltyp_lc : forall A, isValTyp A -> lc_typ A.
+Proof. introv H. induction H; auto using isnegtyp_lc. Qed.
+
+Hint Immediate isnegtyp_lc isvaltyp_lc : core.
+
+Lemma applyty_iso : forall A B1 C1 B2 C2,
+    ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2
+    -> C1 ~= C2.
+Proof with elia.
+  introv HA1 HA2.
+  indTypSize (size_typ A + size_typ B1 + size_typ B2).
+  inverts keep HA1; inverts keep HA2; auto.
+  all: repeat match goal with
+              | H: ApplyTy _ _ ?A |- _ ~= ?A|?B => forwards~ : IH HA1 H; elia; clear H
+              | H: ApplyTy _ _ ?B |- _ ~= ?A|?B => forwards~ : IH HA1 H; elia; clear H
+              | H: ApplyTy _ _ ?A |- ?A|?B ~= _ => forwards~ : IH H HA2; elia; clear H
+              | H: ApplyTy _ _ ?B |- ?A|?B ~= _ => forwards~ : IH H HA2; elia; clear H
+              end.
+  all: clear HA1 HA2.
+  all: repeat match goal with
+              | H1: ApplyTy _ _ ?A1, H2: ApplyTy _ _ ?B1 |- ?A1|?A2 ~= ?B1|?B2 =>
+                forwards~ : IH H1 H2; elia; clear H1 H2
+              | H1: ApplyTy _ _ ?A2, H2: ApplyTy _ _ ?B2 |- ?A1|?A2 ~= ?B1|?B2 =>
+                forwards~ : IH H1 H2; elia; clear H1 H2
+              | H1: ApplyTy _ _ ?A, H2: ApplyTy _ _ ?B |- ?A ~= ?B =>
+                forwards~ : IH H1 H2; elia; clear H1 H2
+              end.
+Abort. (*
+  [ (Forall X.B) -> C1 ]  & [ (A->B) -> C2 ]
+                                       (Forall X.B) | (A->B)
+        *)
+
+Lemma splu_twice : forall A B C B1 B2,
+    splu A B C -> splu B B1 B2 -> exists A1 A2, splu A1 B1 C /\ splu A2 B2 C /\
+                                                size_typ A1 < size_typ A /\
+                                                size_typ A2 < size_typ A.
+Proof with try splits; elia; auto.
+  introv Spl1 Spl2.
+  indTypSize (size_typ A).
+  inverts Spl1.
+  - exists (B1 | C) (B2 | C)...
+  - inverts Spl2.
+    + forwards (T1&T2&?): IH H0 H6... destruct_conj.
+      exists (T1&B0) (T2&B0)...
+    + (* A0 & B0 where splitu A0 = A1|A2 and A1 is ordu *)
+Abort. (* counter example exists *)
+
+#[export]
+Hint Extern 0 =>
+match goal with
+| H : binds _ _ nil |- _ => inverts H
+end : FalseHd.
+
+Lemma dispatch_neg : forall A B1 B2 C1 C2,
+    TypeWF nil A -> isNegTyp B1 -> isNegTyp B2 ->
+    ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2 -> C1 ~= C2.
+Proof.
+  introv Tw Neg1 Neg2 App1 App2. gen B1 B2 C1 C2.
+  inductions Tw; intros; solve_false.
+  all: try solve [forwards HF: applyty_soundness_1 App1; convert2asub; solve_false].
+  - inverts App1; inverts App2.
+(******************************************************************************)
+    (* if B1 and B2 are ordinary it can be easier to prove *)
+
+  indTypSize (size_typ B1).
+  forwards* [?|(?&?&?)]: ordu_or_split A.
+
+  - inverts Spl.
+  - inverts Spl. inductions Tw; solve_false.
+
+Lemma dispatch_neg : forall A B B1 B2 C1 C2,
+    TypeWF nil A -> isNegTyp B -> splu B B1 B2 ->
+    ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2 -> C1 ~= C2.
+Proof.
+  introv Tw Neg Spl App1 App2.
+  induction Neg.
+  - inverts Spl.
+  - inverts Spl.
+  - inverts Spl. inductions Tw; solve_false.
+    all: try solve [forwards HF: applyty_soundness_1 App1; convert2asub; solve_false].
+
+
+
+Lemma dispatch_alt : forall A B B1 B2 C1 C2,
+    TypeWF nil A -> isValTyp B -> splu B B1 B2 ->
+    ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2 -> C1 ~= C2.
+Proof.
+  introv Tw Val Spl App1 App2.
+  induction Tw.
+  - inverts App1.
+
+Definition isAtomic B := forall A B1 B2 C1 C2, TypeWF nil A -> splu B B1 B2 ->
+   ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2 -> C1 ~= C2.
+
+Lemma dispatch : forall A, isValTyp A -> isAtomic A.
+Proof.
+  introv Val.
+  indTypSize (size_typ A).
+  forwards* [?|(?&?&?)]: ordu_or_split A.
+  - unfolds. intros. solve_false.
+  - inverts_typ.
+    forwards Val1: IH H0; elia. forwards Val2: IH H1; elia.
+    unfolds; intros.
+    lets App1: H4. lets App2: H5. clear H5 H4.
+    forwards Lc: applyty_lc_1 App1.
+    induction Lc.
+    inverts keep App1; inverts keep App2; auto.
+-    + admit.
+-    +
+-  inverts Val.
+-  induction Val.
