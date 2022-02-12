@@ -1100,3 +1100,27 @@ TypeWellformedness :: '' ::=
 
   ---------- :: TyWfEmpty
   D |- Empty
+
+defns
+Similarity :: '' ::=
+
+  defn
+  V1 ~ V2
+  :: :: sim :: Sim_
+  {{ com Similar Types }}
+  by
+
+  neg A
+  neg B
+  ----------------------- :: Neg
+  A ~ B
+
+  V1 ~ V2
+  ----------------------- :: In
+  In l V1 ~ In l V2
+
+  ----------------------- :: Fun
+  A->B1 ~ A->B2
+
+  ----------------------- :: forall
+  forall X.A ~ forall X.B

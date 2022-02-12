@@ -77,6 +77,8 @@ Ltac inverts_typ :=
   | H1: isValFty (fty_StackArg (_ | _)) |- _ => inverts H1
   end.
 
+#[export] Hint Extern 1 (isValTyp _) => inverts_typ : core.
+
 Lemma psub_valtyp : forall A B,
     A <p B -> isValTyp A.
 Proof.
@@ -134,6 +136,60 @@ Local Ltac inverts_psub H :=
   try forwards (?&?): psub_and_inv H;
   try forwards (?&?&?): psub_rcd_inv H; subst.
 
+Lemma psub_bot_inv : forall V,
+    V <p t_bot -> False.
+Proof.
+  introv Sub.
+  inverts* Sub. inverts~ H0.
+Qed.
+
+Lemma sub_neg_r_inv : forall V A,
+    V <: A -> isValTyp V -> isNegTyp A -> isNegTyp V.
+Proof with elia.
+  introv Sub Val Neg.
+  indTypSize (size_typ V + size_typ A).
+  inverts~ Val.
+  - inverts~ Neg; try solve [convert2asub; solve_false].
+    + assert (HS: t_rcd l5 V0 <: A0) by applys* DSub_Trans Sub.
+      forwards* : IH HS...
+    + lets~ [Hu|(?&?&Hu)]: ordu_or_split V0.
+      * convert2asub. forwards~ [HS|HS]: algo_sub_orlr_inv Sub.
+        all: convert2dsub; forwards* : IH HS...
+      * exfalso. inverts_typ.
+        convert2asub. forwards~ : algo_sub_or_inv Sub. eauto.
+        destruct_conj. convert2dsub.
+        forwards~ : IH H4... inverts H6.
+    + admit.
+Abort.
+
+Lemma applyty_arrow : forall A1 A2 V B,
+    ApplyTy (t_arrow A1 A2) V B -> isValFty V -> exists V', V = fty_StackArg V' /\ isValTyp V'.
+Proof.
+  introv App Val.
+  inductions App.
+  - inverts* Val.
+  - inverts* Val.
+Qed.
+
+Lemma applyty_forall : forall A V B,
+    ApplyTy (t_forall A) V B -> isValFty V -> exists C, V = fty_StackTyArg C.
+Proof.
+  introv App Val.
+  inductions App.
+  - inverts* Val.
+  - exfalso.
+    inverts Val. inverts_typ.
+    forwards~ (?&?): IHApp1. inverts H3.
+Qed.
+
+Lemma applyty_top : forall V A,
+    ApplyTy t_top V A -> isValFty V -> False.
+Proof.
+  introv App Val.
+  inductions App.
+  - inverts Val. inverts_typ.
+    forwards~ : IHApp1.
+Qed.
 (*-------------------------- psub admissible rules  -------------------------*)
 
 Lemma psub_merge_intersection : forall A B B1 B2,
@@ -156,7 +212,6 @@ Proof.
   - (* rcd *) inverts* Spl.
     + (* (Box_l V) B <p Box_l A *)
       inverts Val; solve_false.
-    + inverts Val. forwards~: IHSub H4.
 Qed.
 
 Lemma psub_spli_right : forall A A1 A2 B,
@@ -167,7 +222,6 @@ Proof.
   - (* rcd *) inverts* Spl.
     + (* (Box_l V) B <p Box_l A *)
       inverts Val; solve_false.
-    + inverts Val. forwards~: IHSub H3.
 Qed.
 
 Lemma psub_splu_left : forall A B B1 B2,
@@ -266,11 +320,11 @@ Proof with try eassumption; elia.
   -(* record *)
     inverts Sub; try inverts_typ; eauto.
     + forwards: IH H... eauto.
-    + applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_left. inverts~ Val.
-    + applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_left. inverts~ Val.
+    + applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_left.
+    + applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_left.
     + applys~ PSub_Intersect.
-      * applys psub_rcd H1. applys* psub_splu_valtyp_left. inverts~ Val.
-      * applys psub_rcd H2. applys* psub_splu_valtyp_left. inverts~ Val.
+      * applys psub_rcd H1. applys* psub_splu_valtyp_left.
+      * applys psub_rcd H2. applys* psub_splu_valtyp_left.
 Qed.
 
 Lemma psub_unionR : forall A A1 A2 B,
@@ -288,11 +342,11 @@ Proof with try eassumption; elia.
   -(* record *)
     inverts Sub; try inverts_typ; eauto.
     + forwards: IH H... eauto.
-    + applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_right. inverts~ Val.
-    + applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_right. inverts~ Val.
+    + applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_right.
+    + applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_right.
     + applys~ PSub_Intersect.
-      * applys psub_rcd H1. applys* psub_splu_valtyp_right. inverts~ Val.
-      * applys psub_rcd H2. applys* psub_splu_valtyp_right. inverts~ Val.
+      * applys psub_rcd H1. applys* psub_splu_valtyp_right.
+      * applys psub_rcd H2. applys* psub_splu_valtyp_right.
 Qed.
 
 Lemma psub_merge_union : forall A A1 A2 B,
@@ -518,9 +572,10 @@ Proof.
   inductions Tw; intros; solve_false.
   all: try solve [forwards HF: applyty_soundness_1 App1; convert2asub; solve_false].
   - inverts App1; inverts App2.
+Abort.
 (******************************************************************************)
     (* if B1 and B2 are ordinary it can be easier to prove *)
-
+(*
   indTypSize (size_typ B1).
   forwards* [?|(?&?&?)]: ordu_or_split A.
 
@@ -568,3 +623,91 @@ Proof.
 -    +
 -  inverts Val.
 -  induction Val.
+*)
+
+
+#[export]
+ Hint Extern 0 =>
+   match goal with
+   | H: isValTyp (t_rcd _ _ | _) |- _ => inverts H
+   | H: isValTyp (_ | t_rcd _ _ ) |- _ => inverts H
+   | H: isValTyp _ |- _ => inverts H; fail
+   end : FalseHd.
+
+Definition applicable A B := exists C, ApplyTy A B C.
+
+Definition typ_as_ftyp := fty_StackArg.
+Coercion typ_as_ftyp : typ >-> Fty.
+
+Definition similar A B := exists V, splu V A B /\ isValTyp V.
+
+Lemma similar_rcd_inv : forall l1 l2 A B,
+    similar (t_rcd l1 A) (t_rcd l2 B) -> similar A B.
+Proof with solve_false.
+  introv HS.
+  unfolds in HS. destruct_conj.
+  inverts H...
+  unfolds. exists. split.
+  {eassumption.} {auto.}
+Qed.
+
+Lemma similar_rcd : forall l A B,
+    similar A B -> similar (t_rcd l A) (t_rcd l B).
+Proof.
+  introv Sim.
+  unfolds. unfolds in Sim. destruct_conj.
+  exists*.
+Qed.
+
+Lemma sim2similar : forall A B,
+    sim A B <-> similar A B.
+Proof.
+  introv. split; introv Sim.
+  - induction Sim.
+    all: try solve [unfolds; exists; split~].
+    + applys* similar_rcd.
+  - unfolds in Sim. destruct_conj.
+    induction H; try inverts_typ; eauto.
+    + inverts_typ. applys* Sim_Neg.
+    + inverts_typ. applys* Sim_Neg.
+    + applys* Sim_Neg.
+Qed.
+
+Lemma sub_neg_l_inv : forall A B,
+    A <: B -> isNegTyp A -> isNegTyp B.
+Proof with elia.
+  introv Sub Neg.
+  indTypSize (size_typ A + size_typ B).
+  inverts Neg.
+Abort. (* counter example: B = Bneg | B2 *)
+
+Lemma applyty_valtyp : forall A B V1 V2,
+      Distinguishability A B -> sim V1 V2-> ordu V1 -> ordu V2 ->
+      V1 <: A -> V2 <: A -> V1 <: B -> V2 <: B.
+Proof with solve_false.
+  introv Dis Sim Ord1 Ord2 Sub1 Sub2 Sub3.
+  gen A B. induction Sim; intros.
+  (* A0,B0 = Neg | Empty *)
+(*********************************************************************)
+  gen V1 V2. induction Dis; intros.
+  - inverts Val. inverts keep Spl. inverts H4.
+    + inverts H.
+      convert2asub. auto_inv. convert2dsub.
+
+Lemma applyty_valtyp : forall A1 A2 V V1 V2,
+    Mergeability A1 A2 -> isValTyp V -> splu V V1 V2 -> ordu V1 -> ordu V2 ->
+    (applicable A1 V1 /\ applicable A1 V2 /\ applicable A2 V1 /\ NApplyTy A2 V2) \/
+    (applicable A1 V1 /\ applicable A1 V2 /\ NApplyTy A2 V1 /\ applicable A2 V2) \/
+    (applicable A1 V1 /\ NApplyTy A1 V2 /\ applicable A2 V1 /\ applicable A2 V2) \/
+    (NApplyTy A1 V1 /\ applicable A1 V2 /\ applicable A2 V1 /\ applicable A2 V2) \/
+    (NApplyTy A1 V1 /\ applicable A1 V2 /\ applicable A2 V1 /\ NApplyTy A2 V2) \/
+    (applicable A1 V1 /\ NApplyTy A1 V2 /\ NApplyTy A2 V1 /\ applicable A2 V2)
+    -> False.
+Proof with solve_false.
+  introv Meg Val Spl Ord1 Ord2 [HF|HF].
+  - unfold applicable in HF. destruct_conj.
+    inverts Meg.
+    all: try solve [inverts keep H; solve_false].
+    + inverts keep H... inverts keep H0...
+      inverts H2... inverts keep H1...
+    +

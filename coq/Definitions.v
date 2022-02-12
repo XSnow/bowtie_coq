@@ -861,8 +861,27 @@ Inductive TypeWF : tctx -> typ -> Prop :=    (* defn TypeWF *)
  | TyWfEmpty : forall (D:tctx),
      TypeWF D t_bot.
 
+(* defns Similarity *)
+Inductive sim : typ -> typ -> Prop :=    (* defn sim *)
+ | Sim_Neg : forall (A B:typ),
+     isNegTyp A ->
+     isNegTyp B ->
+     sim A B
+ | Sim_In : forall (l5:l) (V1 V2:typ),
+     sim V1 V2 ->
+     sim (t_rcd l5 V1) (t_rcd l5 V2)
+ | Sim_Fun : forall (A B1 B2:typ),
+     lc_typ B1 ->
+     lc_typ A ->
+     lc_typ B2 ->
+     sim (t_arrow A B1) (t_arrow A B2)
+ | Sim_forall : forall (A B:typ),
+     lc_typ (t_forall A) ->
+     lc_typ (t_forall B) ->
+     sim (t_forall A) (t_forall B).
+
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub DistinguishabilityAx Distinguishability MergeabilityAx Mergeability TypeWF lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub DistinguishabilityAx Distinguishability MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
 
 
