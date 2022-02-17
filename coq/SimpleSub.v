@@ -15,6 +15,20 @@ match goal with
 | H: isNegTyp (t_rcd _ _) |- _ => inverts H
 end : FalseHd.
 
+#[export]
+ Hint Extern 0 =>
+   match goal with
+   | H: isValTyp (t_rcd _ _ | _) |- _ => inverts H
+   | H: isValTyp (_ | t_rcd _ _ ) |- _ => inverts H
+   | H: isValTyp _ |- _ => inverts H; fail
+   end : FalseHd.
+
+#[export]
+Hint Extern 0 =>
+match goal with
+| H : binds _ _ nil |- _ => inverts H
+end : FalseHd.
+
 (*-------------------------- neg types and val types -------------------------*)
 
 Lemma negtyp2valtyp : forall A,
@@ -471,6 +485,7 @@ Proof.
   - (* intersection *) inverts* Neg.
 Qed.
 
+
 (*------------------------------ Lemma B.9 -----------------------------------*)
 Definition iso A B := A <: B /\ B <: A.
 
@@ -580,11 +595,6 @@ Proof with try splits; elia; auto.
     + (* A0 & B0 where splitu A0 = A1|A2 and A1 is ordu *)
 Abort. (* counter example exists *)
 
-#[export]
-Hint Extern 0 =>
-match goal with
-| H : binds _ _ nil |- _ => inverts H
-end : FalseHd.
 
 Lemma dispatch_neg : forall A B1 B2 C1 C2,
     TypeWF nil A -> isNegTyp B1 -> isNegTyp B2 ->
@@ -648,18 +658,10 @@ Proof.
 *)
 
 
-#[export]
- Hint Extern 0 =>
-   match goal with
-   | H: isValTyp (t_rcd _ _ | _) |- _ => inverts H
-   | H: isValTyp (_ | t_rcd _ _ ) |- _ => inverts H
-   | H: isValTyp _ |- _ => inverts H; fail
-   end : FalseHd.
-
-Definition applicable A B := exists C, ApplyTy A B C.
-
 Definition typ_as_ftyp := fty_StackArg.
 Coercion typ_as_ftyp : typ >-> Fty.
+
+Definition applicable A B := exists C, ApplyTy A B C.
 
 Definition similar A B := exists V, splu V A B /\ isValTyp V.
 
@@ -733,3 +735,68 @@ Proof with solve_false.
 (*     + inverts keep H... inverts keep H0... *)
 (*       inverts H2... inverts keep H1... *)
 (*     + *)
+Abort.
+
+(****************************************************************************)
+(* (4) If apply(A, V) => C and V'/V => ok and apply(A, V')=>C' then C <: C' *)
+Lemma apply_valtyp_psub : forall (A V C V' C' : typ),
+    isValTyp V -> isValTyp V' -> ApplyTy A V C -> V' <p V -> ApplyTy A V' C' -> C <: C'.
+Proof with elia; solve_false.
+  introv Val1 Val2 App1 PSub App2.
+  indTypSize (size_typ V + size_typ V' + size_typ A).
+  lets~ [Hu|(?&?&Hu)]: ordu_or_split V'.
+  lets~ [Hu'|(?&?&Hu')]: ordu_or_split V.
+  - (* V and V' ordu *)
+    inverts App1... (* analysis the form of A *)
+    + (* bot *) eauto.
+    + (* arrow *) inverts~ App2...
+    + (* union *) inverts~ App2...
+      repeat match goal with
+        H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ =>
+        forwards~: IH H1 H2; elia; clear H1
+             end.
+    + (* intersection *) inverts~ App2...
+      * repeat match goal with
+                 H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ =>
+                 forwards~: IH H1 H2; elia; clear H1
+               end.
+      * admit.
+     (* The key case? *)
+     (*   Hu : ordu V' *)
+     (*   Hu' : ordu V *)
+     (*   H0 : ApplyTy A1 V C *)
+     (*   H1 : NApplyTy A2 V *)
+     (*   H5 : NApplyTy A1 V' *)
+     (*   H8 : ApplyTy A2 V' C' *)
+     (*   ============================ *)
+     (*   C <: C' *)
+     * repeat match goal with
+                H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ =>
+                      forwards~: IH H1 H2; elia; clear H1
+              end. admit.
+       (* Similar case *)
+       (* Hu : ordu V' *)
+       (* Hu' : ordu V *)
+       (* H0 : ApplyTy A1 V C *)
+       (* H1 : NApplyTy A2 V *)
+       (* H5 : ApplyTy A1 V' A1' *)
+       (* H8 : ApplyTy A2 V' A2' *)
+       (* ============================ *)
+       (* C <: A1' & A2' *)
+    + (* intersection again *) admit.
+    + (* intersection again *) admit.
+  - forwards HS1: psub_trans PSub.
+    applys~ psub_splu_valtyp_left Hu'.
+    forwards HS2: psub_trans PSub.
+    applys~ psub_splu_valtyp_right Hu'.
+    forwards: applyty_splitu_arg_inv App1 Hu'. destruct_conj. subst.
+    forwards: IH HS1; try eassumption. now eauto. now elia.
+    forwards: IH HS2; try eassumption. now eauto. now elia.
+    eauto.
+  - forwards~ HS1: psub_trans (psub_splu_valtyp_left_rev _ _ _ Hu) PSub.
+    forwards~ HS2: psub_trans (psub_splu_valtyp_right_rev _ _ _ Hu) PSub.
+    forwards: applyty_splitu_arg_inv App2 Hu. destruct_conj. subst.
+    forwards: IH HS1; try eassumption. now eauto. now elia.
+    forwards: IH HS2; try eassumption. now eauto. now elia.
+    eauto.
+Admitted.
