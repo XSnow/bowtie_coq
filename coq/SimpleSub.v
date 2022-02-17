@@ -244,6 +244,27 @@ Qed.
 
 Hint Immediate psub_spli_left psub_spli_right psub_splu_left psub_splu_right : core.
 
+Lemma psub_refl : forall A,
+    isValTyp A -> A <p A.
+Proof.
+  introv H. induction~ H.
+Qed.
+
+(* (5) If split(V) => V1 | V2 then V1/V => ok and V2/V => ok *)
+Lemma psub_splu_valtyp_left_rev : forall A A1 A2,
+    splu A A1 A2 -> isValTyp A -> A1 <p A.
+Proof.
+  introv Spl Val.
+  applys psub_splu_left Spl. applys* psub_refl.
+Qed.
+
+Lemma psub_splu_valtyp_right_rev : forall A A1 A2,
+    splu A A1 A2 -> isValTyp A -> A2 <p A.
+Proof.
+  introv Spl Val.
+  applys psub_splu_right Spl. applys* psub_refl.
+Qed.
+
 Lemma psub_splu_valtyp_left : forall A A1 A2,
     splu A A1 A2 -> isValTyp A -> A <p A1.
 Proof.
@@ -352,6 +373,7 @@ Qed.
 Lemma psub_merge_union : forall A A1 A2 B,
     splu A A1 A2 -> isValTyp A -> A1 <p B -> A2 <p B -> A <p B.
 Abort. (* weak than the above two *)
+
 
 Lemma nsub_negtyp : forall V1 V2 A,
     A <n (fty_StackArg V1) -> isNegTyp V1 -> isNegTyp V2 -> A <n (fty_StackArg V2).
@@ -689,25 +711,25 @@ Proof with solve_false.
   gen A B. induction Sim; intros.
   (* A0,B0 = Neg | Empty *)
 (*********************************************************************)
-  gen V1 V2. induction Dis; intros.
-  - inverts Val. inverts keep Spl. inverts H4.
-    + inverts H.
-      convert2asub. auto_inv. convert2dsub.
+(*   gen V1 V2. induction Dis; intros. *)
+(*   - inverts Val. inverts keep Spl. inverts H4. *)
+(*     + inverts H. *)
+(*       convert2asub. auto_inv. convert2dsub. *)
 
-Lemma applyty_valtyp : forall A1 A2 V V1 V2,
-    Mergeability A1 A2 -> isValTyp V -> splu V V1 V2 -> ordu V1 -> ordu V2 ->
-    (applicable A1 V1 /\ applicable A1 V2 /\ applicable A2 V1 /\ NApplyTy A2 V2) \/
-    (applicable A1 V1 /\ applicable A1 V2 /\ NApplyTy A2 V1 /\ applicable A2 V2) \/
-    (applicable A1 V1 /\ NApplyTy A1 V2 /\ applicable A2 V1 /\ applicable A2 V2) \/
-    (NApplyTy A1 V1 /\ applicable A1 V2 /\ applicable A2 V1 /\ applicable A2 V2) \/
-    (NApplyTy A1 V1 /\ applicable A1 V2 /\ applicable A2 V1 /\ NApplyTy A2 V2) \/
-    (applicable A1 V1 /\ NApplyTy A1 V2 /\ NApplyTy A2 V1 /\ applicable A2 V2)
-    -> False.
-Proof with solve_false.
-  introv Meg Val Spl Ord1 Ord2 [HF|HF].
-  - unfold applicable in HF. destruct_conj.
-    inverts Meg.
-    all: try solve [inverts keep H; solve_false].
-    + inverts keep H... inverts keep H0...
-      inverts H2... inverts keep H1...
-    +
+(* Lemma applyty_valtyp : forall A1 A2 V V1 V2, *)
+(*     Mergeability A1 A2 -> isValTyp V -> splu V V1 V2 -> ordu V1 -> ordu V2 -> *)
+(*     (applicable A1 V1 /\ applicable A1 V2 /\ applicable A2 V1 /\ NApplyTy A2 V2) \/ *)
+(*     (applicable A1 V1 /\ applicable A1 V2 /\ NApplyTy A2 V1 /\ applicable A2 V2) \/ *)
+(*     (applicable A1 V1 /\ NApplyTy A1 V2 /\ applicable A2 V1 /\ applicable A2 V2) \/ *)
+(*     (NApplyTy A1 V1 /\ applicable A1 V2 /\ applicable A2 V1 /\ applicable A2 V2) \/ *)
+(*     (NApplyTy A1 V1 /\ applicable A1 V2 /\ applicable A2 V1 /\ NApplyTy A2 V2) \/ *)
+(*     (applicable A1 V1 /\ NApplyTy A1 V2 /\ NApplyTy A2 V1 /\ applicable A2 V2) *)
+(*     -> False. *)
+(* Proof with solve_false. *)
+(*   introv Meg Val Spl Ord1 Ord2 [HF|HF]. *)
+(*   - unfold applicable in HF. destruct_conj. *)
+(*     inverts Meg. *)
+(*     all: try solve [inverts keep H; solve_false]. *)
+(*     + inverts keep H... inverts keep H0... *)
+(*       inverts H2... inverts keep H1... *)
+(*     + *)
