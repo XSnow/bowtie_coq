@@ -424,8 +424,10 @@ Ltac inverts_all_lc :=
 
 Ltac inverts_all_ord :=
 repeat match goal with
+| H: ordi (t_and _ _) |- _ => inverts H
 | H: ordu (t_and _ _) |- _ => inverts H
 | H: ordi (t_or _ _) |- _ => inverts H
+| H: ordu (t_or _ _) |- _ => inverts H
 | H: ordi (t_rcd _ _) |- _ => inverts H
 | H: ordu (t_rcd _ _) |- _ => inverts H
 | H: ordi (t_arrow _ _) |- _ => inverts H
@@ -437,8 +439,10 @@ end.
 
 Ltac inverts_all_spl :=
 repeat match goal with
+| H: spli (t_and _ _) _ _ |- _ => inverts H
 | H: splu (t_and _ _) _ _ |- _ => inverts H
 | H: spli (t_or _ _) _ _ |- _ => inverts H
+| H: splu (t_or _ _) _ _ |- _ => inverts H
 | H: spli (t_rcd _ _) _ _ |- _ => inverts H
 | H: splu (t_rcd _ _) _ _ |- _ => inverts H
 | H: spli (t_arrow _ _) _ _ |- _ => inverts H
