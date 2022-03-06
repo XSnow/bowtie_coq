@@ -995,8 +995,25 @@ Distinguishability :: '' ::=
   |- A <> B
 
   |- B <> A
-  ----------- :: DistSym
+  |- B <> A'
+  ---------------- :: DistUnionSym
+  |- B <> A | A'
+
+  |- B <> A
+  ---------------- :: DistIntersectLSym
+  |- B <> A & A'
+
+  |- B <> A'
+  ---------------- :: DistIntersectRSym
+  |- B <> A & A'
+
+  |-ax B <> A
+  ----------- :: DistAxSym
   |- A <> B
+  
+  % |- B <> A
+  % ----------- :: DistSym
+  % |- A <> B
 
 
 defns

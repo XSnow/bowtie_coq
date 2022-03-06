@@ -785,8 +785,20 @@ Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishabili
  | DistAx : forall (A B:typ),
      DistinguishabilityAx A B ->
      Distinguishability A B
- | DistSym : forall (A B:typ),
+ | DistUnionSym : forall (B A A':typ),
      Distinguishability B A ->
+     Distinguishability B A' ->
+     Distinguishability B (t_or A A')
+ | DistIntersectLSym : forall (B A A':typ),
+     lc_typ A' ->
+     Distinguishability B A ->
+     Distinguishability B (t_and A A')
+ | DistIntersectRSym : forall (B A A':typ),
+     lc_typ A ->
+     Distinguishability B A' ->
+     Distinguishability B (t_and A A')
+ | DistAxSym : forall (A B:typ),
+     DistinguishabilityAx B A ->
      Distinguishability A B.
 
 (* defns MergeabilityAx *)
