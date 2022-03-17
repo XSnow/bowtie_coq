@@ -21,8 +21,8 @@ end : FalseHd.
 #[export]
  Hint Extern 0 =>
    match goal with
-   | H: isValTyp (t_rcd _ _ | _) |- _ => inverts H; fail
-   | H: isValTyp (_ | t_rcd _ _ ) |- _ => inverts H; fail
+   | H: isValTyp (t_rcd _ _ | _) |- _ => inverts H
+   | H: isValTyp (_ | t_rcd _ _ ) |- _ => inverts H
    | H: isValTyp _ |- _ => inverts H; fail
    end : FalseHd.
 
@@ -937,6 +937,106 @@ Abort.
 
 (* BUT its subtype (A1 \/ A2) /\ A3 is not <> B1 /\ B2 *)
 
+Notation "{Box l T}" := (t_rcd l t_top) (at level 10).
+
+Parameter l1 l2 l3 : l.
+Axiom neq1 : l1 <> l2.
+Axiom neq2 : l2 <> l3.
+Axiom neq3 : l1 <> l3.
+#[local] Hint Resolve neq1 neq2 neq3 : core.
+Definition A1 := {Box l3 T}.
+Definition A2 := {Box l1 T}.
+Definition A3 := {Box l2 T}.
+Definition B1 := {Box l1 T} | {Box l2 T}.
+Definition B2 := ({Box l1 T} | {Box l2 T}) | {Box l3 T}.
+
+Lemma HA1 : A1 <<>> B1.
+  unfold A1. unfold B1. applys DistUnionSym; applys DistAx; applys* DistAxIn.
+Qed.
+
+Lemma HA2 : A2 & A3 <<>> B2.
+  unfold A2. unfold A3. unfold B2. applys DistUnionSym.
+  2: { applys~ DistIntersectL. }
+  applys DistUnionSym.
+  - applys~ DistIntersectR.
+  - applys~ DistIntersectL.
+Qed.
+
+Lemma G1 : A1 | (A2 & A3) <<>> B1 & B2.
+  applys DistUnion.
+  - applys~ DistIntersectLSym HA1. { unfold B2. repeat constructor. }
+  - applys~ DistIntersectRSym HA2. { unfold B1. repeat constructor. }
+Qed.
+
+Lemma HN21 : A2 <<>> B1 -> False.
+  unfold A2. unfold B1. intro H.
+  inverts H.
+  - (* Ax *) inverts H0.
+  - (* Union RHS *) inverts H3; solve_false.
+    * inverts H0; solve_false.
+  - (* Ax *) inverts H0.
+Qed.
+
+Lemma HN22 : A2 <<>> B2 -> False.
+  unfold A2. unfold B2. intro H.
+  inverts H.
+  - (* Ax *) inverts H0.
+  - (* Union RHS *) inverts H3.
+    + (* Ax *) inverts H; solve_false.
+    + inverts H2; solve_false.
+      * inverts H0; solve_false.
+    + inverts H.
+  - (* Ax *) inverts H0.
+Qed.
+
+Lemma HN31 : A3 <<>> B1 -> False.
+Proof with solve_false.
+  unfold A3. unfold B1. intro H.
+  inverts H...
+  - (* Union RHS *) inverts H4...
+    + (* Ax *) inverts H0...
+Qed.
+
+Lemma HN32 : A3 <<>> B2 -> False.
+  unfold A3. unfold B2. intro H.
+  inverts H.
+  - (* Ax *) inverts H0.
+  - (* Union RHS *) inverts H3.
+    + (* Ax *) inverts H; solve_false.
+    + inverts H5; solve_false.
+      * inverts H0; solve_false.
+    + inverts H.
+  - (* Ax *) inverts H0.
+Qed.
+
+Lemma G2 : (A1 | A2) & A3 <<>> B1 & B2 -> False.
+Proof with solve_false.
+  introv H.
+  inverts H...
+  - inverts H4...
+    + inverts H5...
+      * applys~ HN21.
+      * applys~ HN22.
+    + inverts H5...
+      * applys~ HN21.
+      * unfold A2 in H4. inverts H4... inverts H7... inverts H0...
+    + inverts H5...
+      * applys~ HN22.
+      * unfold A1 in H6. inverts H6... inverts H1... inverts H0...
+  - inverts H4...
+    + applys~ HN31.
+    + applys~ HN32.
+  - inverts H4...
+    + inverts H5...
+      * applys~ HN21.
+      * unfold A2 in H4. inverts H4... inverts H7... inverts H0...
+    + applys~ HN31.
+    + unfold A1 in H2. unfold A2 in H2. unfold A3 in H2.
+      unfold A1 in H5. unfold A2 in H5. unfold A3 in H5.
+      inverts H5...
+      * inverts H2...
+        ** inverts H7... inverts H8... inverts H0...
+        ** Abort.
 
 (* Lemma distinguishability_splu_r : forall A B B1 B2, *)
 (*     ordu A -> splu B B1 B2 -> Distinguishability A B1 -> Distinguishability A B2 -> *)
@@ -1038,16 +1138,16 @@ Lemma applyty_iso : forall A B1 C1 B2 C2,
     ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2
     -> C1 ~= C2.
 Proof with elia.
-  introv HA1 HA2.
+  introv HHA1 HHA2.
   indTypSize (size_typ A + size_typ B1 + size_typ B2).
-  inverts keep HA1; inverts keep HA2; auto.
+  inverts keep HHA1; inverts keep HHA2; auto.
   all: repeat match goal with
-              | H: ApplyTy _ _ ?A |- _ ~= ?A|?B => forwards~ : IH HA1 H; elia; clear H
-              | H: ApplyTy _ _ ?B |- _ ~= ?A|?B => forwards~ : IH HA1 H; elia; clear H
-              | H: ApplyTy _ _ ?A |- ?A|?B ~= _ => forwards~ : IH H HA2; elia; clear H
-              | H: ApplyTy _ _ ?B |- ?A|?B ~= _ => forwards~ : IH H HA2; elia; clear H
+              | H: ApplyTy _ _ ?A |- _ ~= ?A|?B => forwards~ : IH HHA1 H; elia; clear H
+              | H: ApplyTy _ _ ?B |- _ ~= ?A|?B => forwards~ : IH HHA1 H; elia; clear H
+              | H: ApplyTy _ _ ?A |- ?A|?B ~= _ => forwards~ : IH H HHA2; elia; clear H
+              | H: ApplyTy _ _ ?B |- ?A|?B ~= _ => forwards~ : IH H HHA2; elia; clear H
               end.
-  all: clear HA1 HA2.
+  all: clear HHA1 HHA2.
   all: repeat match goal with
               | H1: ApplyTy _ _ ?A1, H2: ApplyTy _ _ ?B1 |- ?A1|?A2 ~= ?B1|?B2 =>
                 forwards~ : IH H1 H2; elia; clear H1 H2
@@ -1069,10 +1169,10 @@ Proof with try splits; elia; auto.
   introv Spl1 Spl2.
   indTypSize (size_typ A).
   inverts Spl1.
-  - exists (B1 | C) (B2 | C)...
-  - inverts Spl2.
-    + forwards (T1&T2&?): IH H0 H6... destruct_conj.
-      exists (T1&B0) (T2&B0)...
+  (* - exists (B1 | C) (B2 | C)... *)
+  (* - inverts Spl2. *)
+  (*   + forwards (T1&T2&?): IH H0 H6... destruct_conj. *)
+  (*     exists (T1&B0) (T2&B0)... *)
     + (* A0 & B0 where splitu A0 = A1|A2 and A1 is ordu *)
 Abort. (* counter example exists *)
 
@@ -1081,7 +1181,7 @@ Lemma dispatch_neg : forall A B1 B2 C1 C2,
     TypeWF nil A -> isNegTyp B1 -> isNegTyp B2 ->
     ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2 -> C1 ~= C2.
 Proof.
-  introv Tw Neg1 Neg2 App1 App2. gen B1 B2 C1 C2.
+  intros A B1 B2 C1 C2 Tw Neg1 Neg2 App1 App2. gen B1 B2 C1 C2.
   inductions Tw; intros; solve_false.
   all: try solve [forwards HF: applyty_soundness_1 App1; convert2asub; solve_false].
   - inverts App1; inverts App2.
