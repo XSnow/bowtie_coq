@@ -20,11 +20,11 @@ Inductive typ : Set :=  (*r type *)
  | t_top : typ
  | t_bot : typ.
 
-Definition tctx : Set := list ( atom * typ ).
-
 Inductive Fty : Set :=  (*r elimination type *)
  | fty_StackArg (A:typ)
  | fty_StackTyArg (A:typ).
+
+Definition tctx : Set := list ( atom * typ ).
 
 (* EXPERIMENTAL *)
 (** auxiliary functions on the new list types *)
@@ -754,6 +754,62 @@ Inductive new_sub : typ -> typ -> Prop :=    (* defn new_sub *)
      new_sub A B2 ->
      new_sub A B.
 
+(* defns NotDistinguishableTypes *)
+Inductive NotDistinguishableTypes : typ -> Prop :=    (* defn NotDistinguishableTypes *)
+ | NDArr : forall (A B:typ),
+     lc_typ A ->
+     lc_typ B ->
+     NotDistinguishableTypes (t_arrow A B)
+ | NDAll : forall (A:typ),
+     lc_typ (t_forall A) ->
+     NotDistinguishableTypes (t_forall A)
+ | NDTop : 
+     NotDistinguishableTypes t_top
+ | NDVar : forall (X:typevar),
+     NotDistinguishableTypes (t_tvar_f X).
+
+(* defns NotDistinguishable *)
+Inductive NotDistinguishable : typ -> typ -> Prop :=    (* defn NotDistinguishable *)
+ | NDistIn : forall (l5:l) (A B:typ),
+     NotDistinguishable A B ->
+     NotDistinguishable (t_rcd l5 A) (t_rcd l5 B)
+ | NDistAxIn : forall (A:typ) (l5:l) (B:typ),
+     lc_typ B ->
+     NotDistinguishableTypes A ->
+     NotDistinguishable A (t_rcd l5 B)
+ | NDistInAx : forall (l5:l) (B A:typ),
+     lc_typ B ->
+     NotDistinguishableTypes A ->
+     NotDistinguishable (t_rcd l5 B) A
+ | NDistAxAx : forall (A B:typ),
+     NotDistinguishableTypes A ->
+     NotDistinguishableTypes B ->
+     NotDistinguishable A B
+ | NDistUnionL : forall (A A' B:typ),
+     lc_typ A' ->
+     NotDistinguishable A B ->
+     NotDistinguishable (t_or A A') B
+ | NDistUnionR : forall (A A' B:typ),
+     lc_typ A ->
+     NotDistinguishable A' B ->
+     NotDistinguishable (t_or A A') B
+ | NDistUnionLSymm : forall (B A A':typ),
+     lc_typ A' ->
+     NotDistinguishable B A ->
+     NotDistinguishable B (t_or A A')
+ | NDistUnionRSymm : forall (B A A':typ),
+     lc_typ A ->
+     NotDistinguishable B A' ->
+     NotDistinguishable B (t_or A A')
+ | NDistInter : forall (A A' B:typ),
+     NotDistinguishable A B ->
+     NotDistinguishable A' B ->
+     NotDistinguishable (t_and A A') B
+ | NDistInterSymm : forall (B A A':typ),
+     NotDistinguishable B A ->
+     NotDistinguishable B A' ->
+     NotDistinguishable B (t_and A A').
+
 (* defns DistinguishabilityAx *)
 Inductive DistinguishabilityAx : typ -> typ -> Prop :=    (* defn DistinguishabilityAx *)
  | DistAxIn : forall (l1:l) (A:typ) (l2:l) (B:typ),
@@ -894,6 +950,6 @@ Inductive sim : typ -> typ -> Prop :=    (* defn sim *)
 
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub DistinguishabilityAx Distinguishability MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
 
 

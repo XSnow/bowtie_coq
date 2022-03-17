@@ -16,6 +16,7 @@ Coercion typ_as_ftyp : typ >-> Fty.
 Hint Extern 0 =>
 match goal with
 | H: isNegTyp (t_rcd _ _) |- _ => inverts H; fail
+| H: isNegTyp t_bot |- _ => inverts H; fail
 end : FalseHd.
 
 #[export]
@@ -83,8 +84,8 @@ Qed.
 
 Ltac inverts_typ :=
   match goal with
-  | H1: isNegTyp (_ & _) |- _ => forwards~ (?&?): negtyp_spli_inv H1
-  | H1: isNegTyp (_ | _) |- _ => forwards~ (?&?): negtyp_splu_inv H1
+  | H1: isNegTyp (_ & _) |- _ => forwards~ (?&?): negtyp_spli_inv H1; [applys* SpI_and | ]
+  | H1: isNegTyp (_ | _) |- _ => forwards~ (?&?): negtyp_splu_inv H1; [applys* SpU_or | ]
   | H1: isValTyp (_ & _) |- _ => inverts H1
   | H1: isValTyp (_ | _) |- _ => inverts H1
   | H1: isValTyp (t_rcd _ _) |- _ => inverts H1
@@ -313,7 +314,7 @@ Proof.
   all: inverts_psub Sub; eauto.
 Qed.
 
-Hint Immediate psub_spli_left psub_spli_right psub_splu_left psub_splu_right : core.
+#[export] Hint Immediate psub_spli_left psub_spli_right psub_splu_left psub_splu_right : core.
 
 Lemma psub_refl : forall A,
     isValTyp A -> A <p A.
@@ -630,7 +631,7 @@ Lemma distinguishability_lc_2 : forall A B,
     Distinguishability A B -> lc_typ B.
 Proof. intros. applys distinguishability_lc H. Qed.
 
-Hint Resolve distinguishability_lc_1 distinguishability_lc_2 : core.
+#[export] Hint Resolve distinguishability_lc_1 distinguishability_lc_2 : core.
 
 Lemma distinguishability_negtyp : forall A B,
     Distinguishability A B -> isNegTyp A.
@@ -937,6 +938,7 @@ Abort.
 
 (* BUT its subtype (A1 \/ A2) /\ A3 is not <> B1 /\ B2 *)
 
+Section ConcreteExample.
 Notation "{Box l T}" := (t_rcd l t_top) (at level 10).
 
 Parameter l1 l2 l3 : l.
@@ -1037,6 +1039,7 @@ Proof with solve_false.
       * inverts H2...
         ** inverts H7... inverts H8... inverts H0...
         ** Abort.
+End ConcreteExample.
 
 (* Lemma distinguishability_splu_r : forall A B B1 B2, *)
 (*     ordu A -> splu B B1 B2 -> Distinguishability A B1 -> Distinguishability A B2 -> *)
@@ -1249,7 +1252,7 @@ Proof with solve_false.
   unfolds in HS. destruct_conj.
   inverts H...
   unfolds. exists. split.
-  {eassumption.} {auto.}
+  { eassumption. } { auto. }
 Qed.
 
 Lemma similar_rcd : forall l A B,
@@ -1315,7 +1318,7 @@ Proof with solve_false.
 Abort.
 
 (****************************************************************************)
-(* (4) If apply(A, V) => C and V'/V => ok and apply(A, V')=>C' then C <: C' *)
+(* B.14 If apply(A, V) => C and V'/V => ok and apply(A, V')=>C' then C <: C' *)
 Lemma apply_valtyp_psub : forall (A V C V' C' : typ),
     isValTyp V -> isValTyp V' -> ApplyTy A V C -> V' <p V -> ApplyTy A V' C' -> C <: C'.
 Proof with elia; solve_false.
@@ -1377,3 +1380,75 @@ Proof with elia; solve_false.
     forwards: IH HS2; try eassumption. now eauto. now elia.
     eauto.
 Admitted.
+
+(******************************************************************************)
+#[export]
+Hint Extern 0 =>
+match goal with
+| H: NotDistinguishable _ _ |- _ => inverts H; fail
+| H: NotDistinguishableTypes _ |- _ => inverts H; fail
+end : FalseHd.
+
+Lemma distinguishability_complement_ord : forall A B,
+    ordi A -> ordu A -> ordi B -> ordu B ->
+    Distinguishability A B -> NotDistinguishable A B -> False.
+Proof with solve_false.
+  introv HIA HUA HIB HUB HD HN.
+  induction HN...
+  all: inverts_all_ord.
+  - inverts~ HD...
+  - inverts~ H0.
+    all: inverts HD...
+  - inverts~ H0.
+    all: inverts HD...
+  - inverts H; inverts H0; inverts HD...
+Qed.
+
+Lemma distinguishability_decidable_ord: forall A B,
+    ordi A -> ordu A -> ordi B -> ordu B ->
+    Distinguishability A B \/ NotDistinguishable A B.
+Proof with solve_false.
+  introv HIA HUA HIB HUB.
+  gen B. induction A; intros...
+  - admit.
+  - induction B...
+    + right*.
+    + case_eq (@eq_dec _ label_dec l5 l0); intros; subst; inverts_all_ord.
+      * forwards~ [?|?]: IHA B.
+      * left*.
+    + right*. + right*. + right*.
+    + left*.
+  - destruct B; clear HIA HUA IHA1 IHA2...
+    all: clear HUB HIB; try solve [left*]; try solve [right*].
+    + right*. applys~ NDistAxAx.
+Admitted.
+
+Lemma NDist_or_inv : forall A B C,
+    NotDistinguishable (A | B) C -> NotDistinguishable A C \/
+                                      NotDistinguishable B C.
+Proof with solve_false.
+  intros A B C. gen A B.
+  induction C; introv HN.
+  1,2,3,6,7,8,9: now inverts~ HN...
+  - (* inter *) inverts~ HN...
+    forwards~ : IHC1 H2. forwards~ : IHC2 H3.
+Abort.
+
+(* Counter example *)
+(* A | B <X> C & D *)
+
+Lemma distinguishability_complement : forall A B,
+    Distinguishability A B -> NotDistinguishable A B -> False.
+Proof with solve_false.
+  introv HD HN.
+  induction HD.
+  - inverts HN...
+Abort.
+
+Lemma distinguishability_decidable: forall A B,
+    Distinguishability A B \/ NotDistinguishable A B.
+Abort.
+
+Lemma notdistinguishability_upward : forall A B B',
+    NotDistinguishable A B -> B <: B' -> NotDistinguishable A B'.
+Abort.
