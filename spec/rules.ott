@@ -272,8 +272,8 @@ NegTyp :: '' ::=
   ---------------- :: Fun
   neg A -> B
 
-  ------------------ :: Rec
-  neg (In l Top)->A
+  % ------------------ :: Rec
+  % neg (In l Top)->A
 
   ------------------ :: Forall
   neg forall X . A
@@ -308,27 +308,31 @@ ValTyp :: '' ::=
   ---------------- :: In
   val In l V
 
-  ---------------- :: Fun
-  val A -> B
-
-  ------------------ :: Rec
-  val (In l Top)->A
-
-  ------------------ :: Forall
-  val forall X . A
-
   neg A
-  neg B
-  ------------------ :: Intersection
-  val A & B
+  ------------------ :: Neg
+  val A
+  
+  % ---------------- :: Fun
+  % val A -> B
 
-  neg A
-  neg B
-  ------------------ :: Union
-  val A | B
+  % ------------------ :: Rec
+  % val (In l Top)->A
 
-  ------------------ :: Top
-  val Top
+  % ------------------ :: Forall
+  % val forall X . A
+
+  % neg A
+  % neg B
+  % ------------------ :: Intersection
+  % val A & B
+
+  % neg A
+  % neg B
+  % ------------------ :: Union
+  % val A | B
+
+  % ------------------ :: Top
+  % val Top
 
 
 defns
@@ -1045,6 +1049,14 @@ Distinguishability :: '' ::=
   {{ tex \dist{[[A]]}{[[B]]} }}
   by
 
+  |-ax A <> B
+  ----------- :: DistAx
+  |- A <> B
+
+  |-ax B <> A
+  ----------- :: DistAxSym
+  |- A <> B
+
   |- A <> B
   --------------------- :: DistIn
   |- In l A <> In l B
@@ -1054,6 +1066,11 @@ Distinguishability :: '' ::=
   ---------------- :: DistUnion
   |- A | A' <> B
 
+  |- B <> A
+  |- B <> A'
+  ---------------- :: DistUnionSym
+  |- B <> A | A'
+
   |- A <> B
   ---------------- :: DistIntersectL
   |- A & A' <> B
@@ -1061,15 +1078,6 @@ Distinguishability :: '' ::=
   |- A' <> B
   ---------------- :: DistIntersectR
   |- A & A' <> B
-
-  |-ax A <> B
-  ----------- :: DistAx
-  |- A <> B
-
-  |- B <> A
-  |- B <> A'
-  ---------------- :: DistUnionSym
-  |- B <> A | A'
 
   |- B <> A
   ---------------- :: DistIntersectLSym
@@ -1079,9 +1087,15 @@ Distinguishability :: '' ::=
   ---------------- :: DistIntersectRSym
   |- B <> A & A'
 
-  |-ax B <> A
-  ----------- :: DistAxSym
-  |- A <> B
+  |- A <> B1 & B2
+  |- A <> B1 & B3
+  ---------------------- :: DistDistribL
+  |- A <> B1 & (B2 | B3)
+
+  |- A <> B1 & B3
+  |- A <> B2 & B3
+  ---------------------- :: DistDistribR
+  |- A <> (B1 | B2) & B3
   
   % |- B <> A
   % ----------- :: DistSym

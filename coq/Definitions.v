@@ -263,9 +263,6 @@ Inductive isNegTyp : typ -> Prop :=    (* defn isNegTyp *)
      lc_typ A ->
      lc_typ B ->
      isNegTyp (t_arrow A B)
- | NTypRec : forall (l5:l) (A:typ),
-     lc_typ A ->
-     isNegTyp (t_arrow  (t_rcd l5 t_top)  A)
  | NTypForall : forall (A:typ),
      lc_typ (t_forall A) ->
      isNegTyp (t_forall A)
@@ -285,26 +282,9 @@ Inductive isValTyp : typ -> Prop :=    (* defn isValTyp *)
  | VTypIn : forall (l5:l) (V:typ),
      isValTyp V ->
      isValTyp (t_rcd l5 V)
- | VTypFun : forall (A B:typ),
-     lc_typ A ->
-     lc_typ B ->
-     isValTyp (t_arrow A B)
- | VTypRec : forall (l5:l) (A:typ),
-     lc_typ A ->
-     isValTyp (t_arrow  (t_rcd l5 t_top)  A)
- | VTypForall : forall (A:typ),
-     lc_typ (t_forall A) ->
-     isValTyp (t_forall A)
- | VTypIntersection : forall (A B:typ),
+ | VTypNeg : forall (A:typ),
      isNegTyp A ->
-     isNegTyp B ->
-     isValTyp (t_and A B)
- | VTypUnion : forall (A B:typ),
-     isNegTyp A ->
-     isNegTyp B ->
-     isValTyp (t_or A B)
- | VTypTop : 
-     isValTyp t_top.
+     isValTyp A.
 
 (* defns ValFty *)
 Inductive isValFty : Fty -> Prop :=    (* defn isValFty *)
@@ -823,6 +803,12 @@ Inductive DistinguishabilityAx : typ -> typ -> Prop :=    (* defn Distinguishabi
 
 (* defns Distinguishability *)
 Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishability *)
+ | DistAx : forall (A B:typ),
+     DistinguishabilityAx A B ->
+     Distinguishability A B
+ | DistAxSym : forall (A B:typ),
+     DistinguishabilityAx B A ->
+     Distinguishability A B
  | DistIn : forall (l5:l) (A B:typ),
      Distinguishability A B ->
      Distinguishability (t_rcd l5 A) (t_rcd l5 B)
@@ -830,6 +816,10 @@ Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishabili
      Distinguishability A B ->
      Distinguishability A' B ->
      Distinguishability (t_or A A') B
+ | DistUnionSym : forall (B A A':typ),
+     Distinguishability B A ->
+     Distinguishability B A' ->
+     Distinguishability B (t_or A A')
  | DistIntersectL : forall (A A' B:typ),
      lc_typ A' ->
      Distinguishability A B ->
@@ -838,13 +828,6 @@ Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishabili
      lc_typ A ->
      Distinguishability A' B ->
      Distinguishability (t_and A A') B
- | DistAx : forall (A B:typ),
-     DistinguishabilityAx A B ->
-     Distinguishability A B
- | DistUnionSym : forall (B A A':typ),
-     Distinguishability B A ->
-     Distinguishability B A' ->
-     Distinguishability B (t_or A A')
  | DistIntersectLSym : forall (B A A':typ),
      lc_typ A' ->
      Distinguishability B A ->
@@ -853,9 +836,14 @@ Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishabili
      lc_typ A ->
      Distinguishability B A' ->
      Distinguishability B (t_and A A')
- | DistAxSym : forall (A B:typ),
-     DistinguishabilityAx B A ->
-     Distinguishability A B.
+ | DistDistribL : forall (A B1 B2 B3:typ),
+     Distinguishability A (t_and B1 B2) ->
+     Distinguishability A (t_and B1 B3) ->
+     Distinguishability A (t_and B1  (t_or B2 B3) )
+ | DistDistribR : forall (A B1 B2 B3:typ),
+     Distinguishability A (t_and B1 B3) ->
+     Distinguishability A (t_and B2 B3) ->
+     Distinguishability A (t_and  (t_or B1 B2)  B3).
 
 (* defns MergeabilityAx *)
 Inductive MergeabilityAx : typ -> typ -> Prop :=    (* defn MergeabilityAx *)
