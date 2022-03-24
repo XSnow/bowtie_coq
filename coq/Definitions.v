@@ -843,7 +843,15 @@ Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishabili
  | DistDistribR : forall (A B1 B2 B3:typ),
      Distinguishability A (t_and B1 B3) ->
      Distinguishability A (t_and B2 B3) ->
-     Distinguishability A (t_and  (t_or B1 B2)  B3).
+     Distinguishability A (t_and  (t_or B1 B2)  B3)
+ | DistDistribLSym : forall (B1 B2 B3 A:typ),
+     Distinguishability (t_and B1 B2) A ->
+     Distinguishability (t_and B1 B3) A ->
+     Distinguishability (t_and B1  (t_or B2 B3) ) A
+ | DistDistribRSym : forall (B1 B2 B3 A:typ),
+     Distinguishability (t_and B1 B3) A ->
+     Distinguishability (t_and B2 B3) A ->
+     Distinguishability (t_and  (t_or B1 B2)  B3) A.
 
 (* defns MergeabilityAx *)
 Inductive MergeabilityAx : typ -> typ -> Prop :=    (* defn MergeabilityAx *)

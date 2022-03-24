@@ -1096,6 +1096,16 @@ Distinguishability :: '' ::=
   |- A <> B2 & B3
   ---------------------- :: DistDistribR
   |- A <> (B1 | B2) & B3
+
+  |- B1 & B2 <> A
+  |- B1 & B3 <> A
+  ---------------------- :: DistDistribLSym
+  |- B1 & (B2 | B3) <> A
+
+  |- B1 & B3 <> A
+  |- B2 & B3 <> A
+  ---------------------- :: DistDistribRSym
+  |- (B1 | B2) & B3 <> A
   
   % |- B <> A
   % ----------- :: DistSym
