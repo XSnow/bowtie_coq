@@ -179,7 +179,6 @@ Proof with elia; solve_false; try eassumption.
         ** exists*. applys* ApplyTyInterL. forwards~ : proj2 (IH F B) H1...
         ** forwards (?&?): proj1 (IH F B) H1... exists*.
     + (* forall *) inverts HA1... inverts HA2... exists*.
-    + (* rcd *) inverts HA1...
   - subst.
     forwards: applyty_splitu_arg_inv HA1 H0. forwards: applyty_splitu_arg_inv HA2 H0.
     destruct_conj. subst.

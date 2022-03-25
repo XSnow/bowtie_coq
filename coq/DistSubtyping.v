@@ -69,7 +69,7 @@ Proof. eauto. Qed.
 Lemma open_into_bot : forall X, t_bot -^ X = t_bot.
 Proof. eauto. Qed.
 
-Hint Rewrite open_into_and open_into_or open_into_top open_into_bot : open.
+#[export] Hint Rewrite open_into_and open_into_or open_into_top open_into_bot : open.
 
 
 (* try solve the goal by contradiction *)
@@ -79,7 +79,7 @@ Ltac solve_false := try intro; try solve [false; eauto 4 with FalseHd].
 (* destrcut conjunctions *)
 Ltac destruct_conj :=
   repeat match goal with H: ?T |- _ =>
-                         match T with
+                         lazymatch T with
                          | exists _ , _ => destruct H
                          | _ /\ _ => destruct H
                          end
@@ -307,7 +307,7 @@ Lemma lc_forall_inv : forall A X,
     lc_typ (t_forall A) -> lc_typ (A -^ X).
 Proof. intros. inverts~ H. Qed.
 
-#[export] Hint Resolve lc_forall_inv : core.
+#[export] Hint Immediate lc_forall_inv : core.
 
 Ltac solve_lc_by_inv A :=
   match goal with
@@ -343,6 +343,7 @@ Proof.
   introv H.
   induction H; repeat split; firstorder using ordu_lc, ordi_lc.
 Qed.
+
 (*
 Ltac try_lc_typ_constructors :=
   (now applys lc_t_tvar_f +
@@ -414,7 +415,7 @@ Ltac solve_lc_by_regularity A :=
 
 (* destruct hypotheses *)
 Ltac inverts_all_lc :=
-  repeat match goal with
+  repeat lazymatch goal with
          | H: lc_typ (t_or _ _) |- _ => inverts H
          | H: lc_typ (t_and _ _) |- _ => inverts H
          | H: lc_typ (t_rcd _ _) |- _ => inverts H
@@ -423,7 +424,7 @@ Ltac inverts_all_lc :=
          end.
 
 Ltac inverts_all_ord :=
-repeat match goal with
+repeat lazymatch goal with
 | H: ordi (t_and _ _) |- _ => inverts H
 | H: ordu (t_and _ _) |- _ => inverts H
 | H: ordi (t_or _ _) |- _ => inverts H
@@ -438,7 +439,7 @@ end.
 
 
 Ltac inverts_all_spl :=
-repeat match goal with
+repeat lazymatch goal with
 | H: spli (t_and _ _) _ _ |- _ => inverts H
 | H: splu (t_and _ _) _ _ |- _ => inverts H
 | H: spli (t_or _ _) _ _ |- _ => inverts H
@@ -849,7 +850,6 @@ Lemma ordu_or_split: forall A,
     lc_typ A -> ordu A \/ exists B C, splu A B C.
 Proof with (subst~; simpl in *; eauto).
   introv Lc. induction Lc...
-  - forwards* [?|(?&?&?)]: IHLc.
   - (* and *)
     forwards* [?|(?&?&?)]: IHLc1.
     forwards* [?|(?&?&?)]: IHLc2.
@@ -1140,9 +1140,6 @@ Proof with exists; repeat split*.
   - (* forall *) pick fresh X. instantiate_cofinites_with X.
     forwards [ [?|?] | [?|?] ] : IH (A -^ X); try eassumption; elia; destruct_conj.
     left; left... left; right... right; left... right; right...
-  - (* rcd *) inverts_all_spl.
-    forwards [ [?|?] | [?|?] ] : IH A; try eassumption; elia; destruct_conj.
-    left; left... left; right... right; left... right; right...
 Qed.
 
 
@@ -1159,10 +1156,6 @@ Proof with (auto_unify; auto; try eassumption; elia; try solve [split; auto]; ea
     all: match goal with
               H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; elia
          end; eauto.
-  - (* rcd *)
-    match goal with
-              H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; elia
-    end; split; eauto.
   - (* spli B *)
     repeat match goal with
               H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; clear H1; elia
@@ -1200,10 +1193,6 @@ Proof with (solve_false; auto_unify; try eassumption; elia; eauto 3).
   inverts Hsub; inverts_all_spl; inverts_all_ord; solve_false; auto_unify; auto.
   - (* forall *)
     pick fresh X. instantiate_cofinites_with X.
-    match goal with
-              H0: ordu ?A, H1 : algo_sub ?A ?B, H2 : splu ?B _ _ |- _ => forwards [?|?]: IH H0 H1 H2; elia
-    end; eauto.
-  - (* rcd *)
     match goal with
               H0: ordu ?A, H1 : algo_sub ?A ?B, H2 : splu ?B _ _ |- _ => forwards [?|?]: IH H0 H1 H2; elia
     end; eauto.
@@ -1481,8 +1470,6 @@ Proof.
   - applys DSub_Trans. applys DSub_CovAll (t_or A1 A2).
     intros X Fry. unfolds open_typ_wrt_typ. simpl. auto.
     applys~ DSub_CovDistUAll.
-  - applys DSub_Trans. applys~ DSub_CovIn (t_or A1 A2).
-    applys~ DSub_CovDistUIn.
 Qed.
 
 Lemma dsub_and: forall A B C,
@@ -1526,7 +1513,6 @@ Ltac split_inter_constructors :=
   (applys* SpI_forall; intros; autorewrite with open; auto).
 Ltac split_union_constructors :=
   applys* SpU_or + applys* SpU_andl +
-  applys* SpU_in +
   (applys* SpU_forall; intros; autorewrite with open; auto).
 
 Ltac swap_or_r := applys algo_trans; [ | applys asub_symm_or ].
@@ -1569,7 +1555,6 @@ Proof with (simpl in *; try applys SpI_and; try applys SpU_or; try eassumption; 
         | |- algo_sub (t_and _ _) (_ (t_and _ _)) => match_and; auto
         | |- algo_sub (t_or _ _) (_ _ (t_or _ _)) => match_or; auto
                      end ].
-
     Unshelve. all: applys empty.
   - induction H; auto.
     + (* arrow *) applys DSub_Trans. applys~ DSub_CovArr IHalgo_sub2. applys~ DSub_FunCon IHalgo_sub1.
@@ -1795,7 +1780,7 @@ Ltac gets_all_lc :=
 Lemma open_into_var : forall X Y, t_tvar_f Y -^ X = t_tvar_f Y.
 Proof. eauto. Qed.
 
-Hint Rewrite open_into_var : open.
+#[export] Hint Rewrite open_into_var : open.
 
 Lemma nsplu_isomorphic : forall A B1 B2,
     new_splu A B1 B2 -> A ~~ B1|B2.
@@ -1813,8 +1798,6 @@ Proof with try applys ASub_refl; try match goal with |- lc_typ _ => eauto with l
     econstructor. intros. instantiate_cofinites.
     applys algo_trans H0. autorewrite with open.
     auto.
-  - applys algo_trans; [ | applys dsub2asub; applys DSub_CovDistUIn ]...
-    econstructor. easy.
   - split_l.
     + split_r.
       * use_left_l. applys algo_trans IHnew_splu. use_left_r...
@@ -1835,9 +1818,6 @@ Proof with try applys ASub_refl; try match goal with |- lc_typ _ => eauto with l
       use_left_r... use_right_r...
     + applys ASub_forall; intros; instantiate_cofinites;
        autorewrite with open... easy.
-  - applys algo_trans (t_rcd l5 (A1|A2))...
-    + split_l; applys ASub_rcd. use_left_r... use_right_r...
-    + applys ASub_rcd. easy.
 Qed.
 
 Lemma nspli_isomorphic : forall A B1 B2,

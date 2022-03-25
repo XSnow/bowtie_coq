@@ -14,6 +14,20 @@ with distinguishability_forall_l : forall A B1 C,
     (t_forall B1) <<>> A -> lc_typ C -> C <<>> A.
 Admitted.
 
+Lemma DistUnionL : forall A B C,
+    A <<>> C -> B <<>> C -> A|B <<>> C.
+Proof.
+  intros. applys* DistUnion.
+Qed.
+Lemma DistUnionR : forall A B C,
+    C <<>> A -> C <<>> B -> C <<>> A|B.
+Proof.
+  intros. applys* DistUnionSym.
+Qed.
+
+#[export] Hint Resolve DistUnionL DistUnionR : core.
+
+
 Lemma distinguishability_spl_inv : forall A B,
     Distinguishability A B ->
     (forall A1 A2, splu A A1 A2 -> Distinguishability A1 B /\ Distinguishability A2 B) /\
@@ -59,7 +73,38 @@ Proof with try match goal with |- lc_typ _ => eauto end.
   (* Distributive cases require the inversion lemma from the other splitting relation
      and IH from induction on Dis is not enough so I have to use indTypSize *)
   all: auto_unify. all: eauto.
-  - destruct H...
+
+  match goal with
+    | H1: ?A <<>> ?B, H2: spli ?A _ _ |- _ => forwards [?|(?&?&?)]: ordu_or_split B; [eauto | | ]
+    | H1: ?B <<>> ?A, H2: spli ?A _ _ |- _ => forwards [?|(?&?&?)]: ordu_or_split B; [eauto | | ]
+  end.
+  all: try ( forwards [?|?]: IHDis3; [ eassumption | eassumption | | ] ).
+  all: try solve [left~].
+  all: try solve [right~].
+
+  all: try ( forwards (?&?): IHDis2; [ eassumption | ] ).
+  match goal with
+    | H1: ?A <<>> ?B ,
+
+  all: try forwards [?|(?&?&?)]: ordu_or_split A...
+  1-4: forwards (?&?): IHDis12; [ now eauto | ];
+       forwards (?&?): IHDis22; [ now eauto | ];
+         now eauto.
+  1-4: forwards : IHDis14; [ now eauto | now eauto | ];
+    forwards : IHDis24; [ now eauto | now eauto | ].
+  1-8: repeat match goal with | H : _ \/ _ |- _ => destruct H end.
+  1-16: now eauto.
+
+  all: try forwards [?|(?&?&?)]: ordu_or_split B...
+  1-4: forwards (?&?): IHDis11; [ now eauto | ];
+       forwards (?&?): IHDis21; [ now eauto | ];
+         now eauto.
+  all: forwards : IHDis13; [ now eauto | now eauto | ];
+    forwards : IHDis23; [ now eauto | now eauto | ].
+  all: repeat match goal with | H : _ \/ _ |- _ => destruct H end.
+  all: eauto.
+
+    - destruct H...
     + inverts Spl.
       forwards [ ? | ? ]: IHDis13; [ now eauto | now eauto | | ].
       now left*. now right*.
@@ -80,24 +125,60 @@ Proof with try match goal with |- lc_typ _ => eauto end.
   forwards [ [?|?] | [?|?] ]: double_split; try eassumption.
   destruct_conj.
   forwards [ ? | ? ]: IHDis13; [ now eauto | now eauto | | ].
-  all: try forwards [?|(?&?&?)]: ordu_or_split A...
-  1-4: forwards (?&?): IHDis12; [ now eauto | ];
-       forwards (?&?): IHDis22; [ now eauto | ];
-         now eauto.
-  1-4: forwards : IHDis14; [ now eauto | now eauto | ];
-    forwards : IHDis24; [ now eauto | now eauto | ].
-  1-8: repeat match goal with | H : _ \/ _ |- _ => destruct H end.
-  1-16: now eauto.
-
-  all: try forwards [?|(?&?&?)]: ordu_or_split B...
-  1-4: forwards (?&?): IHDis11; [ now eauto | ];
-       forwards (?&?): IHDis21; [ now eauto | ];
-         now eauto.
-  all: forwards : IHDis13; [ now eauto | now eauto | ];
-    forwards : IHDis23; [ now eauto | now eauto | ].
-  all: repeat match goal with | H : _ \/ _ |- _ => destruct H end.
-  all: eauto.
 Qed.
+
+
+Lemma distinguishability_spl_inv : forall A B,
+    Distinguishability A B ->
+    (forall A1 A2, splu A A1 A2 -> Distinguishability A1 B /\ Distinguishability A2 B) /\
+    (forall B1 B2, splu B B1 B2 -> Distinguishability A B1 /\ Distinguishability A B2) /\
+    (forall A1 A2, spli A A1 A2 -> Distinguishability A1 B \/ Distinguishability A2 B) /\
+    (forall B1 B2, spli B B1 B2 -> Distinguishability A B1 \/ Distinguishability A B2).
+Proof with try match goal with |- lc_typ _ => eauto end.
+
+  Local Ltac get_IH IH IHH IHH1 IHH2 :=
+    match goal with
+    | H1 : Distinguishability _ _, H2 : Distinguishability _ _ |- _ =>
+      forwards IHH1: IH H1; elia; forwards IHH2: IH H2; elia;
+      destruct IHH1 as (IHDis11 & IHDis12 & IHDis13 & IHDis14);
+      destruct IHH2 as (IHDis21 & IHDis22 & IHDis23 & IHDis24)
+    end + match goal with
+          | H : Distinguishability ?A ?B |- _ =>
+            forwards IHH: IH H; elia;
+            destruct IHH as (IHDis1 & IHDis2 & IHDis3 & IHDis4)
+          end.
+
+  introv Dis.
+  indTypSize( size_typ A + size_typ B ).
+  inverts Dis; intros.
+  all: splits; introv Spl; try intro Ord; inverts_all_ord; inverts_all_spl; solve_false; try split.
+  all: (* Ax cases *) try match type of H with (DistinguishabilityAx _ _) => induction* H; inverts* Spl end.
+  all: try get_IH IH IHH IHH1 IHH2.
+  all: try ( forwards (?&?): IHDis1; [ eassumption | ] ).
+  all: try ( forwards (?&?): IHDis2; [ eassumption | ] ).
+  all: try ( forwards (?&?): IHDis11; [ eassumption | ] ).
+  all: try ( forwards (?&?): IHDis12; [ eassumption | ] ).
+  all: try ( forwards (?&?): IHDis21; [ eassumption | ] ).
+  all: try ( forwards (?&?): IHDis22; [ eassumption | ] ).
+  all: try solve [constructor~].
+  all: try solve [assumption].
+  all: try ( forwards [?|?]: IHDis13; [ eassumption | | ] ).
+  all: try ( forwards [?|?]: IHDis14; [ eassumption | | ] ).
+  all: try ( forwards [?|?]: IHDis23; [ eassumption | | ] ).
+  all: try ( forwards [?|?]: IHDis24; [ eassumption | | ] ).
+  all: try ( forwards [?|?]: IHDis3; [ eassumption | | ] ).
+  all: try ( forwards [?|?]: IHDis4; [ eassumption | | ] ).
+  all: try solve [left~].
+  all: try solve [right~].
+  (* Distributive cases require the inversion lemma from the other splitting relation
+     and IH from induction on Dis is not enough so I have to use indTypSize *)
+  all: auto_unify. all: eauto.
+  1-2: destruct H...
+  1-8: inverts Spl.
+  all: try ( forwards [ ? | ? ]: IHDis13; [ now eauto | | ] ).
+  all: try ( forwards [ ? | ? ]: IHDis23; [ now eauto | | ] ).
+  all: try (left; applys distinguishability_forall_l; [ eassumption | eauto ]).
+  all: try solve [left; eauto 2]. all: try solve [right; eauto 2].
 
 Lemma distinguishability_splu_inv : forall A B,
     Distinguishability A B ->

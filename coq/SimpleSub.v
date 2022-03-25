@@ -95,7 +95,7 @@ Lemma valtyp_splu_inv : forall A A1 A2,
 Proof.
   introv Val Spl. gen A1 A2.
   induction Val; intros.
-  - inverts Spl. forwards* : IHVal.
+  - inverts Spl.
   - forwards* (?&?): negtyp_splu_inv H.
 Qed.
 
@@ -190,8 +190,6 @@ Proof.
   all: try solve [inverts~ Sub; match goal with H: isNegTyp _ |- _ => inverts~ H end].
   all: try solve [forwards [?|?]: IHSpl; try eassumption; eauto].
   - (* forall *) left. eauto.
-  - (* rcd *) inverts Sub. solve [forwards [?|?]: IHSpl; try eassumption; eauto].
-    inverts H0.
 Qed.
 
 Local Ltac inverts_psub H :=
@@ -323,9 +321,7 @@ Lemma psub_splu_left : forall A B B1 B2,
 Proof.
   introv Spl Sub. gen A.
   induction Spl; intros; eauto.
-  - inverts_psub Sub. eauto.
-  - inverts_psub Sub. eauto.
-  - inverts_psub Sub. eauto.
+  all: inverts_psub Sub; eauto.
 Qed.
 
 Lemma psub_splu_right : forall A B B1 B2,
@@ -432,16 +428,6 @@ Proof with solve_false.
   - (* inter at left *) inverts_typ; eauto. inverts_typ; eauto.
     applys~ psub_negtyp Sub.
   - (* forall *) applys~ psub_forall Sub.
-  -(* record *)
-    inverts Sub.
-    + inverts_typ; eauto... forwards: IH H; try eassumption; elia. eauto.
-    + inverts_typ; eauto...
-    + inverts Val... applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_left.
-    + inverts Val... applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_left.
-    + inverts Val... applys~ PSub_Intersect.
-      * applys psub_rcd H1. applys* psub_splu_valtyp_left.
-      * applys psub_rcd H2. applys* psub_splu_valtyp_left.
-    + inverts Val... eauto.
 Qed.
 
 Lemma psub_unionR : forall A A1 A2 B,
@@ -456,16 +442,6 @@ Proof with solve_false.
   - (* inter at left *) inverts_typ; eauto. inverts_typ; eauto.
     applys~ psub_negtyp Sub.
   - (* forall *) applys~ psub_forall Sub.
-  -(* record *)
-    inverts Sub.
-    + inverts_typ; eauto... forwards: IH H; try eassumption; elia. eauto.
-    + inverts_typ; eauto...
-    + inverts Val... applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_right.
-    + inverts Val... applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_right.
-    + inverts Val... applys~ PSub_Intersect.
-      * applys psub_rcd H1. applys* psub_splu_valtyp_right.
-      * applys psub_rcd H2. applys* psub_splu_valtyp_right.
-    + inverts Val... eauto.
 Qed.
 
 Lemma psub_merge_union : forall A A1 A2 B,
@@ -508,7 +484,6 @@ Proof.
   - (* forall *) inverts* Sub.
   - (* and *)
     inverts Val; inverts Spl.
-    1: inverts Sub; inverts_typ; [ applys* NSub_IntersectL | applys* NSub_IntersectR].
     all: applys nsub_negtyp; try eassumption.
     all: inverts_typ; eauto; inverts_typ; eauto; solve_false.
   - (* or *)
@@ -529,7 +504,6 @@ Proof.
   - (* forall *) inverts* Sub.
   - (* and *)
     inverts Val; inverts Spl.
-    1: inverts Sub; inverts_typ; [ applys* NSub_IntersectL | applys* NSub_IntersectR].
     all: applys nsub_negtyp; try eassumption.
     all: inverts_typ; eauto; inverts_typ; eauto; solve_false.
   - (* or *)

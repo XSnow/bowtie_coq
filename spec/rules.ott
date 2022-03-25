@@ -200,8 +200,8 @@ DSub :: '' ::=
 
 % I omit these two (and two in the following CovDistU set of rules) since they are trivially admissible
 
-  ------------------------------------- :: CovDistUIn
-  In l (A | B) <: (In l A) | (In l B)
+  % ------------------------------------- :: CovDistUIn
+  % In l (A | B) <: (In l A) | (In l B)
   
   ------------------------------------------------------ :: CovDistUAll
   forall X. (A | B) <: (forall X. A) | (forall X. B)
@@ -527,7 +527,7 @@ Ordinary :: '' ::=
   --------------- :: and
   ordinaryU A & B
 
-  ordinaryU A
+%  ordinaryU A
   ---------------- :: rcd
   ordinaryU In l A
 
@@ -625,14 +625,14 @@ Split :: '' ::=
 %  splitI A = A1 & A2
 %  --------------------------------- :: SpUFunL
 %  splitU A -> B = A1 -> B | A2 -> B
-%
+
   splitU A = A1 | A2
   --------------------------------------------------- :: forall
   splitU forall X . A = forall X . A1 | forall X . A2
 
-  splitU A = A1 | A2 
-  --------------------------------- :: in
-  splitU In l A = In l A1 | In l A2
+%  splitU A = A1 | A2 
+%  --------------------------------- :: in
+%  splitU In l A = In l A1 | In l A2
 
 
 defns
@@ -881,9 +881,9 @@ NewSplit :: '' ::=
   --------------------------------------------------- :: forall
   splitU forall X . A ~ forall X . A1 | forall X . A2
 
-  splitU A ~ A1 | A2 
-  --------------------------------- :: in
-  splitU In l A ~ In l A1 | In l A2
+  % splitU A ~ A1 | A2 
+  % --------------------------------- :: in
+  % splitU In l A ~ In l A1 | In l A2
 
 
 defns
