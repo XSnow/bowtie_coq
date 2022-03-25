@@ -812,14 +812,16 @@ Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishabili
  | DistIn : forall (l5:l) (A B:typ),
      Distinguishability A B ->
      Distinguishability (t_rcd l5 A) (t_rcd l5 B)
- | DistUnion : forall (A A' B:typ),
-     Distinguishability A B ->
-     Distinguishability A' B ->
-     Distinguishability (t_or A A') B
- | DistUnionSym : forall (B A A':typ),
-     Distinguishability B A ->
-     Distinguishability B A' ->
-     Distinguishability B (t_or A A')
+ | DistUnion : forall (A B A1 A2:typ),
+     splu A A1 A2 ->
+     Distinguishability A1 B ->
+     Distinguishability A2 B ->
+     Distinguishability A B
+ | DistUnionSym : forall (B A A1 A2:typ),
+     splu A A1 A2 ->
+     Distinguishability B A1 ->
+     Distinguishability B A2 ->
+     Distinguishability B A
  | DistIntersectL : forall (A A' B:typ),
      lc_typ A' ->
      Distinguishability A B ->
@@ -835,23 +837,7 @@ Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishabili
  | DistIntersectRSym : forall (B A A':typ),
      lc_typ A ->
      Distinguishability B A' ->
-     Distinguishability B (t_and A A')
- | DistDistribL : forall (A B1 B2 B3:typ),
-     Distinguishability A (t_and B1 B2) ->
-     Distinguishability A (t_and B1 B3) ->
-     Distinguishability A (t_and B1  (t_or B2 B3) )
- | DistDistribR : forall (A B1 B2 B3:typ),
-     Distinguishability A (t_and B1 B3) ->
-     Distinguishability A (t_and B2 B3) ->
-     Distinguishability A (t_and  (t_or B1 B2)  B3)
- | DistDistribLSym : forall (B1 B2 B3 A:typ),
-     Distinguishability (t_and B1 B2) A ->
-     Distinguishability (t_and B1 B3) A ->
-     Distinguishability (t_and B1  (t_or B2 B3) ) A
- | DistDistribRSym : forall (B1 B2 B3 A:typ),
-     Distinguishability (t_and B1 B3) A ->
-     Distinguishability (t_and B2 B3) A ->
-     Distinguishability (t_and  (t_or B1 B2)  B3) A.
+     Distinguishability B (t_and A A').
 
 (* defns MergeabilityAx *)
 Inductive MergeabilityAx : typ -> typ -> Prop :=    (* defn MergeabilityAx *)

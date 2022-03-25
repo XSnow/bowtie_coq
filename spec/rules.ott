@@ -1061,15 +1061,17 @@ Distinguishability :: '' ::=
   --------------------- :: DistIn
   |- In l A <> In l B
 
-  |- A  <> B
-  |- A' <> B
+  splitU A = A1 | A2
+  |- A1 <> B
+  |- A2 <> B
   ---------------- :: DistUnion
-  |- A | A' <> B
+  |- A <> B
 
-  |- B <> A
-  |- B <> A'
+  splitU A = A1 | A2
+  |- B <> A1
+  |- B <> A2
   ---------------- :: DistUnionSym
-  |- B <> A | A'
+  |- B <> A
 
   |- A <> B
   ---------------- :: DistIntersectL
@@ -1087,26 +1089,6 @@ Distinguishability :: '' ::=
   ---------------- :: DistIntersectRSym
   |- B <> A & A'
 
-  |- A <> B1 & B2
-  |- A <> B1 & B3
-  ---------------------- :: DistDistribL
-  |- A <> B1 & (B2 | B3)
-
-  |- A <> B1 & B3
-  |- A <> B2 & B3
-  ---------------------- :: DistDistribR
-  |- A <> (B1 | B2) & B3
-
-  |- B1 & B2 <> A
-  |- B1 & B3 <> A
-  ---------------------- :: DistDistribLSym
-  |- B1 & (B2 | B3) <> A
-
-  |- B1 & B3 <> A
-  |- B2 & B3 <> A
-  ---------------------- :: DistDistribRSym
-  |- (B1 | B2) & B3 <> A
-  
   % |- B <> A
   % ----------- :: DistSym
   % |- A <> B

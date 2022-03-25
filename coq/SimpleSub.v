@@ -659,7 +659,7 @@ Lemma distinguishability_negtyp : forall A B,
 Proof.
   introv H. induction* H.
 Abort. (* It does not hold for records *)
-
+(*
 Lemma distinguishability_spl_inv : forall A B,
     Distinguishability A B ->
     (forall A1 A2, splu A A1 A2 -> Distinguishability A1 B /\ Distinguishability A2 B) /\
@@ -1494,3 +1494,4 @@ Abort.
 Lemma notdistinguishability_upward : forall A B B',
     NotDistinguishable A B -> B <: B' -> NotDistinguishable A B'.
 Abort.
+*)

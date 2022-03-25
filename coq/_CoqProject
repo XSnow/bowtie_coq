@@ -2,6 +2,7 @@
 ApplyTy.v
 Definitions.v
 Dispatch.v
+Distinguishability.v
 DistSubtyping.v
 LibTactics.v
 LN_Lemmas.v
