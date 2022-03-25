@@ -5,6 +5,15 @@ Require Export SimpleSub.
 
 (* Previous proved properties of distinguishability *)
 
+Notation "A <<>> B"        := (Distinguishability A B)
+                                (at level 65, B at next level, no associativity) : type_scope.
+
+Lemma distinguishability_forall_r : forall A B1 C,
+    A <<>> (t_forall B1) -> lc_typ C -> A <<>> C
+with distinguishability_forall_l : forall A B1 C,
+    (t_forall B1) <<>> A -> lc_typ C -> C <<>> A.
+Admitted.
+
 Lemma distinguishability_spl_inv : forall A B,
     Distinguishability A B ->
     (forall A1 A2, splu A A1 A2 -> Distinguishability A1 B /\ Distinguishability A2 B) /\
@@ -50,6 +59,24 @@ Proof with try match goal with |- lc_typ _ => eauto end.
   (* Distributive cases require the inversion lemma from the other splitting relation
      and IH from induction on Dis is not enough so I have to use indTypSize *)
   all: auto_unify. all: eauto.
+  - destruct H...
+    + inverts Spl.
+      forwards [ ? | ? ]: IHDis13; [ now eauto | now eauto | | ].
+      now left*. now right*.
+      forwards [ ? | ? ]: IHDis23; [ now eauto | now eauto | | ].
+      now left*. now right*.
+    + inverts~ Spl.
+      forwards [ ? | ? ]: IHDis13; [ now eauto | now eauto | | ].
+      all: forwards [ ? | ? ]: IHDis23; [ now eauto | now eauto | | ].
+      all: try now left*. all: try now right*.
+    + inverts~ Spl.
+      forwards [ ? | ? ]: IHDis13; [ now eauto | now eauto | | ].
+      all: forwards [ ? | ? ]: IHDis23; [ now eauto | now eauto | | ].
+      all: try now left*. all: try now right*.
+    + left. applys* distinguishability_forall_l.
+    + inverts Spl.
+        inverts H0; inverts H2. now left*.
+    +
   forwards [ [?|?] | [?|?] ]: double_split; try eassumption.
   destruct_conj.
   forwards [ ? | ? ]: IHDis13; [ now eauto | now eauto | | ].
@@ -123,8 +150,6 @@ Ltac inverts_all_distinguishability :=
            forwards (?&?): HA Spl; clear Dis
          end.
 
-Notation "A <<>> B"        := (Distinguishability A B)
-                                (at level 65, B at next level, no associativity) : type_scope.
 
 Definition typ_as_ftyp := fty_StackArg.
 Coercion typ_as_ftyp : typ >-> Fty.
