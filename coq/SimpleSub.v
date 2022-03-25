@@ -12,25 +12,36 @@ Notation "A <n B"        := (NegativeSubtyping A B)
 Definition typ_as_ftyp := fty_StackArg.
 Coercion typ_as_ftyp : typ >-> Fty.
 
-Ltac inverts_neg_false := match goal with
-                          | H: isNegTyp (t_rcd _ _) |- _ => inverts H; fail
-                          | H: isNegTyp t_bot |- _ => inverts H; fail
-                          end.
+Ltac inverts_neg_false :=
+  try match goal with
+  | H: isNegTyp (_ & _) |- _ => inverts H
+  | H: isNegTyp (_ | _) |- _ => inverts H
+  end;
+  match goal with
+  | H: isNegTyp (t_rcd _ _) |- _ => inverts H
+  | H: isNegTyp t_bot |- _ => inverts H
+  end; fail.
+
 #[export]
 Hint Extern 0 => inverts_neg_false : FalseHd.
 
 #[export]
  Hint Extern 1 =>
    match goal with
-   | H: isValTyp (t_rcd _ _ | _) |- _ => inverts H
-   | H: isValTyp (_ | t_rcd _ _ ) |- _ => inverts H
-   | H: isValTyp _ |- _ => inverts H
-   end; inverts_neg_false; fail : FalseHd.
+  | H1: isValTyp (_ & _) |- _ => inverts H1
+  | H1: isValTyp (_ | _) |- _ => inverts H1
+  | H1: isValTyp _ |- _ => inverts H1
+   end; inverts_neg_false : FalseHd.
 
 #[export]
 Hint Extern 0 =>
 match goal with
 | H : binds _ _ nil |- _ => inverts H; fail
+end : FalseHd.
+
+#[export]
+ Hint Extern 1 => match goal with
+                 | H: DistinguishabilityAx _ _ |- _ => inverts~ H; fail
 end : FalseHd.
 
 Ltac solve_false := try intro; try solve [false; eauto 3 with FalseHd].
@@ -238,8 +249,8 @@ Proof with elia.
     + lets~ [Hu|(?&?&Hu)]: ordu_or_split V0.
       * convert2asub. forwards~ [HS|HS]: algo_sub_orlr_inv Sub.
         all: convert2dsub; forwards* : IH HS...
-    (*   * exfalso. inverts_typ. *)
-    (*     ** inverts Hu. *)
+      * exfalso. inverts_typ.
+        ** inverts Hu.
     (*     ** *)
     (*       convert2asub. forwards~ : algo_sub_or_inv Sub. eauto. *)
     (*       destruct_conj. convert2dsub. *)
@@ -296,9 +307,7 @@ Proof.
   introv Spl Val Sub. gen A A2.
   induction Sub; intros; eauto.
   - (* rcd *) inverts~ Spl; solve_false.
-    + (* (Box_l V) B <p Box_l A *)
-      inverts Val; solve_false. inverts H2. solve_false.
-    + inverts_typ; solve_false. constructor*.
+    inverts_typ; solve_false. constructor*.
 Qed.
 
 Lemma psub_spli_right : forall A A1 A2 B,
@@ -891,9 +900,6 @@ Proof.
   applys* distinguishability_spli_l_2.
 Qed.
 
-Hint Extern 1 => match goal with
-                 | H: DistinguishabilityAx _ _ |- _ => inverts~ H; fail
-end : FalseHd.
 
 Lemma distinguishability_splu_r : forall A B B1 B2,
     splu B B1 B2 -> Distinguishability A B1 -> Distinguishability A B2 ->
@@ -907,26 +913,28 @@ Proof with solve_false; inverts_all_ord.
     + inverts_all_distinguishability.
       1: applys~ DistIntersectLSym; forwards: IH; try eassumption; elia.
       all: now eauto.
-    + inverts_all_distinguishability.
+    + (* splu A *)
+      inverts_all_distinguishability.
       apply DistSym in H2. apply DistSym in H3.
       forwards HH1: IH H2 H3; [ | eauto | ]; elia. apply DistSym in HH1.
       apply DistSym in H4. apply DistSym in H5.
       forwards HH2: IH H4 H5; [ | eauto | ]; elia. apply DistSym in HH2.
-      applys DistDistribL.
-      forwards: IH H5 H3; [ | eauto | ]; elia.
-  - inverts_all_distinguishability.
-    + applys~ DistIntersectLSym.
-    + applys~ DistIntersectLSym.
-    + applys~ DistIntersectLSym.
-    + applys~ DistIntersectRSym. applys IH; try eassumption; elia.
-  - applys* distinguishability_forall_r Dis1.
-  - inverts Dis1...
-    + (* rcd *)
-      inverts Dis2...
-      applys DistIn. applys~ IH H. elia.
-    + inverts~ H0.
-    + inverts~ H0.
-Qed.
+      Admitted.
+(*       applys DistDistribL. *)
+(*       forwards: IH H5 H3; [ | eauto | ]; elia. *)
+(*   - inverts_all_distinguishability. *)
+(*     + applys~ DistIntersectLSym. *)
+(*     + applys~ DistIntersectLSym. *)
+(*     + applys~ DistIntersectLSym. *)
+(*     + applys~ DistIntersectRSym. applys IH; try eassumption; elia. *)
+(*   - applys* distinguishability_forall_r Dis1. *)
+(*   - inverts Dis1... *)
+(*     + (* rcd *) *)
+(*       inverts Dis2... *)
+(*       applys DistIn. applys~ IH H. elia. *)
+(*     + inverts~ H0. *)
+(*     + inverts~ H0. *)
+(* Qed. *)
 
 Lemma distinguishability_splu_l : forall A B B1 B2,
     ordi A -> ordu A -> splu B B1 B2 -> Distinguishability B1 A -> Distinguishability B2 A ->
@@ -954,9 +962,9 @@ Proof with solve_false; inverts_all_ord.
   - (* and *)
     inverts keep Dis1; auto; inverts keep Dis2; try solve [constructor~]; solve_false.
     + applys~ DistIntersectL. applys~ IH H0. elia.
-    + inverts_all_distinguishability.
-      applys DistUnionSym; applys IH Spl; elia; eauto.
-    + inverts_all_distinguishability.
+    (* + inverts_all_distinguishability. *)
+    (*   applys DistUnionSym; applys IH Spl; elia; eauto. *)
+    (* + inverts_all_distinguishability. *)
 Abort.
 (* A1 <> B1 *)
 (* A2 /\ A3 <> B2 (note this does not imply A2 <> B2 \/ A3 <> B2) *)
@@ -1006,71 +1014,71 @@ Lemma HN21 : A2 <<>> B1 -> False.
   unfold A2. unfold B1. intro H.
   inverts H.
   - (* Ax *) inverts H0.
-  - (* Union RHS *) inverts H3; solve_false.
-    * inverts H0; solve_false.
-  - (* Ax *) inverts H0.
-Qed.
+  (* - (* Union RHS *) inverts H3; solve_false. *)
+  (*    * inverts H0; solve_false. *)
+  (* - (* Ax *) inverts H0. *)
+(* Qed. *) Admitted.
 
-Lemma HN22 : A2 <<>> B2 -> False.
-  unfold A2. unfold B2. intro H.
-  inverts H.
-  - (* Ax *) inverts H0.
-  - (* Union RHS *) inverts H3.
-    + (* Ax *) inverts H; solve_false.
-    + inverts H2; solve_false.
-      * inverts H0; solve_false.
-    + inverts H.
-  - (* Ax *) inverts H0.
-Qed.
+(* Lemma HN22 : A2 <<>> B2 -> False. *)
+(*   unfold A2. unfold B2. intro H. *)
+(*   inverts H. *)
+(*   - (* Ax *) inverts H0. *)
+(*   - (* Union RHS *) inverts H3. *)
+(*     + (* Ax *) inverts H; solve_false. *)
+(*     + inverts H2; solve_false. *)
+(*       * inverts H0; solve_false. *)
+(*     + inverts H. *)
+(*   - (* Ax *) inverts H0. *)
+(* Qed. *)
 
-Lemma HN31 : A3 <<>> B1 -> False.
-Proof with solve_false.
-  unfold A3. unfold B1. intro H.
-  inverts H...
-  - (* Union RHS *) inverts H4...
-    + (* Ax *) inverts H0...
-Qed.
+(* Lemma HN31 : A3 <<>> B1 -> False. *)
+(* Proof with solve_false. *)
+(*   unfold A3. unfold B1. intro H. *)
+(*   inverts H... *)
+(*   - (* Union RHS *) inverts H4... *)
+(*     + (* Ax *) inverts H0... *)
+(* Qed. *)
 
-Lemma HN32 : A3 <<>> B2 -> False.
-  unfold A3. unfold B2. intro H.
-  inverts H.
-  - (* Ax *) inverts H0.
-  - (* Union RHS *) inverts H3.
-    + (* Ax *) inverts H; solve_false.
-    + inverts H5; solve_false.
-      * inverts H0; solve_false.
-    + inverts H.
-  - (* Ax *) inverts H0.
-Qed.
+(* Lemma HN32 : A3 <<>> B2 -> False. *)
+(*   unfold A3. unfold B2. intro H. *)
+(*   inverts H. *)
+(*   - (* Ax *) inverts H0. *)
+(*   - (* Union RHS *) inverts H3. *)
+(*     + (* Ax *) inverts H; solve_false. *)
+(*     + inverts H5; solve_false. *)
+(*       * inverts H0; solve_false. *)
+(*     + inverts H. *)
+(*   - (* Ax *) inverts H0. *)
+(* Qed. *)
 
-Lemma G2 : (A1 | A2) & A3 <<>> B1 & B2 -> False.
-Proof with solve_false.
-  introv H.
-  inverts H...
-  - inverts H4...
-    + inverts H5...
-      * applys~ HN21.
-      * applys~ HN22.
-    + inverts H5...
-      * applys~ HN21.
-      * unfold A2 in H4. inverts H4... inverts H7... inverts H0...
-    + inverts H5...
-      * applys~ HN22.
-      * unfold A1 in H6. inverts H6... inverts H1... inverts H0...
-  - inverts H4...
-    + applys~ HN31.
-    + applys~ HN32.
-  - inverts H4...
-    + inverts H5...
-      * applys~ HN21.
-      * unfold A2 in H4. inverts H4... inverts H7... inverts H0...
-    + applys~ HN31.
-    + unfold A1 in H2. unfold A2 in H2. unfold A3 in H2.
-      unfold A1 in H5. unfold A2 in H5. unfold A3 in H5.
-      inverts H5...
-      * inverts H2...
-        ** inverts H7... inverts H8... inverts H0...
-        ** Abort.
+(* Lemma G2 : (A1 | A2) & A3 <<>> B1 & B2 -> False. *)
+(* Proof with solve_false. *)
+(*   introv H. *)
+(*   inverts H... *)
+(*   - inverts H4... *)
+(*     + inverts H5... *)
+(*       * applys~ HN21. *)
+(*       * applys~ HN22. *)
+(*     + inverts H5... *)
+(*       * applys~ HN21. *)
+(*       * unfold A2 in H4. inverts H4... inverts H7... inverts H0... *)
+(*     + inverts H5... *)
+(*       * applys~ HN22. *)
+(*       * unfold A1 in H6. inverts H6... inverts H1... inverts H0... *)
+(*   - inverts H4... *)
+(*     + applys~ HN31. *)
+(*     + applys~ HN32. *)
+(*   - inverts H4... *)
+(*     + inverts H5... *)
+(*       * applys~ HN21. *)
+(*       * unfold A2 in H4. inverts H4... inverts H7... inverts H0... *)
+(*     + applys~ HN31. *)
+(*     + unfold A1 in H2. unfold A2 in H2. unfold A3 in H2. *)
+(*       unfold A1 in H5. unfold A2 in H5. unfold A3 in H5. *)
+(*       inverts H5... *)
+(*       * inverts H2... *)
+(*         ** inverts H7... inverts H8... inverts H0... *)
+(*         ** Abort. *)
 End ConcreteExample.
 
 (* Lemma distinguishability_splu_r : forall A B B1 B2, *)
@@ -1282,9 +1290,9 @@ Lemma similar_rcd_inv : forall l1 l2 A B,
 Proof with solve_false.
   introv HS.
   unfolds in HS. destruct_conj.
-  inverts H...
+  inverts H... inverts H0...
   unfolds. exists. split.
-  { eassumption. } { auto. }
+  all: eassumption.
 Qed.
 
 Lemma similar_rcd : forall l A B,
@@ -1307,6 +1315,7 @@ Proof.
     + inverts_typ. applys* Sim_Neg.
     + inverts_typ. applys* Sim_Neg.
     + applys* Sim_Neg.
+    + solve_false.
 Qed.
 
 Lemma sub_neg_l_inv : forall A B,
@@ -1375,7 +1384,8 @@ Proof with elia; solve_false.
       * admit.
      (* The key case? *)
      (*   Hu : ordu V' *)
-     (*   Hu' : ordu V *)
+     (*   Hu': ordu V  *)
+     (* PSub : V' <p V *)
      (*   H0 : ApplyTy A1 V C *)
      (*   H1 : NApplyTy A2 V *)
      (*   H5 : NApplyTy A1 V' *)
@@ -1411,7 +1421,7 @@ Proof with elia; solve_false.
     forwards: IH HS1; try eassumption. now eauto. now elia.
     forwards: IH HS2; try eassumption. now eauto. now elia.
     eauto.
-Admitted.
+Abort. (* move to dispatch.v *)
 
 (******************************************************************************)
 #[export]

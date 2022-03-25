@@ -7,9 +7,12 @@ Section B13.
 
   Lemma distinguishability_top_neg_false : forall Aneg,
     Distinguishability Aneg t_top -> isNegTyp Aneg -> False.
-  Proof with solve_false.
+  Proof with solve_false; eauto 3.
     introv Dis Neg.
-    inductions Dis; try inverts_typ...
+    inductions Dis; repeat inverts_typ;
+      try forwards(?&?): distinguishability_lc Dis;
+      try forwards(?&?): distinguishability_lc Dis1;
+      try forwards(?&?): distinguishability_lc Dis2...
     inverts H...
   Qed.
 
@@ -25,11 +28,12 @@ Section B13.
       lets~ [Hiu|(?&?&Hiu)]: ordu_or_split U;
       lets~ [Hiv|(?&?&Hiv)]: ordu_or_split V; inverts_all_distinguishability.
     - inverts Val1; inverts Val2...
-      repeat match goal with
-      | H: _ <<>> _ |- _ => inverts H
-      | H: DistinguishabilityAx _ _ |- _ => inverts H; fail
-             end.
-
+      all: first [inverts_all_distinguishability;
+                  try solve [repeat match goal with
+                                    | H: Distinguishability _ _ |- _ => inverts H
+                                    | H: DistinguishabilityAx _ _ |- _ => inverts H; fail
+                                    end] ].
+      inverts_all_distinguishability.
 
     gen U. induction Val1; intros; induction Val2; intros.
     all: try solve [inverts Dis; try inverts_typ; solve_false].
@@ -70,7 +74,72 @@ Section B13.
     -
 
 
-end Section.
+  end Section.
+  (****************************************************************************)
+(* B.14 If apply(A, V) => C and V'/V => ok and apply(A, V')=>C' then C <: C' *)
+Lemma apply_valtyp_psub : forall (A V C V' C' : typ),
+    isValTyp V -> isValTyp V' -> ApplyTy A V C -> V' <p V -> ApplyTy A V' C' -> C <: C'.
+Proof with elia; solve_false.
+  introv Val1 Val2 App1 PSub App2.
+  indTypSize (size_typ V + size_typ V' + size_typ A).
+  lets~ [Hu|(?&?&Hu)]: ordu_or_split V'.
+  lets~ [Hu'|(?&?&Hu')]: ordu_or_split V.
+  - (* V and V' ordu *)
+    inverts App1... (* analysis the form of A *)
+    + (* bot *) eauto.
+    + (* arrow *) inverts~ App2...
+    + (* union *) inverts~ App2...
+      repeat match goal with
+        H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ =>
+        forwards~: IH H1 H2; elia; clear H1
+             end.
+    + (* intersection *) inverts~ App2...
+      * repeat match goal with
+                 H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ =>
+                 forwards~: IH H1 H2; elia; clear H1
+               end.
+      * admit.
+     (* The key case? *)
+     (*   Hu : ordu V' *)
+     (*   Hu': ordu V  *)
+     (* PSub : V' <p V *)
+     (*   H0 : ApplyTy A1 V C *)
+     (*   H1 : NApplyTy A2 V *)
+     (*   H5 : NApplyTy A1 V' *)
+     (*   H8 : ApplyTy A2 V' C' *)
+     (*   ============================ *)
+     (*   C <: C' *)
+     * repeat match goal with
+                H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ =>
+                      forwards~: IH H1 H2; elia; clear H1
+              end. admit.
+       (* Similar case *)
+       (* Hu : ordu V' *)
+       (* Hu' : ordu V *)
+       (* H0 : ApplyTy A1 V C *)
+       (* H1 : NApplyTy A2 V *)
+       (* H5 : ApplyTy A1 V' A1' *)
+       (* H8 : ApplyTy A2 V' A2' *)
+       (* ============================ *)
+       (* C <: A1' & A2' *)
+    + (* intersection again *) admit.
+    + (* intersection again *) admit.
+  - forwards HS1: psub_trans PSub.
+    applys~ psub_splu_valtyp_left Hu'.
+    forwards HS2: psub_trans PSub.
+    applys~ psub_splu_valtyp_right Hu'.
+    forwards: applyty_splitu_arg_inv App1 Hu'. destruct_conj. subst.
+    forwards: IH HS1; try eassumption. now eauto. now elia.
+    forwards: IH HS2; try eassumption. now eauto. now elia.
+    eauto.
+  - forwards~ HS1: psub_trans (psub_splu_valtyp_left_rev _ _ _ Hu) PSub.
+    forwards~ HS2: psub_trans (psub_splu_valtyp_right_rev _ _ _ Hu) PSub.
+    forwards: applyty_splitu_arg_inv App2 Hu. destruct_conj. subst.
+    forwards: IH HS1; try eassumption. now eauto. now elia.
+    forwards: IH HS2; try eassumption. now eauto. now elia.
+    eauto.
+Admitted.
+
 
 (* Two types are sim iff they are splu from a value type *)
 Lemma sim_no_distinguishability : forall A B,

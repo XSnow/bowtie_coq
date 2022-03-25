@@ -1,6 +1,7 @@
 -R . Top
 ApplyTy.v
 Definitions.v
+Dispatch.v
 DistSubtyping.v
 LibTactics.v
 LN_Lemmas.v
