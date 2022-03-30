@@ -188,6 +188,8 @@ Proof with try eassumption; eauto.
   induction Spl; intros; try solve [exists*]; solve_false; matchty_inv.
   1: { case_matchty l B; exists*. }
   all: try solve [ forwards ? ? ? : IHSpl; try eassumption; eauto].
+  1: { exists. splits~.
+       convert2asub. use_left_r... }
 Qed.
 
 Lemma matchty_splu_2 : forall l A B C C',
@@ -198,6 +200,8 @@ Proof with try eassumption; eauto.
   induction Spl; intros; try solve [exists*]; solve_false; matchty_inv.
   1: { case_matchty l A; exists*. }
   all: try solve [ forwards ? ? ? : IHSpl; try eassumption; eauto].
+  1: { exists. splits~.
+       convert2asub. use_right_r... }
 Qed.
 
 (*  match l [ (Box_l A) & (B1->B2) ] | (Box_l C) => C *)
@@ -218,6 +222,9 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
       * forwards: IH A2...
       * (* both in union match *) forwards: IH A1... forwards: IH A2...
         matchty_unify. eauto.
+      * (* rcd dist *)
+        forwards ~: IH H0... forwards ~: IH H1...
+        matchty_unify. exists. split... convert2asub. split_l...
     + forwards: IH HM... forwards: matchty_splu_1...
       exists*.
     + forwards: IH HM... forwards: matchty_splu_2...

@@ -95,7 +95,7 @@ Lemma valtyp_splu_inv : forall A A1 A2,
 Proof.
   introv Val Spl. gen A1 A2.
   induction Val; intros.
-  - inverts Spl.
+  - inverts Spl. forwards* : IHVal.
   - forwards* (?&?): negtyp_splu_inv H.
 Qed.
 
@@ -190,6 +190,8 @@ Proof.
   all: try solve [inverts~ Sub; match goal with H: isNegTyp _ |- _ => inverts~ H end].
   all: try solve [forwards [?|?]: IHSpl; try eassumption; eauto].
   - (* forall *) left. eauto.
+  - (* rcd *) inverts Sub. solve [forwards [?|?]: IHSpl; try eassumption; eauto].
+    inverts H0.
 Qed.
 
 Local Ltac inverts_psub H :=
@@ -428,6 +430,16 @@ Proof with solve_false.
   - (* inter at left *) inverts_typ; eauto. inverts_typ; eauto.
     applys~ psub_negtyp Sub.
   - (* forall *) applys~ psub_forall Sub.
+  -(* record *)
+    inverts Sub.
+    + inverts_typ; eauto... forwards: IH H; try eassumption; elia. eauto.
+    + inverts_typ; eauto...
+    + inverts Val... applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_left.
+    + inverts Val... applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_left.
+    + inverts Val... applys~ PSub_Intersect.
+      * applys psub_rcd H1. applys* psub_splu_valtyp_left.
+      * applys psub_rcd H2. applys* psub_splu_valtyp_left.
+    + inverts Val... eauto.
 Qed.
 
 Lemma psub_unionR : forall A A1 A2 B,
@@ -442,6 +454,16 @@ Proof with solve_false.
   - (* inter at left *) inverts_typ; eauto. inverts_typ; eauto.
     applys~ psub_negtyp Sub.
   - (* forall *) applys~ psub_forall Sub.
+  -(* record *)
+    inverts Sub.
+    + inverts_typ; eauto... forwards: IH H; try eassumption; elia. eauto.
+    + inverts_typ; eauto...
+    + inverts Val... applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_right.
+    + inverts Val... applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_right.
+    + inverts Val... applys~ PSub_Intersect.
+      * applys psub_rcd H1. applys* psub_splu_valtyp_right.
+      * applys psub_rcd H2. applys* psub_splu_valtyp_right.
+    + inverts Val... eauto.
 Qed.
 
 Lemma psub_merge_union : forall A A1 A2 B,
@@ -455,6 +477,7 @@ Proof.
   introv Sub Neg1 Neg2. gen V2.
   inductions Sub; try solve [inverts Neg1]; intros; eauto using psub_negtyp.
 Qed.
+
 (*------------------------------ Lemma B.1 -----------------------------------*)
 
 Lemma sub2psub : forall V A,
@@ -484,6 +507,7 @@ Proof.
   - (* forall *) inverts* Sub.
   - (* and *)
     inverts Val; inverts Spl.
+    all: (* rcd *) try solve [inverts* Sub].
     all: applys nsub_negtyp; try eassumption.
     all: inverts_typ; eauto; inverts_typ; eauto; solve_false.
   - (* or *)
@@ -504,6 +528,7 @@ Proof.
   - (* forall *) inverts* Sub.
   - (* and *)
     inverts Val; inverts Spl.
+    all: (* rcd *) try solve [inverts* Sub].
     all: applys nsub_negtyp; try eassumption.
     all: inverts_typ; eauto; inverts_typ; eauto; solve_false.
   - (* or *)
@@ -633,7 +658,7 @@ Lemma distinguishability_negtyp : forall A B,
 Proof.
   introv H. induction* H.
 Abort. (* It does not hold for records *)
-(*
+
 Lemma distinguishability_spl_inv : forall A B,
     Distinguishability A B ->
     (forall A1 A2, splu A A1 A2 -> Distinguishability A1 B /\ Distinguishability A2 B) /\
@@ -660,6 +685,7 @@ Proof with try match goal with |- lc_typ _ => eauto end.
   all: splits; introv Spl; try intro Ord; inverts_all_ord; inverts_all_spl; solve_false; try split.
   all: (* Ax cases *) try match type of H with (DistinguishabilityAx _ _) => induction* H; inverts* Spl end.
   all: try get_IH IH IHH IHH1 IHH2.
+  all: try auto_unify.
   all: try ( forwards (?&?): IHDis1; [ eassumption | ] ).
   all: try ( forwards (?&?): IHDis2; [ eassumption | ] ).
   all: try ( forwards (?&?): IHDis11; [ eassumption | ] ).
@@ -679,21 +705,15 @@ Proof with try match goal with |- lc_typ _ => eauto end.
   (* Distributive cases require the inversion lemma from the other splitting relation
      and IH from induction on Dis is not enough so I have to use indTypSize *)
   all: try forwards [?|(?&?&?)]: ordu_or_split A...
-  1-4: forwards (?&?): IHDis12; [ now eauto | ];
-       forwards (?&?): IHDis22; [ now eauto | ];
-         now eauto.
-  1-4: forwards : IHDis14; [ now eauto | now eauto | ];
-    forwards : IHDis24; [ now eauto | now eauto | ].
-  1-8: repeat match goal with | H : _ \/ _ |- _ => destruct H end.
-  1-16: now eauto.
-
-  all: try forwards [?|(?&?&?)]: ordu_or_split B...
-  1-4: forwards (?&?): IHDis11; [ now eauto | ];
-       forwards (?&?): IHDis21; [ now eauto | ];
-         now eauto.
-  all: forwards : IHDis13; [ now eauto | now eauto | ];
-    forwards : IHDis23; [ now eauto | now eauto | ].
-  all: repeat match goal with | H : _ \/ _ |- _ => destruct H end.
+  all: try auto_unify; solve_false.
+  all: try solve [applys DistUnion; eassumption].
+  all: eauto.
+  1: forwards [ [?|?] | [?|?] ]: double_split A; try eassumption; destruct_conj.
+  5: forwards [ [?|?] | [?|?] ]: double_split B; try eassumption; destruct_conj.
+  all: try ( forwards [?|?]: IHDis13; [ eassumption | eassumption | | ] ).
+  all: try ( forwards [?|?]: IHDis14; [ eassumption | eassumption | | ] ).
+  all: try ( forwards [?|?]: IHDis23; [ eassumption | eassumption | | ] ).
+  all: try ( forwards [?|?]: IHDis24; [ eassumption | eassumption | | ] ).
   all: eauto.
 Qed.
 

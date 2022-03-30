@@ -3,13 +3,18 @@ Require Import Coq.micromega.Lia.
 Require Import LN_Lemmas.
 Require Export SimpleSub.
 
+Ltac auto_lc := try match goal with
+                    | |- lc_typ _ => eauto
+                    end.
+
 Section B13.
 
   Lemma distinguishability_top_neg_false : forall Aneg,
     Distinguishability Aneg t_top -> isNegTyp Aneg -> False.
   Proof with solve_false; eauto 3.
     introv Dis Neg.
-    inductions Dis; repeat inverts_typ;
+    Print inverts_typ.
+    inductions Dis; inverts_typ; auto_lc;
       try forwards(?&?): distinguishability_lc Dis;
       try forwards(?&?): distinguishability_lc Dis1;
       try forwards(?&?): distinguishability_lc Dis2...

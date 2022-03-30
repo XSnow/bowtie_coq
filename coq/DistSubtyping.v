@@ -850,6 +850,7 @@ Lemma ordu_or_split: forall A,
     lc_typ A -> ordu A \/ exists B C, splu A B C.
 Proof with (subst~; simpl in *; eauto).
   introv Lc. induction Lc...
+  - forwards* [?|(?&?&?)]: IHLc.
   - (* and *)
     forwards* [?|(?&?&?)]: IHLc1.
     forwards* [?|(?&?&?)]: IHLc2.
@@ -1140,6 +1141,9 @@ Proof with exists; repeat split*.
   - (* forall *) pick fresh X. instantiate_cofinites_with X.
     forwards [ [?|?] | [?|?] ] : IH (A -^ X); try eassumption; elia; destruct_conj.
     left; left... left; right... right; left... right; right...
+  - (* rcd *) inverts_all_spl.
+   forwards [ [?|?] | [?|?] ] : IH A; try eassumption; elia; destruct_conj.
+   left; left... left; right... right; left... right; right...
 Qed.
 
 
@@ -1156,6 +1160,10 @@ Proof with (auto_unify; auto; try eassumption; elia; try solve [split; auto]; ea
     all: match goal with
               H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; elia
          end; eauto.
+    - (* rcd *)
+    match goal with
+              H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; elia
+    end; split; eauto.
   - (* spli B *)
     repeat match goal with
               H1 : algo_sub ?A ?B, H2 : splu ?A _ _ |- _ => forwards(?&?): IH H2 H1; clear H1; elia
@@ -1196,6 +1204,10 @@ Proof with (solve_false; auto_unify; try eassumption; elia; eauto 3).
     match goal with
               H0: ordu ?A, H1 : algo_sub ?A ?B, H2 : splu ?B _ _ |- _ => forwards [?|?]: IH H0 H1 H2; elia
     end; eauto.
+    - (* rcd *)
+      match goal with
+        H0: ordu ?A, H1 : algo_sub ?A ?B, H2 : splu ?B _ _ |- _ => forwards [?|?]: IH H0 H1 H2; elia
+      end; eauto.
   - (* double split *)
     forwards [ [?|?] | [?|?] ]: double_split H; try eassumption; destruct_conj;
       repeat match goal with
@@ -1470,6 +1482,8 @@ Proof.
   - applys DSub_Trans. applys DSub_CovAll (t_or A1 A2).
     intros X Fry. unfolds open_typ_wrt_typ. simpl. auto.
     applys~ DSub_CovDistUAll.
+  - applys DSub_Trans. applys~ DSub_CovIn (t_or A1 A2).
+    applys~ DSub_CovDistUIn.
 Qed.
 
 Lemma dsub_and: forall A B C,
@@ -1512,7 +1526,7 @@ Ltac split_inter_constructors :=
   applys* SpI_in + applys* SpI_arrow + applys* SpI_orl +
   (applys* SpI_forall; intros; autorewrite with open; auto).
 Ltac split_union_constructors :=
-  applys* SpU_or + applys* SpU_andl +
+  applys* SpU_or + applys* SpU_andl + applys* SpU_in +
   (applys* SpU_forall; intros; autorewrite with open; auto).
 
 Ltac swap_or_r := applys algo_trans; [ | applys asub_symm_or ].
@@ -1798,6 +1812,8 @@ Proof with try applys ASub_refl; try match goal with |- lc_typ _ => eauto with l
     econstructor. intros. instantiate_cofinites.
     applys algo_trans H0. autorewrite with open.
     auto.
+  - applys algo_trans; [ | applys dsub2asub; applys DSub_CovDistUIn ]...
+    econstructor. easy.
   - split_l.
     + split_r.
       * use_left_l. applys algo_trans IHnew_splu. use_left_r...
@@ -1817,7 +1833,10 @@ Proof with try applys ASub_refl; try match goal with |- lc_typ _ => eauto with l
        autorewrite with open...
       use_left_r... use_right_r...
     + applys ASub_forall; intros; instantiate_cofinites;
-       autorewrite with open... easy.
+        autorewrite with open... easy.
+  - applys algo_trans (t_rcd l5 (A1|A2))...
+    + split_l; applys ASub_rcd. use_left_r... use_right_r...
+    + applys ASub_rcd. easy.
 Qed.
 
 Lemma nspli_isomorphic : forall A B1 B2,
