@@ -787,6 +787,7 @@ Lemma DistSym : forall A B,
     A <<>> B -> B <<>> A.
 Proof.
   introv H. induction~ H.
+  all: eauto using DistUnion, DistUnionSym.
 Qed.
 
 Lemma distinguishability_arrow_r : forall A B1 B2 C1 C2,
@@ -794,8 +795,7 @@ Lemma distinguishability_arrow_r : forall A B1 B2 C1 C2,
 Proof.
     introv Dis. gen C1 C2.
     inductions Dis; intros; eauto.
-  - inverts* H.
-  - inverts* H.
+    all: inverts* H.
 Qed.
 
 Lemma distinguishability_arrow_l : forall A B1 B2 C1 C2,
@@ -803,8 +803,7 @@ Lemma distinguishability_arrow_l : forall A B1 B2 C1 C2,
 Proof.
     introv Dis. gen C1 C2.
     inductions Dis; intros; eauto.
-  - inverts* H.
-  - inverts* H.
+    all: inverts* H.
 Qed.
 
 Lemma distinguishability_forall_r : forall A B1 C1,
@@ -817,19 +816,74 @@ Proof.
     inductions Dis; intros; try solve [clear distinguishability_forall_l; eauto].
   - clear distinguishability_forall_l. inverts* H.
   - inverts* H.
+  - inverts* H.
   +
     introv Dis. gen C1. clear distinguishability_forall_l.
     inductions Dis; intros; try solve [clear distinguishability_forall_r; eauto].
   - clear distinguishability_forall_r. inverts* H.
+  - inverts* H.
   - inverts* H.
 Qed.
 
 Hint Immediate distinguishability_arrow_l distinguishability_arrow_r
      distinguishability_forall_l distinguishability_forall_r : core.
 
+Ltac basic_auto :=
+  destruct_conj;
+  try exists; try splits;
+  try lazymatch goal with
+      | |- lc_typ _ => eauto
+      | |- spli _ _ _ => try eapply spli_rename_open; try eassumption; econstructor; try eassumption;
+                         eauto
+      | |- splu _ _ _ => try eapply splu_rename_open; try eassumption; econstructor; try eassumption;
+                         eauto
+      end; try eassumption; elia.
+
+Lemma part_split_1 : forall A A1 A2 B1 B2,
+    spli A A1 A2 -> splu A1 B1 B2 ->
+    (exists C1 C2, splu A C1 C2 /\ spli C1 B1 A2 /\ spli C2 B2 A2)
+    \/ (exists C1 C2, splu A C1 B2 /\ spli C1 B1 C2 /\ splu A2 C2 B2)
+    \/ (exists C1 C2, splu A B1 C2  /\ spli C2 B2 C1 /\ splu A2 B1 C1).
+Proof with basic_auto.
+  introv SI SU. gen B1 B2.
+  induction SI; intros; inverts_all_spl.
+  - left...
+  - right; left...
+  - right; right...
+  - instantiate_cofinites.
+    forwards [?| [?|?] ] : H0 H2...
+    1: left... 4: right; left... 7: right; right...
+    all: intros.
+    all: try ( lazymatch goal with
+         | H: splu (?A -^ _) _ _ |- splu (?A -^ _ ) _ _ =>
+             forwards R1: rename_splu x X H
+         | H: spli ?A _ _ |- spli (close_typ_wrt_typ _ ?A -^ _ ) _ _ =>
+               forwards R1: rename_spli x X H
+           end;
+               simpl in R1; try rewrite 3 typsubst_typ_spec in R1;
+               try rewrite 2 typsubst_typ_spec in R1;
+               try rewrite 2 close_typ_wrt_typ_open_typ_wrt_typ in R1;
+               try rewrite close_typ_wrt_typ_open_typ_wrt_typ in R1;
+               try apply R1; try solve_notin ).
+  - forwards [?| [?|?] ] : IHSI H3...
+    + left... + right; left... + right; right...
+  Unshelve. all: eauto.
+Qed.
+
+Lemma part_split_2 : forall A A1 A2 B1 B2,
+    spli A A1 A2 -> splu A2 B1 B2 ->
+    (exists C1 C2, spli C1 A1 B1 /\ spli C2 A1 B2 /\ splu A C1 C2)
+    \/ (exists C1 C2, splu A C1 B2 /\ spli C1 B1 C2 /\ splu A2 C2 B2)
+    \/ (exists C1 C2, splu A B1 C2  /\ spli C2 B2 C1 /\ splu A2 B1 C1).
+Proof with basic_auto.
+  introv SI SU. gen B1 B2.
+  induction SI; intros; inverts_all_spl.
+Admitted.
+
+
 Lemma distinguishability_spli_l_1 : forall A B B1 B2,
       spli B B1 B2 -> (Distinguishability A B1 -> Distinguishability A B).
-Proof.
+Proof with basic_auto.
   introv Spl Dis.
   indTypSize (size_typ A + size_typ B).
   inverts Spl; intros; inverts_all_distinguishability.
@@ -843,13 +897,19 @@ Proof.
     inverts Dis; solve_false.
     1-2: now inverts* H0.
     1: applys DistIn.
-    2: applys DistUnion.
+    2: applys DistUnion; [ eassumption | | ].
+    all: inverts_all_spl.
+    4: { forwards [?| [?|?] ] : part_split_1 H H7; destruct_conj; eauto.
+         + applys DistUnionSym...
+           all: applys IH...
+         + applys DistUnionSym...
+           all: applys IH...
+         + applys DistUnionSym...
+           all: applys IH...
+    }
     4: applys~ DistIntersectL.
     5: applys~ DistIntersectR.
-    all: try solve [ applys IH; [ | | eauto ]; eauto; elia ].
-    all: (* distributivity *)
-      eapply SpI_in in H; forwards: IH H0 H; elia; forwards: IH H1 H; elia;
-      now eauto.
+    all: applys IH...
 Qed.
 
 Lemma distinguishability_spli_r_1 : forall A B B1 B2,
@@ -862,7 +922,7 @@ Qed.
 
 Lemma distinguishability_spli_l_2 : forall A B B1 B2,
       spli B B1 B2 -> (Distinguishability A B2 -> Distinguishability A B).
-Proof.
+Proof with basic_auto.
   introv Spl Dis.
   indTypSize (size_typ A + size_typ B).
   inverts Spl; intros; inverts_all_distinguishability.
@@ -876,13 +936,14 @@ Proof.
     inverts Dis; solve_false.
     1-2: now inverts* H0.
     1: applys DistIn.
-    2: applys DistUnion.
+    2: applys DistUnion; [ eassumption | | ].
+    all: inverts_all_spl.
+    4: { forwards: part_split_2 H H7; destruct_conj; eauto.
+         applys DistUnionSym...
+         all: applys IH... }
     4: applys~ DistIntersectL.
     5: applys~ DistIntersectR.
-    all: try solve [ applys IH; [ | | eauto ]; eauto; elia ].
-    all: (* distributivity *)
-      eapply SpI_in in H; forwards: IH H H0; elia; forwards: IH H H1; elia;
-      now eauto.
+    all: applys IH...
 Qed.
 
 Lemma distinguishability_spli_r_2 : forall A B B1 B2,

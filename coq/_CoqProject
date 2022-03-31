@@ -1,10 +1,10 @@
 -R . Top
-ApplyTy.v
-Definitions.v
-Dispatch.v
-Distinguishability.v
-DistSubtyping.v
 LibTactics.v
+Definitions.v
 LN_Lemmas.v
+DistSubtyping.v
+ApplyTy.v
 MatchTy.v
 SimpleSub.v
+Dispatch.v
+Distinguishability.v
