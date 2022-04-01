@@ -1036,8 +1036,11 @@ DistinguishabilityAx :: '' ::=
   ------------------ :: DistAxIn
   |-ax In l1 A <> In l2 B
 
-  ----------- :: DistAxEmptyL
+  ------------------ :: DistAxEmptyL
   |-ax Empty <> B
+
+  ------------------ :: DistAxEmptyR
+  |-ax A <> Empty
 
 
 defns
@@ -1051,10 +1054,6 @@ Distinguishability :: '' ::=
 
   |-ax A <> B
   ----------- :: DistAx
-  |- A <> B
-
-  |-ax B <> A
-  ----------- :: DistAxSym
   |- A <> B
 
   |- A <> B

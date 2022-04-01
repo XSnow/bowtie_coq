@@ -799,15 +799,15 @@ Inductive DistinguishabilityAx : typ -> typ -> Prop :=    (* defn Distinguishabi
      DistinguishabilityAx (t_rcd l1 A) (t_rcd l2 B)
  | DistAxEmptyL : forall (B:typ),
      lc_typ B ->
-     DistinguishabilityAx t_bot B.
+     DistinguishabilityAx t_bot B
+ | DistAxEmptyR : forall (A:typ),
+     lc_typ A ->
+     DistinguishabilityAx A t_bot.
 
 (* defns Distinguishability *)
 Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishability *)
  | DistAx : forall (A B:typ),
      DistinguishabilityAx A B ->
-     Distinguishability A B
- | DistAxSym : forall (A B:typ),
-     DistinguishabilityAx B A ->
      Distinguishability A B
  | DistIn : forall (l5:l) (A B:typ),
      Distinguishability A B ->
