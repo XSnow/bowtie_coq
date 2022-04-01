@@ -459,3 +459,282 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
     forwards: IH S2...
     exists (x1|x2). split~. applys~ ApplyTyUnionArg H.
 Qed.
+
+(*****************************************************************************)
+
+Ltac inverts_neg_false :=
+  try match goal with
+  | H: isNegTyp (_ & _) |- _ => inverts H
+  | H: isNegTyp (_ | _) |- _ => inverts H
+  end;
+  match goal with
+  | H: isNegTyp (t_rcd _ _) |- _ => inverts H
+  | H: isNegTyp t_bot |- _ => inverts H
+  end; fail.
+
+#[export]
+Hint Extern 0 => inverts_neg_false : FalseHd.
+
+#[export]
+ Hint Extern 1 =>
+   match goal with
+  | H1: isValTyp (_ & _) |- _ => inverts H1
+  | H1: isValTyp (_ | _) |- _ => inverts H1
+  | H1: isValTyp _ |- _ => inverts H1
+   end; inverts_neg_false : FalseHd.
+
+Definition typ_as_ftyp := fty_StackArg.
+Coercion typ_as_ftyp : typ >-> Fty.
+
+Notation "[| A |]"        := (fty_StackTyArg A)
+                              (at level 5) : type_scope.
+
+(*-------------------------- neg types and val types -------------------------*)
+
+Lemma isnegtyp_lc : forall A, isNegTyp A -> lc_typ A.
+Proof. introv H. induction~ H. Qed.
+
+Lemma isvaltyp_lc : forall A, isValTyp A -> lc_typ A.
+Proof. introv H. induction H; auto using isnegtyp_lc. Qed.
+
+#[export] Hint Immediate isnegtyp_lc isvaltyp_lc : core.
+
+Lemma negtyp2valtyp : forall A,
+    isNegTyp A -> isValTyp A.
+Proof.
+  introv Neg.
+  induction* Neg.
+Qed.
+
+#[export] Hint Immediate negtyp2valtyp : core.
+
+Lemma negtyp_spli_inv : forall A A1 A2,
+    isNegTyp A -> spli A A1 A2 -> isNegTyp A1 /\ isNegTyp A2.
+Proof.
+  introv Val Spl.
+  induction Spl; inverts~ Val; split*.
+  all: try forwards* (?&?): IHSpl.
+Qed.
+
+Lemma valtyp_spli_inv : forall A A1 A2,
+    isValTyp A -> spli A A1 A2 -> isValTyp A1 /\ isValTyp A2.
+Proof.
+  introv Val Spl.
+  induction Spl; inverts~ Val; split*.
+  all: try match goal with
+           | H1: isNegTyp (_ & _) |- _ => inverts* H1
+           | H1: isNegTyp (_ | _) |- _ => inverts* H1
+           end.
+  all: try forwards* (?&?): IHSpl.
+  all: try match goal with
+         | H1: spli ?A _ _, H2: isNegTyp ?A |- _ => forwards* (?&?): negtyp_spli_inv H2 H1
+         | H2: isNegTyp _ _ _ |- _ => forwards* (?&?): negtyp_spli_inv H2
+           end.
+  all: solve_false.
+Qed.
+
+Lemma negtyp_splu_inv : forall A A1 A2,
+    isNegTyp A -> splu A A1 A2 -> isNegTyp A1 /\ isNegTyp A2.
+Proof.
+  introv Val Spl.
+  induction Spl; inverts~ Val; split*.
+  all: try forwards* (?&?): IHSpl.
+Qed.
+
+Lemma valtyp_splu_inv : forall A A1 A2,
+    isValTyp A -> splu A A1 A2 -> isValTyp A1 /\ isValTyp A2.
+Proof.
+  introv Val Spl. gen A1 A2.
+  induction Val; intros.
+  - inverts Spl. forwards* : IHVal.
+  - forwards* (?&?): negtyp_splu_inv H.
+Qed.
+
+Ltac inverts_typ :=
+  try match goal with
+  | H1: isValFty (fty_StackArg (_ & _)) |- _ => inverts H1
+  | H1: isValFty (fty_StackArg (_ | _)) |- _ => inverts H1
+  | H1: isValTyp (_ & _) |- _ => inverts H1
+  | H1: isValTyp (_ | _) |- _ => inverts H1
+  | H1: isValTyp (t_rcd _ _) |- _ => inverts H1
+  | H1: isValTyp ?A, H2: spli ?A _ _ |- _ => forwards (?&?): valtyp_spli_inv H1 H2
+  | H1: isValTyp ?A, H2: splu ?A _ _ |- _ => forwards (?&?): valtyp_splu_inv H1 H2
+  end;
+  try match goal with
+  | H1: isNegTyp (_ & _) |- _ => forwards (?&?): negtyp_spli_inv H1; [applys SpI_and | ]; clear H1
+  | H1: isNegTyp (_ | _) |- _ => forwards (?&?): negtyp_splu_inv H1; [applys SpU_or | ]; clear H1
+  | H1: isNegTyp ?A, H2: spli ?A _ _ |- _ => forwards (?&?): negtyp_spli_inv H1 H2
+  | H1: isNegTyp ?A, H2: splu ?A _ _ |- _ => forwards (?&?): negtyp_splu_inv H1 H2
+  end.
+
+#[export] Hint Extern 1 (isValTyp _) => inverts_typ : core.
+
+(*****************************************************************************)
+
+(* B.3 (5) *)
+Lemma applyty_arrow : forall A1 A2 V B,
+    ApplyTy (t_arrow A1 A2) V B -> isValFty V -> exists V', V = fty_StackArg V' /\ isValTyp V'.
+Proof.
+  introv App Val.
+  inductions App.
+  - inverts* Val.
+  - inverts* Val.
+Qed.
+
+(* B.3 (6) *)
+Lemma applyty_forall : forall A V B,
+    ApplyTy (t_forall A) V B -> isValFty V -> exists C, V = fty_StackTyArg C.
+Proof.
+  introv App Val.
+  inductions App.
+  - inverts* Val.
+  - exfalso.
+    inverts Val. inverts_typ.
+    forwards~ (?&?): IHApp1. solve_false.
+Qed.
+
+(* B.3 (7) *)
+Lemma apply_top_false_1 : forall V,
+    isValTyp V -> NApplyTy t_top [| V |].
+  introv Val. constructor*.
+Qed.
+
+(* B.3 (7) *)
+Lemma apply_top_false_2 : forall V,
+    isValTyp V -> NApplyTy t_top V.
+Proof with eauto.
+  introv Val. induction* Val.
+Qed.
+
+(* B.3 (7) *)
+Lemma applyty_top : forall V A,
+    ApplyTy t_top V A -> isValFty V -> False.
+Proof.
+  introv App Val.
+  inductions App.
+  - inverts Val. inverts_typ.
+    forwards~ : IHApp1.
+Qed.
+
+(* B.3 (8) *)
+Lemma apply_box_false_1 : forall l V1 V2,
+    isValTyp V1 -> isValTyp V2 -> NApplyTy (t_rcd l V1) [| V2 |].
+  introv Val. constructor*.
+Qed.
+
+(* B.3 (8) *)
+Lemma apply_box_false_2 : forall l V1 V2,
+    isValTyp V1 -> isValTyp V2 -> NApplyTy (t_rcd l V1) V2.
+Proof with eauto.
+  introv Val. induction* Val.
+Qed.
+
+(*****************************************************************************)
+Definition iso A B := A <: B /\ B <: A.
+
+Notation "A ~= B"        := (iso A B)
+                              (at level 65, B at next level, no associativity) : type_scope.
+
+Lemma iso_symm : forall A B,
+    A ~= B -> B ~= A.
+Proof.
+  introv (H1&H2).
+  split~.
+Qed.
+
+Lemma iso_refl : forall A,
+    lc_typ A -> A ~= A.
+Proof.
+  introv H. induction H; split.
+  all: applys~ DSub_Refl.
+Qed.
+
+Lemma iso_or : forall A B C,
+    A ~= B -> A ~= C -> A ~= B|C.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; constructor~.
+Qed.
+Lemma iso_or_2 : forall A B C,
+    A ~= C -> B ~= C -> A|B ~= C.
+Proof.
+  introv H1 H2. eauto using iso_or, iso_symm.
+Qed.
+
+Lemma iso_or_match : forall A1 A2 B1 B2,
+    A1 ~= B1 -> A2 ~= B2 -> A1|A2 ~= B1|B2.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; convert2asub; match_or; auto.
+Qed.
+
+Lemma iso_and : forall A B C,
+    A ~= B -> A ~= C -> A ~= B&C.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; constructor~.
+Qed.
+
+Lemma iso_and_match : forall A1 A2 B1 B2,
+    A1 ~= B1 -> A2 ~= B2 -> A1&A2 ~= B1&B2.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; convert2asub; match_and; auto.
+Qed.
+
+#[export] Hint Immediate iso_symm iso_refl iso_or iso_or_2 iso_and iso_or_match
+  iso_and_match : core.
+
+(* B.5 (1) *)
+Lemma applyty_bot : forall B C,
+    ApplyTy t_bot B C -> C ~= t_bot.
+Proof. introv H. inductions H; eauto using iso_or_2. Qed.
+
+(* B.5 (4) *)
+Lemma applyty_splitu_inv : forall A B A1 A2 C,
+    ApplyTy A B C -> splu A A1 A2 ->
+    exists C1 C2, new_splu C C1 C2 /\ ApplyTy A1 B C1 /\ ApplyTy A2 B C2.
+Proof with exists; splits.
+  introv HA HS. gen A1 A2.
+  induction HA; intros; solve_false; inverts_all_spl; auto_unify.
+  all: try (forwards: IHHA; [ eassumption |.. ]).
+  all: try solve [exists; splits; try applys splu2nsplu; eauto].
+  all: try (forwards: IHHA1; [ eassumption |.. ]; destruct_conj).
+  all: try (forwards: IHHA2; [ eassumption |.. ]; destruct_conj).
+  - instantiate_cofinites...
+    forwards HN: splu2nsplu H2. forwards HN': typsubst_typ_splu x B HN.
+    now eauto.
+    rewrite 3 typsubst_typ_spec in HN'.
+    rewrite 3 close_typ_wrt_typ_open_typ_wrt_typ in HN'; [ applys HN' | .. ];
+      try solve_notin.
+    all: eauto.
+
+    (***************************)
+(*   - exists; splits; eauto. *)
+(*     applys ApplyTyUnionArg. *)
+(*     rewrite -> typsubst_typ_open_typ_wrt_typ in HN'. *)
+Abort.
+
+(* B.5 (5) *)
+Lemma napplyty_spliti_inv : forall A B A1 A2,
+    NApplyTy A B -> spli A A1 A2 ->
+    NApplyTy A1 B /\ NApplyTy A2 B.
+Proof with destruct_conj; try match goal with |- lc_typ _ => eauto end; try eassumption.
+  introv HN HS. gen A1 A2.
+  induction HN; intros; solve_false; inverts_all_spl; auto_unify.
+  all: try (forwards: IHHN; [ eassumption |.. ])...
+  all: try solve [split; eauto].
+  - cut (~ B <: A3). cut (~ B <: A4).
+    + split; eauto.
+    + intro HF. apply H2. convert2asub.
+      applys algo_trans HF. applys ASub_orr... eauto.
+    + intro HF. apply H2. convert2asub.
+      applys algo_trans HF. applys ASub_orl... eauto.
+Qed.
+
+(* B.5 (6) *)
+Lemma apply_top_false : forall A,
+    lc_typ A -> NApplyTy t_top A.
+Proof with eauto.
+  introv Lc. induction* Lc.
+Qed.
