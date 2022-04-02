@@ -19,6 +19,7 @@ Section B13.
       try forwards(?&?): distinguishability_lc Dis1;
       try forwards(?&?): distinguishability_lc Dis2...
     inverts H...
+    all: auto_lc.
   Qed.
 
   Hint Immediate distinguishability_top_neg_false : FalseHd.
@@ -32,54 +33,52 @@ Section B13.
       lets~ [Hv|(?&?&Hv)]: ordu_or_split V;
       lets~ [Hiu|(?&?&Hiu)]: ordu_or_split U;
       lets~ [Hiv|(?&?&Hiv)]: ordu_or_split V; inverts_all_distinguishability.
-    - inverts Val1; inverts Val2...
-      all: first [inverts_all_distinguishability;
-                  try solve [repeat match goal with
-                                    | H: Distinguishability _ _ |- _ => inverts H
-                                    | H: DistinguishabilityAx _ _ |- _ => inverts H; fail
-                                    end] ].
-      inverts_all_distinguishability.
+    Abort.
+  (*   - inverts Val1; inverts Val2... *)
+  (*     all: first [inverts_all_distinguishability; *)
+  (*                 try solve [repeat match goal with *)
+  (*                                   | H: Distinguishability _ _ |- _ => inverts H *)
+  (*                                   | H: DistinguishabilityAx _ _ |- _ => inverts H; fail *)
+  (*                                   end] ]. *)
+  (*     inverts_all_distinguishability. *)
 
-    gen U. induction Val1; intros; induction Val2; intros.
-    all: try solve [inverts Dis; try inverts_typ; solve_false].
-    - inverts Dis; inverts Sub...
-    - admit.
-    - inverts Dis; inverts Sub...
-    - inverts Dis. ; inverts Sub. inverts_all_distinguishability.  eauto.;try inverts_typ; solve_false].
+  (*   gen U. induction Val1; intros; induction Val2; intros. *)
+  (*   all: try solve [inverts Dis; try inverts_typ; solve_false]. *)
+  (*   - inverts Dis; inverts Sub... *)
+  (*   - admit. *)
+  (*   - inverts Dis; inverts Sub... *)
+  (*   - inverts Dis. ; inverts Sub. inverts_all_distinguishability.  eauto.;try inverts_typ; solve_false]. *)
 
-  Lemma distinguishability_valtyp_not_apply : forall V U,
-    Distinguishability V U -> isValTyp V -> isValTyp U -> V <p U -> False.
-  Proof with try inverts_typ; solve_false.
-    introv Dis Val1 Val2 Sub.
-    induction Sub...
-    - forwards* : distinguishability_rcd_inv Dis.
-    - inverts Dis...
-      + inverts H0...
-    - inverts_all_distinguishability. eauto.
-    - inverts_all_distinguishability. eauto.
-    - (* the inv lemma has preconditions *)
-  Restart.
-  Proof with try inverts_typ; solve_false.
-  introv Dis Val1 Val2 Sub.
-  gen U. induction Val1; intros; induction Val2; intros.
-    all: try solve [inverts Dis; try inverts_typ; solve_false].
-    - (* rcd *) inverts Dis.
-      + inverts Sub...
-      + inverts Sub...
-      + inverts H. inverts Sub...
-    - inverts Dis; inverts Sub...
-      applys IHVal1.dd
+  (* Lemma distinguishability_valtyp_not_apply : forall V U, *)
+  (*   Distinguishability V U -> isValTyp V -> isValTyp U -> V <p U -> False. *)
+  (* Proof with try inverts_typ; solve_false. *)
+  (*   introv Dis Val1 Val2 Sub. *)
+  (*   induction Sub... *)
+  (*   - forwards* : distinguishability_rcd_inv Dis. *)
+  (*   - inverts Dis... *)
+  (*     + inverts H0... *)
+  (*   - inverts_all_distinguishability. eauto. *)
+  (*   - inverts_all_distinguishability. eauto. *)
+  (*   - (* the inv lemma has preconditions *) *)
+  (* Restart. *)
+  (* Proof with try inverts_typ; solve_false. *)
+  (* introv Dis Val1 Val2 Sub. *)
+  (* gen U. induction Val1; intros; induction Val2; intros. *)
+  (*   all: try solve [inverts Dis; try inverts_typ; solve_false]. *)
+  (*   - (* rcd *) inverts Dis. *)
+  (*     + inverts Sub... *)
+  (*     + inverts Sub... *)
+  (*     + inverts H. inverts Sub... *)
+  (*   - inverts Dis; inverts Sub... *)
+  (*     applys IHVal1.dd *)
 
-        * applys* IHVal1 V0.
-        * forwards* : distinguishability_rcd_inv H0.
-  all: try solve [inverts_all_distinguishability; eauto].
-  try solve [inverts Sub].
-  try solve [inverts Dis].
+  (*       * applys* IHVal1 V0. *)
+  (*       * forwards* : distinguishability_rcd_inv H0. *)
+  (* all: try solve [inverts_all_distinguishability; eauto]. *)
+  (* try solve [inverts Sub]. *)
+  (* try solve [inverts Dis]. *)
 
-    -
-
-
-  end Section.
+End B13.
   (****************************************************************************)
 (* B.14 If apply(A, V) => C and V'/V => ok and apply(A, V')=>C' then C <: C' *)
 Lemma apply_valtyp_psub : forall (A V C V' C' : typ),
@@ -145,15 +144,20 @@ Proof with elia; solve_false.
     eauto.
 Admitted.
 
+Lemma distinguishability_forall_false: forall A B,
+    t_forall A <<>> t_forall B -> False.
+  introv H. inductions H; inverts_all_spl; solve_false.
+Qed.
+
+#[export] Hint Immediate distinguishability_forall_false : FalseHd.
 
 (* Two types are sim iff they are splu from a value type *)
 Lemma sim_no_distinguishability : forall A B,
     sim A B -> Distinguishability A B -> False.
-Proof with solve_false.
+Proof with auto_lc; inverts_all_spl; solve_false.
   introv Sim Dis.
   induction Sim; intros.
   - induction Dis; try inverts_typ...
-    + inverts H...
     + inverts H1...
   - forwards* : distinguishability_rcd_inv Dis.
   - inverts Dis...
@@ -198,8 +202,7 @@ Proof.
 Qed.
 
 (* B.16 Inversion of Abstract Application to Value Types *)
-(* Here we only consider V to be StackArg. Note that V can also be StackTypArg
-but that case is trivial *)
+(* Here we only consider V to be StackArg. *)
 Lemma applyty_valtyp_inter_inv : forall (A A' V B : typ),
     ApplyTy (A&A') V B -> isValTyp V -> TypeWF nil (A&A') ->
     exists B', ApplyTy A V B' \/ ApplyTy A' V B'.
@@ -216,4 +219,14 @@ Proof with solve_false.
       all: exists*.
     * inverts WF. forwards~ (?&[?|?]): lemma_for_B16 H2 H1 H4.
       all: exists*.
+Qed.
+
+(* B.16 Inversion of Abstract Application to Value Types *)
+(* Here we only consider V to be StackTypArg. *)
+Lemma applyty_inter_inv : forall A1 A2 B C,
+    ApplyTy (A1&A2) [|B|] C ->
+    exists C', ApplyTy A1 [|B|] C' \/ ApplyTy A2 [|B|] C'.
+Proof with destruct_conj; try subst; try solve [exists*].
+  introv HA.
+  inverts HA; solve_false...
 Qed.
