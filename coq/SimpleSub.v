@@ -9,6 +9,10 @@ Notation "A <p B"        := (PositiveSubtyping A B)
 Notation "A <n B"        := (NegativeSubtyping A B)
                               (at level 65, B at next level, no associativity) : type_scope.
 
+Ltac auto_lc := try match goal with
+                    | |- lc_typ _ => eauto
+                    end.
+
 #[export]
 Hint Extern 0 =>
 lazymatch goal with
@@ -19,6 +23,11 @@ end : FalseHd.
  Hint Extern 1 => lazymatch goal with
                  | H: DistinguishabilityAx _ _ |- _ => inverts~ H; fail
 end : FalseHd.
+
+Lemma valtyp_bot_false :  isValTyp t_bot -> False.
+Proof. introv H. inverts H. inverts H0. Qed.
+
+#[export] Hint Immediate valtyp_bot_false : FalseHd.
 
 Ltac solve_false := try intro; try solve [false; eauto 3 with FalseHd].
 
@@ -62,6 +71,7 @@ Proof.
   inverts~ Sub. inverts~ H0.
 Qed.
 
+(* B.3 (1) *)
 Lemma psub_rcd_inv : forall V l B,
     V <p (t_rcd l B) -> exists A, V = t_rcd l A /\ A <p B.
 Proof.
@@ -347,6 +357,136 @@ Lemma psub_merge_union : forall A A1 A2 B,
 Abort. (* weak than the above two *)
 
 
+  Lemma psub_andl_inv : forall A B C,
+      A & B <p C -> A <p C /\ B <p C.
+  Proof.
+    introv H.
+    inductions H; inverts_typ; auto_lc; split~.
+    all: try forwards: IHPositiveSubtyping; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
+    - applys* PSub_UnionL.
+    - applys* PSub_UnionL.
+    - applys* PSub_UnionR.
+    - applys* PSub_UnionR.
+    - applys* PSub_Intersect.
+    - applys* PSub_Intersect.
+  Qed.
+
+  Lemma psub_orl_inv : forall A B C,
+      A | B <p C -> A <p C /\ B <p C.
+  Proof.
+    introv H.
+    inductions H; inverts_typ; auto_lc; split~.
+    all: try forwards: IHPositiveSubtyping; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
+    - applys* PSub_UnionL.
+    - applys* PSub_UnionL.
+    - applys* PSub_UnionR.
+    - applys* PSub_UnionR.
+    - applys* PSub_Intersect.
+    - applys* PSub_Intersect.
+  Qed.
+
+  Lemma psub_forall_inv : forall A B C,
+      t_forall A <p C -> lc_typ (t_forall B) -> t_forall B <p C.
+  Proof.
+    introv H Lc.
+    inductions H; eauto.
+    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
+    all: auto_lc.
+    eauto.
+  Qed.
+
+  Lemma psub_arrow_inv : forall A B C D1 D2,
+      t_arrow A B <p C -> lc_typ (t_arrow D1 D2) -> t_arrow D1 D2 <p C.
+  Proof.
+    introv H Lc.
+    inductions H; eauto.
+    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
+    all: auto_lc.
+    eauto.
+  Qed.
+
+  Lemma psub_spli_l_inv : forall A A1 A2 C,
+      spli A A1 A2 -> isValTyp A -> A <p C -> A1 <p C /\ A2 <p C.
+  Proof.
+    introv Spl Val Sub.
+    indTypSize (size_typ A + size_typ C).
+    destruct A; intros; inverts_typ; solve_false.
+    - inverts Spl. inverts Sub.
+      + forwards: IH H4; try eassumption; elia; destruct_conj.
+        split; applys~ PSub_In.
+      + split*.
+      + forwards* (?&?): IH H1; elia.
+      + forwards* (?&?): IH H1; elia.
+      + forwards~ (?&?): IH H0; [eauto | ..]; elia.
+        forwards~ (?&?): IH H1; [eauto | ..]; elia.
+        split*.
+      + split*.
+    - inverts Spl. applys~ psub_andl_inv.
+    - apply psub_orl_inv in Sub. destruct_conj.
+      inverts Spl.
+      + split; applys* psub_unionR.
+      + split; applys* psub_unionL.
+    - inverts Spl; split; applys* psub_arrow_inv.
+    - inverts Spl; split; applys* psub_forall_inv.
+  Qed.
+
+  Lemma psub_splu_l_inv : forall A A1 A2 C,
+      splu A A1 A2 -> isValTyp A -> A <p C -> A1 <p C /\ A2 <p C.
+  Proof.
+    introv Spl Val Sub.
+    indTypSize (size_typ A + size_typ C).
+    destruct A; intros; inverts_typ; solve_false.
+    - inverts Spl. inverts Sub.
+      + forwards: IH H4; try eassumption; elia; destruct_conj.
+        split; applys~ PSub_In.
+      + split*.
+      + forwards* (?&?): IH H1; elia.
+      + forwards* (?&?): IH H1; elia.
+      + forwards~ (?&?): IH H0; [eauto | ..]; elia.
+        forwards~ (?&?): IH H1; [eauto | ..]; elia.
+        split*.
+      + split*.
+    - apply psub_andl_inv in Sub. destruct_conj.
+      inverts Spl.
+      + forwards: IH; [ | eassumption | ..]; try eassumption; elia. now eauto.
+        destruct_conj. split; applys* psub_spli_left.
+      + forwards: IH; [ | eassumption | ..]; try eassumption; elia. now eauto.
+        destruct_conj. split; applys* psub_spli_left.
+    - inverts Spl. applys~ psub_orl_inv.
+    - inverts Spl; split; applys* psub_forall_inv.
+  Qed.
+
+  Ltac inverts_all_psub :=
+    repeat lazymatch goal with
+      | Sub : _ & _ <p _ |- _ =>
+          forwards (?&?): psub_andl_inv Sub; clear Sub
+      | Sub : _ | _ <p _ |- _ =>
+          forwards (?&?): psub_orl_inv Sub; clear Sub
+      | Sub : _ <p _ & _ |- _ =>
+          forwards (?&?): psub_and_inv Sub; clear Sub
+      | Sub : _ <p (t_rcd _ _) |- _ =>
+          forwards (?&?&?): psub_rcd_inv Sub; clear Sub
+      | Sub : _ <p ?B, Hspl: spli ?B _ _ |- _ =>
+          forwards (?&?): psub_spli_inv Hspl Sub; clear Sub
+      | Sub : t_forall _ <p _ |- _ =>
+          lets: psub_forall_inv Sub; clear Sub
+      | Sub : ?A <p _, Hspl: splu ?A _ _ |- _ =>
+          forwards (?&?): psub_splu_l_inv Hspl Sub; clear Sub
+      | Sub : ?A <p _, Hspl: spli ?A _ _ |- _ =>
+          forwards (?&?): psub_spli_l_inv Hspl Sub; clear Sub
+      | Sub : _ <p ?B, Hspl: splu ?B _ _ |- _ =>
+          forwards [?|?]: psub_splu_inv Hspl Sub; clear Sub
+      | Sub : _ <p _ | _ |- _ =>
+          forwards [?|?]: psub_or_inv Sub; clear Sub
+      end;
+    try lazymatch goal with |- isValTyp _ => eauto 2 end.
+
 Lemma nsub_negtyp : forall V1 V2 A,
     A <n (fty_StackArg V1) -> isNegTyp V1 -> isNegTyp V2 -> A <n (fty_StackArg V2).
 Proof.
@@ -439,8 +579,63 @@ Proof.
 Qed.
 
 
-(*------------------------------ Lemma B.9 -----------------------------------*)
+(*------------------------------ Lemma B.3 -----------------------------------*)
 
+Lemma negtyp_sub_rcd_inv : forall Aneg l A,
+    isNegTyp Aneg -> Aneg <: (t_rcd l A) -> False.
+Proof with convert2asub; try eassumption; elia.
+  introv Neg Sub.
+  indTypSize (size_typ Aneg + size_typ A).
+  lets [Hi|(?&?&Hi)]: ordi_or_split A... now eauto.
+  - gen l A. inverts Neg; intros; convert2asub; solve_false.
+    + forwards [?|?]: algo_sub_andlr_inv Sub; [eauto | eauto |.. ].
+      applys IH A...  applys IH B...
+    + cut (A <:: t_rcd l A0). cut (B <:: t_rcd l A0).
+      * intros. applys IH...
+      * applys algo_trans Sub. eauto.
+      * applys algo_trans Sub. eauto.
+  - forwards (?&?): algo_sub_and_inv Sub.
+    now eauto.
+    applys IH Neg...
+Qed.
+
+(* B.3 (1) *)
+Lemma valtyp_sub_rcd_inv : forall V l A,
+    isValTyp V -> V <: (t_rcd l A) -> exists B, V = t_rcd l B.
+Proof.
+  introv Val Sub.
+  induction Val.
+  - convert2asub. auto_inv. eauto.
+  - false. applys* negtyp_sub_rcd_inv A0.
+Qed.
+
+(* B.3 (1) *)
+Lemma valtyp_sub_rcd_inv_2 : forall V l A,
+    isValTyp V -> V <: (t_rcd l A) -> exists B, V = t_rcd l B /\ B <p A.
+Proof.
+  introv Val Sub.
+  apply sub2psub in Sub.
+  applys~ psub_rcd_inv.
+  auto.
+Qed.
+
+(* B.3 (2) *)
+Lemma valtyp_sub_arrow_inv : forall V A B,
+    isValTyp V -> V <: (t_arrow A B) -> isNegTyp V.
+Proof.
+  introv Val Sub.
+  induction~ Val; intros.
+  - convert2asub; solve_false.
+Qed.
+
+(* B.3 (3) *)
+Lemma valtyp_sub_forall_inv : forall V A,
+    isValTyp V -> V <: (t_forall A) -> isNegTyp V.
+Proof.
+  introv Val Sub.
+  induction~ Val; intros.
+  - convert2asub; solve_false.
+Qed.
 
 
 (******************************************************************************)
@@ -471,6 +666,13 @@ Lemma distinguishability_negtyp : forall A B,
 Proof.
   introv H. induction* H.
 Abort. (* It does not hold for records *)
+
+Lemma distinguishability_forall_false: forall A B,
+    Distinguishability (t_forall A) (t_forall B) -> False.
+  introv H. inductions H; inverts_all_spl; solve_false.
+Qed.
+
+#[export] Hint Immediate distinguishability_forall_false : FalseHd.
 
 Lemma distinguishability_spl_inv : forall A B,
     Distinguishability A B ->
@@ -853,6 +1055,7 @@ Proof with try reflexivity; elia; auto.
     applys DistUnionSym; try eassumption.
 Qed.
 
+(* B.11 *)
 Lemma distinguishability_downward : forall A B B',
     Distinguishability A B -> B' <: B -> Distinguishability A B'.
 Proof with try reflexivity; elia; auto.
@@ -1075,6 +1278,30 @@ Proof.
     + inverts_typ. applys* Sim_Neg.
     + inverts_typ. applys* Sim_Neg.
     + applys* Sim_Neg.
+Qed.
+
+Lemma sim_no_distinguishability : forall A B,
+    sim A B -> Distinguishability A B -> False.
+Proof with auto_lc; inverts_all_spl; solve_false.
+  introv Sim Dis.
+  induction Sim; intros.
+  - induction Dis; try inverts_typ...
+    + inverts H1...
+  - forwards* : distinguishability_rcd_inv Dis.
+Qed.
+
+Lemma sim_psub : forall A B,
+    sim A B -> A <p B.
+Proof.
+  introv H.
+  induction* H.
+Qed.
+
+Lemma sim_psub_2 : forall A B,
+    sim A B -> B <p A.
+Proof.
+  introv H.
+  induction* H.
 Qed.
 
 Lemma sub_neg_l_inv : forall A B,

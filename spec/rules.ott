@@ -301,7 +301,7 @@ ValTyp :: '' ::=
   defn
   val V
   :: :: isValTyp :: VTyp
-  {{ com Negative Types }}
+  {{ com Value Types }}
   by
   
   val V
@@ -1118,9 +1118,9 @@ Mergeability :: '' ::=
   {{ tex \judgmerg{[[A]]}{[[B]]} }}
   by
   
-  |- A >< B
-  --------------------- :: MergeIn
-  |- In l A >< In l B
+  % |- A >< B
+  % --------------------- :: MergeIn
+  % |- In l A >< In l B
 
   |- A <> B
   ----------------------- :: MergeFunL
@@ -1139,17 +1139,31 @@ Mergeability :: '' ::=
   ---------------- :: MergeIntersect
   |- A & A' >< B
 
+  |- B >< A
+  |- B >< A'
+  ---------------- :: MergeIntersectSym
+  |- B >< A & A'
+  
   |- A  >< B
-  |- A'  >< B
+  |- A' >< B
   ---------------- :: MergeUnion
   |- A | A' >< B
-
+  
   |- B >< A
-  ----------- :: MergeSym
-  |- A >< B
+  |- B >< A'
+  ---------------- :: MergeUnionSym
+  |- B >< A | A'
+
+  % |- B >< A
+  % ----------- :: MergeSym
+  % |- A >< B
   
   |-ax A >< B
   ----------- :: MergeAx
+  |- A >< B
+  
+  |-ax B >< A
+  ----------- :: MergeAxSym
   |- A >< B
 
 defns
@@ -1213,8 +1227,8 @@ Similarity :: '' ::=
   ----------------------- :: In
   In l V1 ~ In l V2
 
-  ----------------------- :: Fun
-  A->B1 ~ A->B2
+  % ----------------------- :: Fun
+  % A->B1 ~ A->B2
 
-  ----------------------- :: forall
-  forall X.A ~ forall X.B
+  % ----------------------- :: forall
+  % forall X.A ~ forall X.B

@@ -3,12 +3,6 @@ Require Import Coq.micromega.Lia.
 Require Import LN_Lemmas.
 Require Export SimpleSub.
 
-Ltac auto_lc := try match goal with
-                    | |- lc_typ _ => eauto
-                    end.
-
-Section B13.
-
   Lemma distinguishability_top_neg_false : forall Aneg,
     Distinguishability Aneg t_top -> isNegTyp Aneg -> False.
   Proof with solve_false; eauto 3.
@@ -73,142 +67,8 @@ Section B13.
   (*   - inverts Dis; inverts Sub... *)
   (*   - inverts Dis. ; inverts Sub. inverts_all_distinguishability.  eauto.;try inverts_typ; solve_false]. *)
 
-  Lemma psub_andl_inv : forall A B C,
-      A & B <p C -> A <p C /\ B <p C.
-  Proof.
-    introv H.
-    inductions H; inverts_typ; auto_lc; split~.
-    all: try forwards: IHPositiveSubtyping; try reflexivity; destruct_conj.
-    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
-    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
-    - applys* PSub_UnionL.
-    - applys* PSub_UnionL.
-    - applys* PSub_UnionR.
-    - applys* PSub_UnionR.
-    - applys* PSub_Intersect.
-    - applys* PSub_Intersect.
-  Qed.
 
-  Lemma psub_orl_inv : forall A B C,
-      A | B <p C -> A <p C /\ B <p C.
-  Proof.
-    introv H.
-    inductions H; inverts_typ; auto_lc; split~.
-    all: try forwards: IHPositiveSubtyping; try reflexivity; destruct_conj.
-    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
-    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
-    - applys* PSub_UnionL.
-    - applys* PSub_UnionL.
-    - applys* PSub_UnionR.
-    - applys* PSub_UnionR.
-    - applys* PSub_Intersect.
-    - applys* PSub_Intersect.
-  Qed.
-
-  Lemma psub_forall_inv : forall A B C,
-      t_forall A <p C -> lc_typ (t_forall B) -> t_forall B <p C.
-  Proof.
-    introv H Lc.
-    inductions H; eauto.
-    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
-    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
-    all: auto_lc.
-    eauto.
-  Qed.
-
-  Lemma psub_arrow_inv : forall A B C D1 D2,
-      t_arrow A B <p C -> lc_typ (t_arrow D1 D2) -> t_arrow D1 D2 <p C.
-  Proof.
-    introv H Lc.
-    inductions H; eauto.
-    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
-    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
-    all: auto_lc.
-    eauto.
-  Qed.
-
-  Lemma psub_spli_l_inv : forall A A1 A2 C,
-      spli A A1 A2 -> isValTyp A -> A <p C -> A1 <p C /\ A2 <p C.
-  Proof.
-    introv Spl Val Sub.
-    indTypSize (size_typ A + size_typ C).
-    destruct A; intros; inverts_typ; solve_false.
-    - inverts Spl. inverts Sub.
-      + forwards: IH H4; try eassumption; elia; destruct_conj.
-        split; applys~ PSub_In.
-      + split*.
-      + forwards* (?&?): IH H1; elia.
-      + forwards* (?&?): IH H1; elia.
-      + forwards~ (?&?): IH H0; [eauto | ..]; elia.
-        forwards~ (?&?): IH H1; [eauto | ..]; elia.
-        split*.
-      + split*.
-    - inverts Spl. applys~ psub_andl_inv.
-    - apply psub_orl_inv in Sub. destruct_conj.
-      inverts Spl.
-      + split; applys* psub_unionR.
-      + split; applys* psub_unionL.
-    - inverts Spl; split; applys* psub_arrow_inv.
-    - inverts Spl; split; applys* psub_forall_inv.
-  Qed.
-
-  Lemma psub_splu_l_inv : forall A A1 A2 C,
-      splu A A1 A2 -> isValTyp A -> A <p C -> A1 <p C /\ A2 <p C.
-  Proof.
-    introv Spl Val Sub.
-    indTypSize (size_typ A + size_typ C).
-    destruct A; intros; inverts_typ; solve_false.
-    - inverts Spl. inverts Sub.
-      + forwards: IH H4; try eassumption; elia; destruct_conj.
-        split; applys~ PSub_In.
-      + split*.
-      + forwards* (?&?): IH H1; elia.
-      + forwards* (?&?): IH H1; elia.
-      + forwards~ (?&?): IH H0; [eauto | ..]; elia.
-        forwards~ (?&?): IH H1; [eauto | ..]; elia.
-        split*.
-      + split*.
-    - apply psub_andl_inv in Sub. destruct_conj.
-      inverts Spl.
-      + forwards: IH; [ | eassumption | ..]; try eassumption; elia. now eauto.
-        destruct_conj. split; applys* psub_spli_left.
-      + forwards: IH; [ | eassumption | ..]; try eassumption; elia. now eauto.
-        destruct_conj. split; applys* psub_spli_left.
-    - inverts Spl. applys~ psub_orl_inv.
-    - inverts Spl; split; applys* psub_forall_inv.
-  Qed.
-
-  Ltac inverts_all_psub :=
-    repeat lazymatch goal with
-      | Sub : _ & _ <p _ |- _ =>
-          forwards (?&?): psub_andl_inv Sub; clear Sub
-      | Sub : _ | _ <p _ |- _ =>
-          forwards (?&?): psub_orl_inv Sub; clear Sub
-      | Sub : _ <p _ & _ |- _ =>
-          forwards (?&?): psub_and_inv Sub; clear Sub
-      | Sub : _ <p (t_rcd _ _) |- _ =>
-          forwards (?&?&?): psub_rcd_inv Sub; clear Sub
-      | Sub : _ <p ?B, Hspl: spli ?B _ _ |- _ =>
-          forwards (?&?): psub_spli_inv Hspl Sub; clear Sub
-      | Sub : t_forall _ <p _ |- _ =>
-          lets: psub_forall_inv Sub; clear Sub
-      | Sub : ?A <p _, Hspl: splu ?A _ _ |- _ =>
-          forwards (?&?): psub_splu_l_inv Hspl Sub; clear Sub
-      | Sub : ?A <p _, Hspl: spli ?A _ _ |- _ =>
-          forwards (?&?): psub_spli_l_inv Hspl Sub; clear Sub
-      | Sub : _ <p ?B, Hspl: splu ?B _ _ |- _ =>
-          forwards [?|?]: psub_splu_inv Hspl Sub; clear Sub
-      | Sub : _ <p _ | _ |- _ =>
-          forwards [?|?]: psub_or_inv Sub; clear Sub
-      end;
-    try lazymatch goal with |- isValTyp _ => eauto 2 end.
-
-  Lemma valtyp_bot_false :  isValTyp t_bot -> False.
-  Proof. introv H. inverts H. inverts H0. Qed.
-
-  (* #[export] *)
-    Hint Immediate valtyp_bot_false : FalseHd.
-
+  (* B. 13 *)
   Lemma distinguishability_valtyp_not_psub : forall V U,
     Distinguishability V U -> isValTyp V -> isValTyp U -> V <p U -> False.
   Proof with try eassumption; elia.
@@ -276,18 +136,52 @@ Section B13.
       all: applys IH; [ | | | eassumption | ..]...
 Qed.
 
-End B13.
-  (****************************************************************************)
-(* B.14 If apply(A, V) => C and V'/V => ok and apply(A, V')=>C' then C <: C' *)
-Lemma apply_valtyp_psub : forall (A V C V' C' : typ),
-    isValTyp V -> isValTyp V' -> ApplyTy A V C -> V' <p V -> ApplyTy A V' C' -> C <: C'.
+
+Lemma dispatch : forall (A1 A2 B B' C1 C2' : typ),
+    Mergeability A1 A2 -> ordu B -> ordu B' ->
+    ApplyTy A1 B C1 -> NApplyTy A1 B' -> ApplyTy A2 B' C2' ->
+    Distinguishability B B'.
 Proof with elia; solve_false.
-  introv Val1 Val2 App1 PSub App2.
+  (* introv Val1 Val2 App1 PSub App2. *)
+  (* indTypSize (size_typ V + size_typ V' + size_typ A). *)
+  (* lets~ [Hu|(?&?&Hu)]: ordu_or_split V'. *)
+  (* lets~ [Hu'|(?&?&Hu')]: ordu_or_split V. *)
+Admitted.
+
+Lemma dispatch_gen : forall (A1 A2 B B' C1 C2' : typ),
+    Mergeability A1 A2 ->
+    ApplyTy A1 B C1 -> NApplyTy A1 B' -> ApplyTy A2 B' C2' ->
+    NApplyTy A2 B -> (* this premise is not on the paper def *)
+    Distinguishability B B'.
+Proof with elia; solve_false.
+  (* introv Val1 Val2 App1 PSub App2. *)
+  (* indTypSize (size_typ V + size_typ V' + size_typ A). *)
+  (* lets~ [Hu|(?&?&Hu)]: ordu_or_split V'. *)
+  (* lets~ [Hu'|(?&?&Hu')]: ordu_or_split V. *)
+Admitted.
+
+Notation "A >><< B"        := (Mergeability A B)
+                                (at level 65, B at next level, no associativity) : type_scope.
+Lemma mergeability_symm : forall A B,
+    Mergeability A B -> Mergeability B A.
+Proof.
+  introv H. induction~ H. all: eauto.
+Admitted.
+
+#[export] Hint Immediate mergeability_symm : core.
+
+(****************************************************************************)
+(* B.14 If apply(A, V) => C and V'/V => ok and apply(A, V')=>C' then C <: C' *)
+Lemma applyty_valtyp_psub : forall (A V C V' C' : typ),
+    TypeWF nil A -> isValTyp V -> isValTyp V' ->
+    V' <p V -> ApplyTy A V C -> ApplyTy A V' C' -> C <: C'.
+Proof with elia; solve_false.
+  introv WF Val1 Val2 PSub App1 App2.
   indTypSize (size_typ V + size_typ V' + size_typ A).
   lets~ [Hu|(?&?&Hu)]: ordu_or_split V'.
   lets~ [Hu'|(?&?&Hu')]: ordu_or_split V.
   - (* V and V' ordu *)
-    inverts App1... (* analysis the form of A *)
+    inverts App1; inverts WF... (* analysis the form of A *)
     + (* bot *) eauto.
     + (* arrow *) inverts~ App2...
     + (* union *) inverts~ App2...
@@ -300,21 +194,40 @@ Proof with elia; solve_false.
                  H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ =>
                  forwards~: IH H1 H2; elia; clear H1
                end.
-      * admit.
-     (* The key case? *)
-     (*   Hu : ordu V' *)
-     (*   Hu': ordu V  *)
-     (* PSub : V' <p V *)
-     (*   H0 : ApplyTy A1 V C *)
-     (*   H1 : NApplyTy A2 V *)
-     (*   H5 : NApplyTy A1 V' *)
-     (*   H8 : ApplyTy A2 V' C' *)
-     (*   ============================ *)
-     (*   C <: C' *)
-     * repeat match goal with
-                H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ =>
-                      forwards~: IH H1 H2; elia; clear H1
-              end. admit.
+      * false.
+        forwards: dispatch A1 A2 V V'; try eassumption.
+        forwards~ : distinguishability_valtyp_not_psub V' V.
+
+      (* The key case? *)
+      (*   Hu : ordu V' *)
+      (*   Hu': ordu V  *)
+      (* PSub : V' <p V *)
+      (*   H0 : ApplyTy A1 V C *)
+      (*   H1 : NApplyTy A2 V *)
+      (*   H5 : NApplyTy A1 V' *)
+      (*   H8 : ApplyTy A2 V' C' *)
+      (*   ============================ *)
+      (*   C <: C' *)
+
+        (* inverts H7; solve_false. (* mergeability *) *)
+        (* ** admit. *)
+        (* ** (* arrow input diff *) *)
+        (*   forwards (SubA & (SubC1 & SubC2)): applyty_arrow_sound_2 H0. (* B.5 (2) *) *)
+        (*   forwards (SubB & (SubC3 & SubC4)): applyty_arrow_sound_2 H11. (* B.5 (2) *) *)
+        (* ** (* arrow return diff *) *)
+        (*   forwards (SubA & (SubC1 & SubC2)): applyty_arrow_sound_2 H0. (* B.5 (2) *) *)
+        (*   forwards (SubB & (SubC3 & SubC4)): applyty_arrow_sound_2 H11. (* B.5 (2) *) *)
+        (*   forwards SubB : applyty_soundness_1 H11. *)
+        (*   forwards~ : applyty_completeness_1 (t_arrow A B) C B... *)
+        (* inverts PSub; solve_false; inverts_typ. *)
+     *  false.
+        forwards~: dispatch A2 A1 V' V; try eassumption.
+        forwards~ : distinguishability_valtyp_not_psub V' V.
+        (* this case require dispatch to be defined as paper *)
+        (* repeat match goal with *)
+        (*         H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ => *)
+        (*               forwards~: IH H1 H2; elia; clear H1 *)
+        (*       end. *)
        (* Similar case *)
        (* Hu : ordu V' *)
        (* Hu' : ordu V *)
@@ -324,8 +237,28 @@ Proof with elia; solve_false.
        (* H8 : ApplyTy A2 V' A2' *)
        (* ============================ *)
        (* C <: A1' & A2' *)
-    + (* intersection again *) admit.
-    + (* intersection again *) admit.
+    + (* intersection again *) inverts~ App2...
+      2: repeat match goal with
+                 H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ =>
+                 forwards~: IH H1 H2; elia; clear H1
+               end.
+      * false.
+        forwards: dispatch A1 A2 V' V; try eassumption.
+        forwards~ : distinguishability_valtyp_not_psub V' V.
+      * false.
+        forwards~ : dispatch A1 A2 V' V; try eassumption.
+        forwards~ : distinguishability_valtyp_not_psub V' V.
+    + (* intersection again *) inverts~ App2...
+      3: repeat match goal with
+                 H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ =>
+                 forwards~: IH H1 H2; elia; clear H1
+               end.
+      * false.
+        forwards~: dispatch A2 A1 V V'; try eassumption.
+        forwards~ : distinguishability_valtyp_not_psub V' V.
+      * false.
+        forwards~ : dispatch A1 A2 V V'; try eassumption.
+        forwards~ : distinguishability_valtyp_not_psub V' V.
   - forwards HS1: psub_trans PSub.
     applys~ psub_splu_valtyp_left Hu'.
     forwards HS2: psub_trans PSub.
@@ -340,40 +273,57 @@ Proof with elia; solve_false.
     forwards: IH HS1; try eassumption. now eauto. now elia.
     forwards: IH HS2; try eassumption. now eauto. now elia.
     eauto.
-Admitted.
-
-Lemma distinguishability_forall_false: forall A B,
-    t_forall A <<>> t_forall B -> False.
-  introv H. inductions H; inverts_all_spl; solve_false.
 Qed.
 
-#[export] Hint Immediate distinguishability_forall_false : FalseHd.
+Lemma iso_subst_sub : forall A B C,
+    A <: B -> A ~= C -> C <: B.
+Proof.
+  introv H1 (H2&H3). convert2asub. applys algo_trans; try eassumption.
+Qed.
 
+(* B.15 *)
+Lemma applyty_andl_sub : forall (A1 A2 B B1 B2 : typ) (V:Fty),
+    TypeWF nil (A1&A2) -> isValFty V ->
+    ApplyTy (A1&A2) V B -> ApplyTy A1 V B1 -> ApplyTy A2 V B2 -> B1&B2 <: B.
+Proof with try eassumption; elia; destruct_conj; subst.
+  introv WF Val AppA App1 App2.
+    indTypFtySize (size_typ A1 + size_typ A2 + size_Fty V).
+    lets~ [Hu|(?&?&Hu)]: ordu_or_split_Fty V... now eauto.
+  - inverts AppA; solve_false.
+    forwards: applyty_unique App1...
+    forwards: applyty_unique App2...
+    convert2asub. match_and; eauto.
+  - assert (HS: similar x0 x1). {
+      inverts Val. unfold similar; exists; split; eassumption.
+    }
+    apply sim2similar in HS.
+    forwards HS1: sim_psub HS. forwards HS2: sim_psub_2 HS.
+    forwards (?&?) : applyty_splitu_arg_inv App1...
+    forwards (?&?) : applyty_splitu_arg_inv App2...
+    forwards (?&?) : applyty_splitu_arg_inv AppA...
+    forwards: IH (fty_StackArg x0) A1 A2... now eauto.
+    forwards: IH (fty_StackArg x1) A1 A2... now eauto.
+    inverts WF.
+    forwards: applyty_valtyp_psub A2 HS1... 1-2: eauto.
+    (* forwards: applyty_valtyp_psub A2 HS2... 1-2: eauto. *)
+    forwards: applyty_valtyp_psub A1 HS1... 1-2: eauto.
+    (* forwards: applyty_valtyp_psub A1 HS2... 1-2: eauto. *)
+    applys DSub_Trans ((x2 | x2) & (x4 | x4)).
+    applys DSub_Trans.
+    applys DSub_CovInterL. now eauto.
+    applys DSub_CovUnionR... now eauto.
+    applys DSub_CovInterR. now eauto.
+    applys DSub_CovUnionR... now eauto.
+    applys DSub_Trans (x2 & x4).
+    all: convert2asub.
+    2: use_left_r; easy.
+    split_l; swap_and_l. all: auto_lc.
+    all: split_l; swap_and_l. all: auto_lc.
+    all: eauto.
+Qed.
+
+(******************************************************************************)
 (* Two types are sim iff they are splu from a value type *)
-Lemma sim_no_distinguishability : forall A B,
-    sim A B -> Distinguishability A B -> False.
-Proof with auto_lc; inverts_all_spl; solve_false.
-  introv Sim Dis.
-  induction Sim; intros.
-  - induction Dis; try inverts_typ...
-    + inverts H1...
-  - forwards* : distinguishability_rcd_inv Dis.
-  - inverts Dis...
-  - inverts Dis...
-Qed.
-
-Lemma dispatch_gen : forall (A1 A2 B B' C1 C2' : typ),
-    Mergeability A1 A2 ->
-    ApplyTy A1 B C1 -> NApplyTy A1 B' -> ApplyTy A2 B' C2' ->
-    NApplyTy A2 B -> (* this premise is not on the paper def *)
-    Distinguishability B B'.
-Proof with elia; solve_false.
-  (* introv Val1 Val2 App1 PSub App2. *)
-  (* indTypSize (size_typ V + size_typ V' + size_typ A). *)
-  (* lets~ [Hu|(?&?&Hu)]: ordu_or_split V'. *)
-  (* lets~ [Hu'|(?&?&Hu')]: ordu_or_split V. *)
-Admitted.
-
 (* This is equivalent to the dispatch lemma w/o ordu constraints *)
 Lemma applyty_merge_sim : forall A A' B B' x1 x2,
     Mergeability A A' -> sim B B' ->

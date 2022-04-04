@@ -1696,6 +1696,33 @@ Qed.
    | H: algo_sub (t_rcd _ _) (t_tvar_f _) |- _ => applys sub_inv_9 H
                             end : FalseHd.
 
+Lemma sub_inv_10 : forall A B D l,
+    algo_sub (t_arrow B D) (t_rcd l A) -> False.
+Proof.
+  introv H.
+  indTypSize (size_typ (t_rcd l A) + size_typ (t_arrow B D)).
+  inverts H; solve_false.
+  all: inverts H0; applys IH; try eassumption; elia.
+Qed.
+Lemma sub_inv_11 : forall A B l,
+    algo_sub (t_forall B) (t_rcd l A) -> False.
+Proof.
+  introv H.
+  indTypSize (size_typ (t_rcd l A) + size_typ (t_forall B)).
+  inverts H; solve_false.
+  all: inverts H0; applys IH; try eassumption; elia.
+Qed.
+
+Lemma sub_inv_12 : forall l A,
+    algo_sub t_top (t_rcd l A) -> False.
+Proof.
+  introv H. indTypSize (size_typ (t_rcd l A)).
+  inverts H; solve_false.
+  all: inverts H0; applys IH; try eassumption; elia.
+Qed.
+
+#[export] Hint Immediate sub_inv_10 sub_inv_11 sub_inv_12 : FalseHd.
+
 (******** nondeterministic split & alternative subtyping definition *******)
 
 Lemma new_splu_decrease_size: forall A B C,

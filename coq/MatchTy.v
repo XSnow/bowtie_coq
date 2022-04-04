@@ -102,6 +102,7 @@ Qed.
 
 #[export] Hint Immediate nmatchty_spli_1 nmatchty_spli_2 : core.
 
+(* B.9 *)
 Lemma matchty_spli : forall l A B B' C C',
     spli A B C -> MatchTy l B B' -> MatchTy l C C' ->
     exists A', MatchTy l A A' /\ (B' & C') <: A'.
@@ -204,6 +205,7 @@ Proof with try eassumption; eauto.
        convert2asub. use_right_r... }
 Qed.
 
+(* B.10 *)
 (*  match l [ (Box_l A) & (B1->B2) ] | (Box_l C) => C *)
 (*  match l [ (Box_l A) | (Box_l C) ] & [ (B1->B2) | (Box_l C) ] => (A|C) & C *)
 Lemma monotonicity_matchty : forall l A A' B,

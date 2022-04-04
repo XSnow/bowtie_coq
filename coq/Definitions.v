@@ -852,9 +852,6 @@ Inductive MergeabilityAx : typ -> typ -> Prop :=    (* defn MergeabilityAx *)
 
 (* defns Mergeability *)
 Inductive Mergeability : typ -> typ -> Prop :=    (* defn Mergeability *)
- | MergeIn : forall (l5:l) (A B:typ),
-     Mergeability A B ->
-     Mergeability (t_rcd l5 A) (t_rcd l5 B)
  | MergeFunL : forall (A A' B B':typ),
      lc_typ A' ->
      lc_typ B' ->
@@ -871,15 +868,23 @@ Inductive Mergeability : typ -> typ -> Prop :=    (* defn Mergeability *)
      Mergeability A B ->
      Mergeability A' B ->
      Mergeability (t_and A A') B
+ | MergeIntersectSym : forall (B A A':typ),
+     Mergeability B A ->
+     Mergeability B A' ->
+     Mergeability B (t_and A A')
  | MergeUnion : forall (A A' B:typ),
      Mergeability A B ->
      Mergeability A' B ->
      Mergeability (t_or A A') B
- | MergeSym : forall (A B:typ),
+ | MergeUnionSym : forall (B A A':typ),
      Mergeability B A ->
-     Mergeability A B
+     Mergeability B A' ->
+     Mergeability B (t_or A A')
  | MergeAx : forall (A B:typ),
      MergeabilityAx A B ->
+     Mergeability A B
+ | MergeAxSym : forall (A B:typ),
+     MergeabilityAx B A ->
      Mergeability A B.
 
 (* defns TypeWellformedness *)
@@ -919,16 +924,7 @@ Inductive sim : typ -> typ -> Prop :=    (* defn sim *)
      sim A B
  | Sim_In : forall (l5:l) (V1 V2:typ),
      sim V1 V2 ->
-     sim (t_rcd l5 V1) (t_rcd l5 V2)
- | Sim_Fun : forall (A B1 B2:typ),
-     lc_typ B1 ->
-     lc_typ A ->
-     lc_typ B2 ->
-     sim (t_arrow A B1) (t_arrow A B2)
- | Sim_forall : forall (A B:typ),
-     lc_typ (t_forall A) ->
-     lc_typ (t_forall B) ->
-     sim (t_forall A) (t_forall B).
+     sim (t_rcd l5 V1) (t_rcd l5 V2).
 
 
 (** infrastructure *)

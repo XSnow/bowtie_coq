@@ -339,6 +339,7 @@ Proof with elia; solve_false; try eassumption.
    Unshelve. all: apply t_top.
 Qed.
 
+(* B.7 *)
 Lemma napplyty_splitu_fun : forall A A1 A2 F,
     NApplyTy A1 F \/ NApplyTy A2 F -> splu A A1 A2 -> NApplyTy A F.
 Proof.
@@ -362,6 +363,7 @@ Proof.
   - forwards~: napplyty_rename C H0.
 Qed.
 
+(* B.6 (1) *)
 Lemma applyty_soundness_1 : forall A B C,
     ApplyTy A (fty_StackArg B) C -> A <: (t_arrow B C).
 Proof with try eassumption; try applys ASub_refl; try match goal with |- lc_typ _ => eauto with lngen end.
@@ -388,6 +390,7 @@ Proof with try eassumption; try applys ASub_refl; try match goal with |- lc_typ 
   - convert2asub. split_r; eauto.
 Qed.
 
+(* B.6 (2) *)
 Lemma applyty_soundness_2 : forall A B C,
     ApplyTy A (fty_StackTyArg B) C ->
     exists C',  C = C'^-^B /\
@@ -534,7 +537,7 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
      Unshelve. all: apply empty.
 Qed.
 
-
+(* B.8 (1) *)
 Lemma monotonicity_applyty_1 : forall A A' F C,
     ApplyTy A F C -> A' <: A -> exists C', C' <: C /\ ApplyTy A' F C'.
 Proof with try eassumption; elia; solve_false; destruct_conj.
@@ -567,6 +570,7 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
     all: eauto.
 Qed.
 
+(* B.8 (2) *)
 Lemma monotonicity_applyty_2_1 : forall A B B' C,
     ApplyTy A (fty_StackArg B) C -> declarative_subtyping B' B ->
     exists C', declarative_subtyping C' C /\ ApplyTy A (fty_StackArg B') C'.
