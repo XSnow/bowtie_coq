@@ -11,25 +11,29 @@ Notation "[| A |]"        := (fty_StackTyArg A)
                                (at level 5) : type_scope.
 
 Ltac inverts_neg_false :=
-  try match goal with
-  | H: isNegTyp (_ & _) |- _ => inverts H
-  | H: isNegTyp (_ | _) |- _ => inverts H
-  end;
   match goal with
-  | H: isNegTyp (t_rcd _ _) |- _ => inverts H
-  | H: isNegTyp t_bot |- _ => inverts H
-  end; fail.
+  | H: isNegTyp _ |- _ => inverts H; fail
+  end.
 
 #[export]
 Hint Extern 0 => inverts_neg_false : FalseHd.
 
 #[export]
+Hint Extern 1 => lazymatch goal with
+                 | H: isNegTyp (_ & _) |- _ => inverts H
+                 | H: isNegTyp (_ | _) |- _ => inverts H
+                 end : FalseHd.
+
+#[export]
  Hint Extern 1 =>
-   match goal with
+  lazymatch goal with
   | H1: isValTyp (_ & _) |- _ => inverts H1
   | H1: isValTyp (_ | _) |- _ => inverts H1
-  | H1: isValTyp _ |- _ => inverts H1
-   end; inverts_neg_false : FalseHd.
+  | H1: isValTyp (t_rcd _ _) |- _ => inverts H1
+  | H1: isValTyp t_bot |- _ => inverts H1
+  | H1: isValTyp (t_tvar_b _) |- _ => inverts H1
+  | H1: isValTyp (t_tvar_f _) |- _ => inverts H1
+   end : FalseHd.
 
 #[export]
 Hint Extern 0 =>
@@ -107,22 +111,34 @@ Proof.
   - forwards* (?&?): negtyp_splu_inv H.
 Qed.
 
+Lemma valtyp_rcd_inv : forall l V,
+    isValTyp(t_rcd l V) -> isValTyp V.
+Proof.
+  introv H. inverts~ H. inverts H0.
+Qed.
+
 Ltac inverts_typ :=
-  try match goal with
-  | H1: isValFty (fty_StackArg (_ & _)) |- _ => inverts H1
-  | H1: isValFty (fty_StackArg (_ | _)) |- _ => inverts H1
-  | H1: isValTyp (_ & _) |- _ => inverts H1
-  | H1: isValTyp (_ | _) |- _ => inverts H1
-  | H1: isValTyp (t_rcd _ _) |- _ => inverts H1
-  | H1: isValTyp ?A, H2: spli ?A _ _ |- _ => forwards (?&?): valtyp_spli_inv H1 H2
-  | H1: isValTyp ?A, H2: splu ?A _ _ |- _ => forwards (?&?): valtyp_splu_inv H1 H2
-  end;
-  try match goal with
-  | H1: isNegTyp (_ & _) |- _ => forwards (?&?): negtyp_spli_inv H1; [applys SpI_and | ]; clear H1
-  | H1: isNegTyp (_ | _) |- _ => forwards (?&?): negtyp_splu_inv H1; [applys SpU_or | ]; clear H1
-  | H1: isNegTyp ?A, H2: spli ?A _ _ |- _ => forwards (?&?): negtyp_spli_inv H1 H2
-  | H1: isNegTyp ?A, H2: splu ?A _ _ |- _ => forwards (?&?): negtyp_splu_inv H1 H2
-  end.
+  try
+    lazymatch goal with
+    | H1:isValFty (fty_StackArg (_ & _)) |- _ => inverts H1
+    | H1:isValFty (fty_StackArg (_ | _)) |- _ => inverts H1
+    | H1:isValTyp (_ & _) |- _ => inverts H1
+    | H1:isValTyp (_ | _) |- _ => inverts H1
+    | H1:isValTyp (t_rcd _ _) |- _ => apply valtyp_rcd_inv in H1
+    | H1:isValTyp ?A, H2:spli ?A _ _ |- _ => forwards (?, ?) : valtyp_spli_inv H1 H2
+    | H1:isValTyp ?A, H2:splu ?A _ _ |- _ => forwards (?, ?) : valtyp_splu_inv H1 H2
+    end;
+  try
+    lazymatch goal with
+    | H1:isNegTyp t_bot |- _ => inverts H1
+    | H1:isNegTyp (t_rcd _ _) |- _ => inverts H1
+    | H1:isNegTyp (_ & _) |- _ => inverts H1
+    (* |- _ => forwards (?, ?) : negtyp_spli_inv H1; [ applys SpI_and |  ]; clear H1 *)
+    | H1:isNegTyp (_ | _) |- _ => inverts H1
+    (* |- _ => forwards (?, ?) : negtyp_splu_inv H1; [ applys SpU_or |  ]; clear H1 *)
+    | H1:isNegTyp ?A, H2:spli ?A _ _ |- _ => forwards (?, ?) : negtyp_spli_inv H1 H2
+    | H1:isNegTyp ?A, H2:splu ?A _ _ |- _ => forwards (?, ?) : negtyp_splu_inv H1 H2
+    end.
 
 #[export] Hint Extern 1 (isValTyp _) => inverts_typ : core.
 
@@ -197,7 +213,7 @@ Proof with solve_false.
   all: solve_false.
 Qed.
 
-#[export]  Hint Extern 1 => match goal with
+#[export] Hint Extern 1 => lazymatch goal with
                             | H1: ApplyTy ?T _ _, H2: NApplyTy ?T _  |- _ =>
                               applys applyty_contradication H1 H2
                             end : FalseHd.
@@ -217,7 +233,7 @@ Qed.
 Ltac auto_unify_2 :=
   auto_unify; (* unify split *)
   (* unify applyty *)
-  repeat match goal with
+  repeat lazymatch goal with
          | [ H1: ApplyTy ?A ?B _ , H2: ApplyTy ?A ?B _ |- _ ] =>
            (forwards : applyty_unique H1 H2;
             subst; clear H2)

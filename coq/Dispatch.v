@@ -13,7 +13,6 @@ Section B13.
     Distinguishability Aneg t_top -> isNegTyp Aneg -> False.
   Proof with solve_false; eauto 3.
     introv Dis Neg.
-    Print inverts_typ.
     inductions Dis; inverts_typ; auto_lc;
       try forwards(?&?): distinguishability_lc Dis;
       try forwards(?&?): distinguishability_lc Dis1;
@@ -23,6 +22,31 @@ Section B13.
   Qed.
 
   Hint Immediate distinguishability_top_neg_false : FalseHd.
+
+  Lemma distinguishability_top_rcd_false : forall l A,
+    Distinguishability (t_rcd l A) t_top -> False.
+  Proof with solve_false; eauto 3.
+    introv Dis.
+    inductions Dis; inverts_all_spl.
+    - inverts H...
+    - forwards* : IHDis1.
+    - inverts H.
+  Qed.
+
+  Hint Immediate distinguishability_top_rcd_false : FalseHd.
+
+  Lemma distinguishability_top_val_false : forall V,
+    Distinguishability V t_top -> isValTyp V -> False.
+  Proof with solve_false; eauto 3.
+    introv Dis Val.
+    inductions Dis; inverts_typ; auto_lc;
+      try forwards(?&?): distinguishability_lc Dis;
+      try forwards(?&?): distinguishability_lc Dis1;
+      try forwards(?&?): distinguishability_lc Dis2...
+    inverts H...
+  Qed.
+
+  Hint Immediate distinguishability_top_val_false : FalseHd.
 
   Lemma distinguishability_negtyp_not_apply : forall V U,
       Distinguishability V U -> isNegTyp V -> isNegTyp U -> V <p U -> False.
@@ -49,34 +73,208 @@ Section B13.
   (*   - inverts Dis; inverts Sub... *)
   (*   - inverts Dis. ; inverts Sub. inverts_all_distinguishability.  eauto.;try inverts_typ; solve_false]. *)
 
-  (* Lemma distinguishability_valtyp_not_apply : forall V U, *)
-  (*   Distinguishability V U -> isValTyp V -> isValTyp U -> V <p U -> False. *)
-  (* Proof with try inverts_typ; solve_false. *)
-  (*   introv Dis Val1 Val2 Sub. *)
-  (*   induction Sub... *)
-  (*   - forwards* : distinguishability_rcd_inv Dis. *)
-  (*   - inverts Dis... *)
-  (*     + inverts H0... *)
-  (*   - inverts_all_distinguishability. eauto. *)
-  (*   - inverts_all_distinguishability. eauto. *)
-  (*   - (* the inv lemma has preconditions *) *)
-  (* Restart. *)
-  (* Proof with try inverts_typ; solve_false. *)
-  (* introv Dis Val1 Val2 Sub. *)
-  (* gen U. induction Val1; intros; induction Val2; intros. *)
-  (*   all: try solve [inverts Dis; try inverts_typ; solve_false]. *)
-  (*   - (* rcd *) inverts Dis. *)
-  (*     + inverts Sub... *)
-  (*     + inverts Sub... *)
-  (*     + inverts H. inverts Sub... *)
-  (*   - inverts Dis; inverts Sub... *)
-  (*     applys IHVal1.dd *)
+  Lemma psub_andl_inv : forall A B C,
+      A & B <p C -> A <p C /\ B <p C.
+  Proof.
+    introv H.
+    inductions H; inverts_typ; auto_lc; split~.
+    all: try forwards: IHPositiveSubtyping; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
+    - applys* PSub_UnionL.
+    - applys* PSub_UnionL.
+    - applys* PSub_UnionR.
+    - applys* PSub_UnionR.
+    - applys* PSub_Intersect.
+    - applys* PSub_Intersect.
+  Qed.
 
-  (*       * applys* IHVal1 V0. *)
-  (*       * forwards* : distinguishability_rcd_inv H0. *)
-  (* all: try solve [inverts_all_distinguishability; eauto]. *)
-  (* try solve [inverts Sub]. *)
-  (* try solve [inverts Dis]. *)
+  Lemma psub_orl_inv : forall A B C,
+      A | B <p C -> A <p C /\ B <p C.
+  Proof.
+    introv H.
+    inductions H; inverts_typ; auto_lc; split~.
+    all: try forwards: IHPositiveSubtyping; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
+    - applys* PSub_UnionL.
+    - applys* PSub_UnionL.
+    - applys* PSub_UnionR.
+    - applys* PSub_UnionR.
+    - applys* PSub_Intersect.
+    - applys* PSub_Intersect.
+  Qed.
+
+  Lemma psub_forall_inv : forall A B C,
+      t_forall A <p C -> lc_typ (t_forall B) -> t_forall B <p C.
+  Proof.
+    introv H Lc.
+    inductions H; eauto.
+    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
+    all: auto_lc.
+    eauto.
+  Qed.
+
+  Lemma psub_arrow_inv : forall A B C D1 D2,
+      t_arrow A B <p C -> lc_typ (t_arrow D1 D2) -> t_arrow D1 D2 <p C.
+  Proof.
+    introv H Lc.
+    inductions H; eauto.
+    all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
+    all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
+    all: auto_lc.
+    eauto.
+  Qed.
+
+  Lemma psub_spli_l_inv : forall A A1 A2 C,
+      spli A A1 A2 -> isValTyp A -> A <p C -> A1 <p C /\ A2 <p C.
+  Proof.
+    introv Spl Val Sub.
+    indTypSize (size_typ A + size_typ C).
+    destruct A; intros; inverts_typ; solve_false.
+    - inverts Spl. inverts Sub.
+      + forwards: IH H4; try eassumption; elia; destruct_conj.
+        split; applys~ PSub_In.
+      + split*.
+      + forwards* (?&?): IH H1; elia.
+      + forwards* (?&?): IH H1; elia.
+      + forwards~ (?&?): IH H0; [eauto | ..]; elia.
+        forwards~ (?&?): IH H1; [eauto | ..]; elia.
+        split*.
+      + split*.
+    - inverts Spl. applys~ psub_andl_inv.
+    - apply psub_orl_inv in Sub. destruct_conj.
+      inverts Spl.
+      + split; applys* psub_unionR.
+      + split; applys* psub_unionL.
+    - inverts Spl; split; applys* psub_arrow_inv.
+    - inverts Spl; split; applys* psub_forall_inv.
+  Qed.
+
+  Lemma psub_splu_l_inv : forall A A1 A2 C,
+      splu A A1 A2 -> isValTyp A -> A <p C -> A1 <p C /\ A2 <p C.
+  Proof.
+    introv Spl Val Sub.
+    indTypSize (size_typ A + size_typ C).
+    destruct A; intros; inverts_typ; solve_false.
+    - inverts Spl. inverts Sub.
+      + forwards: IH H4; try eassumption; elia; destruct_conj.
+        split; applys~ PSub_In.
+      + split*.
+      + forwards* (?&?): IH H1; elia.
+      + forwards* (?&?): IH H1; elia.
+      + forwards~ (?&?): IH H0; [eauto | ..]; elia.
+        forwards~ (?&?): IH H1; [eauto | ..]; elia.
+        split*.
+      + split*.
+    - apply psub_andl_inv in Sub. destruct_conj.
+      inverts Spl.
+      + forwards: IH; [ | eassumption | ..]; try eassumption; elia. now eauto.
+        destruct_conj. split; applys* psub_spli_left.
+      + forwards: IH; [ | eassumption | ..]; try eassumption; elia. now eauto.
+        destruct_conj. split; applys* psub_spli_left.
+    - inverts Spl. applys~ psub_orl_inv.
+    - inverts Spl; split; applys* psub_forall_inv.
+  Qed.
+
+  Ltac inverts_all_psub :=
+    repeat lazymatch goal with
+      | Sub : _ & _ <p _ |- _ =>
+          forwards (?&?): psub_andl_inv Sub; clear Sub
+      | Sub : _ | _ <p _ |- _ =>
+          forwards (?&?): psub_orl_inv Sub; clear Sub
+      | Sub : _ <p _ & _ |- _ =>
+          forwards (?&?): psub_and_inv Sub; clear Sub
+      | Sub : _ <p (t_rcd _ _) |- _ =>
+          forwards (?&?&?): psub_rcd_inv Sub; clear Sub
+      | Sub : _ <p ?B, Hspl: spli ?B _ _ |- _ =>
+          forwards (?&?): psub_spli_inv Hspl Sub; clear Sub
+      | Sub : t_forall _ <p _ |- _ =>
+          lets: psub_forall_inv Sub; clear Sub
+      | Sub : ?A <p _, Hspl: splu ?A _ _ |- _ =>
+          forwards (?&?): psub_splu_l_inv Hspl Sub; clear Sub
+      | Sub : ?A <p _, Hspl: spli ?A _ _ |- _ =>
+          forwards (?&?): psub_spli_l_inv Hspl Sub; clear Sub
+      | Sub : _ <p ?B, Hspl: splu ?B _ _ |- _ =>
+          forwards [?|?]: psub_splu_inv Hspl Sub; clear Sub
+      | Sub : _ <p _ | _ |- _ =>
+          forwards [?|?]: psub_or_inv Sub; clear Sub
+      end;
+    try lazymatch goal with |- isValTyp _ => eauto 2 end.
+
+  Lemma valtyp_bot_false :  isValTyp t_bot -> False.
+  Proof. introv H. inverts H. inverts H0. Qed.
+
+  (* #[export] *)
+    Hint Immediate valtyp_bot_false : FalseHd.
+
+  Lemma distinguishability_valtyp_not_psub : forall V U,
+    Distinguishability V U -> isValTyp V -> isValTyp U -> V <p U -> False.
+  Proof with try eassumption; elia.
+    introv Dis Val1 Val2 Sub.
+    indTypSize (size_typ V + size_typ U).
+    (* forwards [?|(?&?&?)]: ordu_or_split V. now eauto. *)
+    forwards [?|(?&?&?)]: ordu_or_split U. now eauto.
+    forwards [?|(?&?&?)]: ordu_or_split V. now eauto.
+    - inverts Dis; solve_false.
+      + inverts H1; try solve [inverts Sub; solve_false].
+      + inverts Sub; inverts_typ; solve_false.
+        * applys* IH A B...
+      + inverts_typ. inverts_all_psub. applys* IH A U...
+      + inverts_typ. inverts_all_psub. applys* IH A' U...
+      + inverts_typ. inverts_all_psub. applys* IH V A...
+      + inverts_typ. inverts_all_psub. applys* IH V A'...
+    - inverts_all_distinguishability.
+      inverts_all_psub.
+      applys* IH x U. elia.
+
+      (* inverts H0. (* splu V *) *)
+      (* all: inverts_all_spl; inverts_typ; inverts_all_distinguishability; *)
+      (*   inverts_all_psub; auto_lc. *)
+      (* + applys IH; [ | | | eassumption | ..]... *)
+      (*   all: eauto. *)
+      (* + applys IH; [ | eassumption | ..]... *)
+      (*   all: eauto. *)
+      (* + applys IH B... *)
+      (*   all: eauto. *)
+      (* + applys IH; [ | eassumption | ..]... *)
+      (*   all: eauto. *)
+      (* + applys IH; [ | eassumption | ..]... *)
+      (*   all: eauto. *)
+      (* + assert (Hspl: splu (t_forall A) (t_forall A1) (t_forall A2)) by eauto. *)
+      (*   inverts_all_distinguishability. *)
+      (*   applys IH (t_forall A1)... *)
+      (*   all: eauto. *)
+      (* + (* rcd *) *)
+      (*   inverts Sub; solve_false. *)
+      (*   all: inverts_typ. *)
+      (*   * apply distinguishability_rcd_inv in Dis. *)
+      (*     applys IH; [ | eassumption | ..]... *)
+      (*   * assert (Hspl: splu (t_rcd l5 A) (t_rcd l5 A1) (t_rcd l5 A2)) by eauto. *)
+      (*     inverts_all_distinguishability. *)
+      (*     inverts_all_psub. *)
+      (*     applys IH H4... *)
+      (*     all: eauto. *)
+      (*   * assert (Hspl: splu (t_rcd l5 A) (t_rcd l5 A1) (t_rcd l5 A2)) by eauto. *)
+      (*     inverts_all_distinguishability. *)
+      (*   * applys* IH (t_rcd l5 A1) U. *)
+      (*   applys distinguishability_rcd_inv... *)
+      (* + inverts H0. *)
+      (* + *)
+      (*   inverts_typ... solve_false. *)
+      (* + inverts_typ. now eauto. now eauto. *)
+      (*   inverts_all_distinguishability. *)
+      (*   inverts Val1. *)
+      (*   * inverts Dis; solve_false. solve_false.inverts Dis. inverts H1. inverts Val2. inverts H2. ; solve_false. inverts_all_distinguishability. *)
+
+      (* + *)
+      (* (* try inverts_typ; solve_false. *) *)
+      (*  admit. *)
+    - inverts_typ. inverts_all_distinguishability.
+      forwards [?|?]: psub_splu_inv Sub...
+      all: applys IH; [ | | | eassumption | ..]...
+Qed.
 
 End B13.
   (****************************************************************************)

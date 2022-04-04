@@ -11,12 +11,12 @@ Notation "A <n B"        := (NegativeSubtyping A B)
 
 #[export]
 Hint Extern 0 =>
-match goal with
+lazymatch goal with
 | H : binds _ _ nil |- _ => inverts H; fail
 end : FalseHd.
 
 #[export]
- Hint Extern 1 => match goal with
+ Hint Extern 1 => lazymatch goal with
                  | H: DistinguishabilityAx _ _ |- _ => inverts~ H; fail
 end : FalseHd.
 
@@ -175,7 +175,6 @@ Proof.
   - inverts_psub Sub1; inverts_psub Sub2; subst; eauto.
     injection H; intros; subst. inverts_typ.
     forwards~: IHSpl x0.
-    solve_false.
 Qed.
 
 Lemma psub_spli_left : forall A A1 A2 B,
@@ -183,8 +182,8 @@ Lemma psub_spli_left : forall A A1 A2 B,
 Proof.
   introv Spl Val Sub. gen A A2.
   induction Sub; intros; eauto.
-  - (* rcd *) inverts~ Spl; solve_false.
-    inverts_typ; solve_false. constructor*.
+  - (* rcd *) inverts~ Spl; inverts_typ; solve_false.
+    constructor*.
 Qed.
 
 Lemma psub_spli_right : forall A A1 A2 B,
@@ -1076,7 +1075,6 @@ Proof.
     + inverts_typ. applys* Sim_Neg.
     + inverts_typ. applys* Sim_Neg.
     + applys* Sim_Neg.
-    + solve_false.
 Qed.
 
 Lemma sub_neg_l_inv : forall A B,
