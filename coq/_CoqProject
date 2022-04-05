@@ -6,5 +6,5 @@ DistSubtyping.v
 ApplyTy.v
 MatchTy.v
 SimpleSub.v
-Dispatch.v
 Distinguishability.v
+Dispatch.v

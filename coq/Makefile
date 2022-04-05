@@ -63,7 +63,7 @@ LN_Lemmas.v: $(OTT_LOC)/$(OTTFILE).ott
 	$(LNGEN) --coq LN_Lemmas.v --coq-ott Definitions $(OTT_LOC)/$(OTTFILE).ott
 
 $(COQMKFILENAME): Makefile Definitions.v
-	{ echo "-R . $(LIBNAME)" ; ls *.v ; } > _CoqProject && coq_makefile -arg '-w -variable-collision,-meta-collision,-require-in-module' -f _CoqProject -o $(COQMKFILENAME)
+	coq_makefile -arg '-w -variable-collision,-meta-collision,-require-in-module' -f _CoqProject -o $(COQMKFILENAME)
 
 
 clean:
