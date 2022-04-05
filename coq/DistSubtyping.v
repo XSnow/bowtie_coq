@@ -1684,7 +1684,7 @@ Proof.
   all: inverts H0; applys IH; try eassumption; elia.
 Qed.
 
-#[export] Hint Extern 1 => match goal with
+#[export] Hint Extern 1 False => lazymatch goal with
    | H: algo_sub (t_tvar_f _) (t_arrow _ _) |- _ => applys sub_inv_1 H
    | H: algo_sub (t_rcd _ _) (t_arrow _ _) |- _ => applys sub_inv_2 H
    | H: algo_sub t_top (t_arrow _ _) |- _ => applys sub_inv_3 H

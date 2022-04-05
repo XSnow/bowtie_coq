@@ -16,24 +16,26 @@ Ltac inverts_neg_false :=
   end.
 
 #[export]
-Hint Extern 0 => inverts_neg_false : FalseHd.
+Hint Extern 1 => inverts_neg_false : FalseHd.
 
 #[export]
-Hint Extern 1 => lazymatch goal with
+Hint Extern 2 => repeat lazymatch goal with
                  | H: isNegTyp (_ & _) |- _ => inverts H
                  | H: isNegTyp (_ | _) |- _ => inverts H
-                 end : FalseHd.
+                 end; inverts_neg_false : FalseHd.
 
 #[export]
- Hint Extern 1 =>
-  lazymatch goal with
+ Hint Extern 2 =>
+  repeat lazymatch goal with
   | H1: isValTyp (_ & _) |- _ => inverts H1
   | H1: isValTyp (_ | _) |- _ => inverts H1
   | H1: isValTyp (t_rcd _ _) |- _ => inverts H1
+   end;
+  try lazymatch goal with
   | H1: isValTyp t_bot |- _ => inverts H1
   | H1: isValTyp (t_tvar_b _) |- _ => inverts H1
   | H1: isValTyp (t_tvar_f _) |- _ => inverts H1
-   end : FalseHd.
+   end; inverts_neg_false : FalseHd.
 
 #[export]
 Hint Extern 0 =>
@@ -660,6 +662,12 @@ Definition iso A B := A <: B /\ B <: A.
 
 Notation "A ~= B"        := (iso A B)
                               (at level 65, B at next level, no associativity) : type_scope.
+
+Lemma iso_subst_sub : forall A B C,
+    A <: B -> A ~= C -> C <: B.
+Proof.
+  introv H1 (H2&H3). convert2asub. applys algo_trans; try eassumption.
+Qed.
 
 Lemma iso_lc : forall A B,
     A ~= B -> lc_typ A /\ lc_typ B.
