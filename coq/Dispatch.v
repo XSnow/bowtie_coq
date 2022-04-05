@@ -327,51 +327,99 @@ Proof with try eassumption; elia; destruct_conj; subst.
   lets~ [Hu'|(?&?&Hu')]: ordu_or_split B'. auto_lc.
   - applys dispatch...
   - Abort.
-(* forwards : applyty_splitu_arg_inv App2... *)
-(*     forwards [?|?]: napplyty_splitu_arg_inv Napp1... *)
-(*     forwards: IH Napp2 H... applys DistnionL. *)
-(* Admitted. *)
 
+
+(* Two types are sim iff they are splu from a value type *)
 Lemma sim_isvaltyp : forall A B,
     sim A B -> isValTyp A /\ isValTyp B.
 Proof.
   introv H. induction* H.
 Qed.
 
-(* Two types are sim iff they are splu from a value type *)
-(* This lemma is equivalent to dispatch_gen *)
-Lemma applyty_merge_sim : forall A A' B B' x1 x2,
-    TypeWF nil (A&A') -> (* implies Mergeability A A' *)
-    sim B B' -> ApplyTy A B x1 -> ApplyTy A' B' x2 ->
-    exists y, ApplyTy A' B y \/ ApplyTy A B' y.
-Proof with try eassumption.
-  introv WF HS HA1 HA2.
-  indTypSize (size_typ B + size_typ B').
-  forwards* [(?&?)|?]: applyty_total A B'.
-  forwards* [(?&?)|?]: applyty_total A' B.
-  false.
-  inverts WF.
-  forwards (?&?): sim_isvaltyp HS.
-  forwards Sub1: sim_psub HS...
-  forwards Sub2: sim_psub_2 HS...
-  forwards: applyty_valtyp_psub Sub1...
-  - inverts H1; inverts H2.
-    all: solve_false.
-
-  applys sim_no_distinguishability HS.
-  applys* dispatch HM.
+Lemma sim_split_1 : forall A B A1 A2,
+    sim A B -> splu A A1 A2 -> sim A1 A2.
+Proof.
+  introv H S. apply sim_isvaltyp in H.
+  applys sim2similar.
+  unfolds. exists*.
 Qed.
 
+Lemma sim_split_2 : forall A B A1 A2,
+    sim A B -> splu A A1 A2 -> sim A1 B.
+Proof.
+  introv H S. gen A1 A2.
+  induction H; intros.
+  - inverts_typ. eauto.
+  - inverts* S.
+Qed.
+
+Lemma sim_split_3 : forall A B A1 A2,
+    sim A B -> splu A A1 A2 -> sim A2 B.
+Proof.
+  introv H S. gen A1 A2.
+  induction H; intros.
+  - inverts_typ. eauto.
+  - inverts* S.
+Qed.
+
+Lemma sim_split_4 : forall A B A1 A2,
+    sim B A -> splu A A1 A2 -> sim B A1.
+Proof.
+  introv H S. gen A1 A2.
+  induction H; intros.
+  - inverts_typ. eauto.
+  - inverts* S.
+Qed.
+
+Lemma sim_split_5 : forall A B A1 A2,
+    sim B A -> splu A A1 A2 -> sim B A2.
+Proof.
+  introv H S. gen A1 A2.
+  induction H; intros.
+  - inverts_typ. eauto.
+  - inverts* S.
+Qed.
+
+#[local] Hint Immediate sim_split_1 sim_split_2 sim_split_3 sim_split_4 sim_split_5 : core.
+
+(* This lemma is equivalent to dispatch_gen *)
+Lemma applyty_and_sim_inv : forall A A' B B' x1 x2,
+    TypeWF nil (A&A') ->
+    sim B B' -> ApplyTy A B x1 -> ApplyTy A' B' x2 ->
+    NApplyTy A B' -> NApplyTy A' B -> False.
+Proof with auto_lc; elia; try eassumption; destruct_conj; subst.
+  introv WF HS App1 App2 Napp1 Napp2.
+  indTypSize (size_typ B + size_typ B').
+  lets~ [Hu|(?&?&Hu)]: ordu_or_split B. auto_lc.
+  lets~ [Hu'|(?&?&Hu')]: ordu_or_split B'. auto_lc.
+  - applys sim_no_distinguishability HS. applys dispatch...
+    inverts~ WF.
+  - forwards : applyty_splitu_arg_inv App2...
+    forwards [(?&?)|Napp11]: applyty_total A x... now eauto.
+    forwards [(?&?)|Napp12]: applyty_total A x0... now eauto.
+    * applys* applyty_contradication A B'.
+    * applys IH A A' B x0... eauto.
+    * applys IH A A' B x... eauto.
+  - forwards : applyty_splitu_arg_inv App1...
+    forwards [(?&?)|Napp11]: applyty_total A' x... now eauto.
+    forwards [(?&?)|Napp12]: applyty_total A' x0... now eauto.
+    * applys* applyty_contradication A' B.
+    * applys IH A A' x0 B'... eauto.
+    * applys IH A A' x B'... eauto.
+Qed.
+
+
 Lemma lemma_for_B16 : forall A A' V B1 B2 x1 x2,
-    Mergeability A A' -> isValTyp V
+    TypeWF nil (A&A') -> isValTyp V
     -> splu V B1 B2 -> ApplyTy A B1 x1 -> ApplyTy A' B2 x2 ->
     exists y, ApplyTy A' B1 y \/ ApplyTy A B2 y.
 Proof.
-  intros. applys~ applyty_merge_sim.
-  - applys sim2similar.
-    unfold similar. exists*.
-  - eauto.
-  - eauto.
+  intros.
+  forwards* [(?&?)|Napp1]: applyty_total A B2.
+  forwards* [(?&?)|Napp2]: applyty_total A' B1.
+  false. applys* applyty_and_sim_inv A A' B1 B2.
+  applys sim2similar.
+  unfold similar. exists*.
 Qed.
 
 (* B.16 Inversion of Abstract Application to Value Types *)
@@ -403,139 +451,3 @@ Proof with destruct_conj; try subst; try solve [exists*].
   introv HA.
   inverts HA; solve_false...
 Qed.
-
-(******************************************************************************)
-(******************************************************************************)
-(* Lemma B.12 *)
-Lemma dispatch_ord : forall A1 A2 B B' C1 C2',
-    ordu B -> ordu B' -> Mergeability A1 A2 ->
-    ApplyTy A1 B C1 -> NApplyTy A1 B' -> ApplyTy A2 B' C2' ->
-    Distinguishability B B'.
-Proof.
-(*  introv Ord1 Ord2 Meg App1 Napp1 App2. gen B B' C1 C2'.
-  induction Meg; intros.
-
-all: try solve [inverts Napp1; inverts App1; inverts App2; solve_false]. *)
-(*   - (* arrow *) *)
-(*     inverts App1; inverts Napp1; inverts App2. *)
-Abort.
-(* A <> B *)
-(* C1 <: A *)
-(* C2 <: B *)
-(* ~ C2 <: A *)
-(* splu C1 =/> *)
-(* splu C2 =/> *)
-(* ----------- *)
-(* C1 <> C2 *)
-(*****************************************************************************)
-
-  (*     match goal with *)
-  (*     | H1: declarative_subtyping ?B _, H2: declarative_subtyping _  _ |- _ => idtac end. *)
-  (*         false; apply H3; applys DSub_Trans H2 H1 *)
-  (* end. *)
-  (* , H2: declarative_subtyping _ ?B , *)
-  (*       H3: ~ (declarative_subtyping ?C ?A)| *)
-
-Lemma applyty_iso : forall A B1 C1 B2 C2,
-    ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2
-    -> C1 ~= C2.
-Proof with elia.
-  introv HHA1 HHA2.
-  indTypSize (size_typ A + size_typ B1 + size_typ B2).
-  inverts keep HHA1; inverts keep HHA2; auto.
-  all: repeat match goal with
-              | H: ApplyTy _ _ ?A |- _ ~= ?A|?B => forwards~ : IH HHA1 H; elia; clear H
-              | H: ApplyTy _ _ ?B |- _ ~= ?A|?B => forwards~ : IH HHA1 H; elia; clear H
-              | H: ApplyTy _ _ ?A |- ?A|?B ~= _ => forwards~ : IH H HHA2; elia; clear H
-              | H: ApplyTy _ _ ?B |- ?A|?B ~= _ => forwards~ : IH H HHA2; elia; clear H
-              end.
-  all: clear HHA1 HHA2.
-  all: repeat match goal with
-              | H1: ApplyTy _ _ ?A1, H2: ApplyTy _ _ ?B1 |- ?A1|?A2 ~= ?B1|?B2 =>
-                forwards~ : IH H1 H2; elia; clear H1 H2
-              | H1: ApplyTy _ _ ?A2, H2: ApplyTy _ _ ?B2 |- ?A1|?A2 ~= ?B1|?B2 =>
-                forwards~ : IH H1 H2; elia; clear H1 H2
-              | H1: ApplyTy _ _ ?A, H2: ApplyTy _ _ ?B |- ?A ~= ?B =>
-                forwards~ : IH H1 H2; elia; clear H1 H2
-              end.
-Abort. (*
-  [ (Forall X.B) -> C1 ]  & [ (A->B) -> C2 ]
-                                       (Forall X.B) | (A->B)
-        *)
-
-Lemma splu_twice : forall A B C B1 B2,
-    splu A B C -> splu B B1 B2 -> exists A1 A2, splu A1 B1 C /\ splu A2 B2 C /\
-                                                size_typ A1 < size_typ A /\
-                                                size_typ A2 < size_typ A.
-Proof with try splits; elia; auto.
-  introv Spl1 Spl2.
-  indTypSize (size_typ A).
-  inverts Spl1.
-  (* - exists (B1 | C) (B2 | C)... *)
-  (* - inverts Spl2. *)
-  (*   + forwards (T1&T2&?): IH H0 H6... destruct_conj. *)
-  (*     exists (T1&B0) (T2&B0)... *)
-    + (* A0 & B0 where splitu A0 = A1|A2 and A1 is ordu *)
-Abort. (* counter example exists *)
-
-
-Lemma dispatch_neg : forall A B1 B2 C1 C2,
-    TypeWF nil A -> isNegTyp B1 -> isNegTyp B2 ->
-    ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2 -> C1 ~= C2.
-Proof.
-  intros A B1 B2 C1 C2 Tw Neg1 Neg2 App1 App2. gen B1 B2 C1 C2.
-  inductions Tw; intros; solve_false.
-  all: try solve [forwards HF: applyty_soundness_1 App1; convert2asub; solve_false].
-  - inverts App1; inverts App2.
-Abort.
-(******************************************************************************)
-    (* if B1 and B2 are ordinary it can be easier to prove *)
-(*
-  indTypSize (size_typ B1).
-  forwards* [?|(?&?&?)]: ordu_or_split A.
-
-  - inverts Spl.
-  - inverts Spl. inductions Tw; solve_false.
-
-Lemma dispatch_neg : forall A B B1 B2 C1 C2,
-    TypeWF nil A -> isNegTyp B -> splu B B1 B2 ->
-    ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2 -> C1 ~= C2.
-Proof.
-  introv Tw Neg Spl App1 App2.
-  induction Neg.
-  - inverts Spl.
-  - inverts Spl.
-  - inverts Spl. inductions Tw; solve_false.
-    all: try solve [forwards HF: applyty_soundness_1 App1; convert2asub; solve_false].
-
-
-
-Lemma dispatch_alt : forall A B B1 B2 C1 C2,
-    TypeWF nil A -> isValTyp B -> splu B B1 B2 ->
-    ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2 -> C1 ~= C2.
-Proof.
-  introv Tw Val Spl App1 App2.
-  induction Tw.
-  - inverts App1.
-
-Definition isAtomic B := forall A B1 B2 C1 C2, TypeWF nil A -> splu B B1 B2 ->
-   ApplyTy A (fty_StackArg B1) C1 -> ApplyTy A (fty_StackArg B2) C2 -> C1 ~= C2.
-
-Lemma dispatch : forall A, isValTyp A -> isAtomic A.
-Proof.
-  introv Val.
-  indTypSize (size_typ A).
-  forwards* [?|(?&?&?)]: ordu_or_split A.
-  - unfolds. intros. solve_false.
-  - inverts_typ.
-    forwards Val1: IH H0; elia. forwards Val2: IH H1; elia.
-    unfolds; intros.
-    lets App1: H4. lets App2: H5. clear H5 H4.
-    forwards Lc: applyty_lc_1 App1.
-    induction Lc.
-    inverts keep App1; inverts keep App2; auto.
--    + admit.
--    +
--  inverts Val.
--  induction Val.
-*)
