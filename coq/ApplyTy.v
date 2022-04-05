@@ -186,6 +186,15 @@ Ltac solve_lc_by_regularity A :=
 #[export] Hint Extern 1 (lc_typ (?A -^ _) ) => progress solve_lc_by_regularity A : core.
  *)
 
+Lemma napplyty_bot : forall A,
+    NApplyTy t_bot A -> False.
+Proof.
+  introv App. inductions App.
+  all: eauto.
+Qed.
+
+#[export] Hint Immediate napplyty_bot : core.
+
 Lemma napplyty_splitu_arg_inv : forall A B B1 B2,
     NApplyTy A (fty_StackArg B) -> splu B B1 B2 ->
     NApplyTy A (fty_StackArg B1) \/ NApplyTy A (fty_StackArg B2).
@@ -539,6 +548,34 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
      Unshelve. all: apply empty.
 Qed.
 
+Lemma napplyty_sub_inv : forall (A B C : typ),
+    NApplyTy (t_arrow A B) C -> C <: A -> False.
+Proof.
+  introv HA Sub.
+  indTypSize (size_typ C).
+  lets~ [Hu|(?&?&Hu)]: ordu_or_split C...
+  - forwards~ : applyty_completeness_1 (t_arrow A B) C B.
+    applys~ DSub_FunCon. forwards* : napplyty_lc_1 HA.
+    destruct_conj.
+    solve_false.
+  - forwards [?|?]: napplyty_splitu_arg_inv HA Hu.
+    + cut (x <: A).
+      * intros Sub'. applys IH H Sub'. elia.
+      * applys DSub_Trans Sub. convert2asub. eauto.
+    + cut (x0 <: A).
+      * intros Sub'. applys IH H Sub'. elia.
+      * applys DSub_Trans Sub. convert2asub. eauto.
+Qed.
+
+Lemma applyty_forall_inv : forall (A B C : typ),
+    ApplyTy (t_forall A) B C -> False.
+Proof.
+  introv HA. inductions HA. eauto.
+Qed.
+
+#[export] Hint Immediate napplyty_sub_inv applyty_forall_inv : FalseHd.
+
+(****************************************************************************)
 (* B.8 (1) *)
 Lemma monotonicity_applyty_1 : forall A A' F C,
     ApplyTy A F C -> A' <: A -> exists C', C' <: C /\ ApplyTy A' F C'.
@@ -636,13 +673,14 @@ Qed.
 
 (* B.3 (7) *)
 Lemma applyty_top : forall V A,
-    ApplyTy t_top V A -> isValFty V -> False.
+    ApplyTy t_top V A -> False.
 Proof.
-  introv App Val.
+  introv App.
   inductions App.
-  - inverts Val. inverts_typ.
-    forwards~ : IHApp1.
+  forwards~ : IHApp1.
 Qed.
+
+#[export] Hint Immediate applyty_top : FalseHd.
 
 (* B.3 (8) *)
 Lemma apply_box_false_1 : forall l V1 V2,

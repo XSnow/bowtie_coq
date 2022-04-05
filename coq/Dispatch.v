@@ -10,7 +10,7 @@ Require Export Distinguishability.
 Notation "A >><< B"        := (Mergeability A B)
                                 (at level 65, B at next level, no associativity) : type_scope.
 Lemma mergeability_symm : forall A B,
-    Mergeability A B -> Mergeability B A.
+    A >><< B -> B >><< A.
 Proof.
   introv H. induction~ H. all: eauto.
 Qed.
@@ -18,28 +18,82 @@ Qed.
 #[export] Hint Immediate mergeability_symm : core.
 
 
-Lemma dispatch : forall (A1 A2 B B' C1 C2' : typ),
-    Mergeability A1 A2 -> ordu B -> ordu B' ->
-    ApplyTy A1 B C1 -> NApplyTy A1 B' -> ApplyTy A2 B' C2' ->
-    Distinguishability B B'.
-Proof with elia; solve_false.
-  (* introv Val1 Val2 App1 PSub App2. *)
-  (* indTypSize (size_typ V + size_typ V' + size_typ A). *)
-  (* lets~ [Hu|(?&?&Hu)]: ordu_or_split V'. *)
-  (* lets~ [Hu'|(?&?&Hu')]: ordu_or_split V. *)
-Admitted.
+(****************************************************************************)
+Lemma distinguishability_downward_both : forall A A' B B',
+    Distinguishability A B -> A' <: A -> B' <: B -> Distinguishability A' B'.
+Proof.
+  introv Dis Sub1 Sub2.
+  applys distinguishability_downward.
+  applys DistSym. apply DistSym in Dis.
+  applys distinguishability_downward Dis.
+  all: eauto.
+Qed.
 
-Lemma dispatch_gen : forall (A1 A2 B B' C1 C2' : typ),
-    Mergeability A1 A2 ->
+#[export] Hint Immediate distinguishability_downward_both : core.
+
+
+Lemma lc_andl_inv : forall A B,
+    lc_typ (A&B) -> lc_typ A.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+Lemma lc_andr_inv : forall A B,
+    lc_typ (A&B) -> lc_typ B.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+Lemma lc_orl_inv : forall A B,
+    lc_typ (A|B) -> lc_typ A.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+Lemma lc_orr_inv : forall A B,
+    lc_typ (A|B) -> lc_typ B.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+#[export] Hint Resolve lc_andl_inv lc_andr_inv lc_orl_inv lc_orr_inv : core.
+
+(****************************************************************************)
+
+(* Lemma B.12 *)
+Lemma dispatch : forall A1 A2 B B' C1 C2',
+    ordu B -> ordu B' -> A1 >><< A2 ->
     ApplyTy A1 B C1 -> NApplyTy A1 B' -> ApplyTy A2 B' C2' ->
-    NApplyTy A2 B -> (* this premise is not on the paper def *)
     Distinguishability B B'.
-Proof with elia; solve_false.
-  (* introv Val1 Val2 App1 PSub App2. *)
-  (* indTypSize (size_typ V + size_typ V' + size_typ A). *)
-  (* lets~ [Hu|(?&?&Hu)]: ordu_or_split V'. *)
-  (* lets~ [Hu'|(?&?&Hu')]: ordu_or_split V. *)
-Admitted.
+Proof with try eassumption; destruct_conj; subst.
+ introv Ord1 Ord2 Meg App1 Napp1 App2. gen B B' C1 C2'.
+ induction Meg; intros.
+ - forwards: applyty_arrow_sound_2 App1...
+   forwards: applyty_arrow_sound_2 App2...
+   eauto.
+ - forwards (?&(?&?)): applyty_arrow_sound_2 App2...
+   false. applys~ napplyty_sub_inv Napp1.
+ - solve_false.
+ - forwards: napplyty_spliti_inv Napp1... now constructor*.
+   inverts App1; solve_false.
+   + forwards: IHMeg1 B0 B'...
+   + forwards: IHMeg2 B0 B'...
+   + forwards: IHMeg1 B0 B'...
+ - inverts App2; solve_false.
+   + forwards: IHMeg1 B0 B'...
+   + forwards: IHMeg2 B0 B'...
+   + forwards: IHMeg1 B0 B'...
+ - forwards : applyty_splitu_inv App1... now constructor*.
+   forwards [?|?]: napplyty_splitu_inv Napp1... now constructor*.
+   + forwards: IHMeg1 B0 B'...
+   + forwards: IHMeg2 B0 B'...
+ - forwards : applyty_splitu_inv App2... now constructor*.
+   forwards: IHMeg1 B0 B'...
+ - (* MergeabilityAx *)
+   inverts H; solve_false.
+ - (* MergeabilityAx *)
+   inverts H; solve_false.
+Qed.
 
 (****************************************************************************)
 (* B.14 If apply(A, V) => C and V'/V => ok and apply(A, V')=>C' then C <: C' *)
@@ -259,18 +313,53 @@ Proof with try eassumption; elia; destruct_conj; subst.
 Qed.
 
 (******************************************************************************)
+
+(* Dispatch lemma w/o ordu constraints *)
+Lemma dispatch_gen : forall (A1 A2 B B' C1 C2' : typ),
+    Mergeability A1 A2 ->
+    ApplyTy A1 B C1 -> NApplyTy A1 B' -> ApplyTy A2 B' C2' ->
+    NApplyTy A2 B -> (* this premise is not on the paper def *)
+    Distinguishability B B'.
+Proof with try eassumption; elia; destruct_conj; subst.
+  introv Meg App1 Napp1 App2 Napp2.
+  indTypSize (size_typ B + size_typ B').
+  lets~ [Hu|(?&?&Hu)]: ordu_or_split B. auto_lc.
+  lets~ [Hu'|(?&?&Hu')]: ordu_or_split B'. auto_lc.
+  - applys dispatch...
+  - Abort.
+(* forwards : applyty_splitu_arg_inv App2... *)
+(*     forwards [?|?]: napplyty_splitu_arg_inv Napp1... *)
+(*     forwards: IH Napp2 H... applys DistnionL. *)
+(* Admitted. *)
+
+Lemma sim_isvaltyp : forall A B,
+    sim A B -> isValTyp A /\ isValTyp B.
+Proof.
+  introv H. induction* H.
+Qed.
+
 (* Two types are sim iff they are splu from a value type *)
-(* This is equivalent to the dispatch lemma w/o ordu constraints *)
+(* This lemma is equivalent to dispatch_gen *)
 Lemma applyty_merge_sim : forall A A' B B' x1 x2,
-    Mergeability A A' -> sim B B' ->
-    ApplyTy A B x1 -> ApplyTy A' B' x2 ->
+    TypeWF nil (A&A') -> (* implies Mergeability A A' *)
+    sim B B' -> ApplyTy A B x1 -> ApplyTy A' B' x2 ->
     exists y, ApplyTy A' B y \/ ApplyTy A B' y.
-Proof with solve_false.
-  introv HM HS HA1 HA2.
+Proof with try eassumption.
+  introv WF HS HA1 HA2.
+  indTypSize (size_typ B + size_typ B').
   forwards* [(?&?)|?]: applyty_total A B'.
   forwards* [(?&?)|?]: applyty_total A' B.
-  false. applys sim_no_distinguishability HS.
-  applys* dispatch_gen HM.
+  false.
+  inverts WF.
+  forwards (?&?): sim_isvaltyp HS.
+  forwards Sub1: sim_psub HS...
+  forwards Sub2: sim_psub_2 HS...
+  forwards: applyty_valtyp_psub Sub1...
+  - inverts H1; inverts H2.
+    all: solve_false.
+
+  applys sim_no_distinguishability HS.
+  applys* dispatch HM.
 Qed.
 
 Lemma lemma_for_B16 : forall A A' V B1 B2 x1 x2,
@@ -315,6 +404,7 @@ Proof with destruct_conj; try subst; try solve [exists*].
   inverts HA; solve_false...
 Qed.
 
+(******************************************************************************)
 (******************************************************************************)
 (* Lemma B.12 *)
 Lemma dispatch_ord : forall A1 A2 B B' C1 C2',
