@@ -350,7 +350,7 @@ Proof with elia; solve_false; try eassumption.
    Unshelve. all: apply t_top.
 Qed.
 
-(* B.7 *)
+(* Lemma B.7 *)
 Lemma napplyty_splitu_fun : forall A A1 A2 F,
     NApplyTy A1 F \/ NApplyTy A2 F -> splu A A1 A2 -> NApplyTy A F.
 Proof.
@@ -373,6 +373,8 @@ Proof.
   - forwards~: napplyty_rename C H1.
   - forwards~: napplyty_rename C H0.
 Qed.
+
+(*------------------------------ Lemma B.6 -----------------------------------*)
 
 (* B.6 (1) *)
 Lemma applyty_soundness_1 : forall A B C,
@@ -575,7 +577,8 @@ Qed.
 
 #[export] Hint Immediate napplyty_sub_inv applyty_forall_inv : FalseHd.
 
-(****************************************************************************)
+(*------------------------------ Lemma B.8 -----------------------------------*)
+
 (* B.8 (1) *)
 Lemma monotonicity_applyty_1 : forall A A' F C,
     ApplyTy A F C -> A' <: A -> exists C', C' <: C /\ ApplyTy A' F C'.
@@ -611,8 +614,8 @@ Qed.
 
 (* B.8 (2) *)
 Lemma monotonicity_applyty_2_1 : forall A B B' C,
-    ApplyTy A (fty_StackArg B) C -> declarative_subtyping B' B ->
-    exists C', declarative_subtyping C' C /\ ApplyTy A (fty_StackArg B') C'.
+    ApplyTy A (fty_StackArg B) C -> B' <: B ->
+    exists C', C' <: C /\ ApplyTy A (fty_StackArg B') C'.
 Proof with try eassumption; elia; solve_false; destruct_conj.
   introv HA HS.
   indTypFtySize (size_typ A + size_typ B' + size_typ B).
@@ -634,7 +637,7 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
     exists (x1|x2). split~. applys~ ApplyTyUnionArg H.
 Qed.
 
-(*****************************************************************************)
+(*------------------------------ Lemma B.3 -----------------------------------*)
 
 (* B.3 (5) *)
 Lemma applyty_arrow : forall A1 A2 V B,
@@ -869,7 +872,7 @@ Qed.
 
 #[export] Hint Resolve new_splu_iso splu_iso : core.
 
-(*****************************************************************************)
+(*------------------------------ Lemma B.5 -----------------------------------*)
 
 (* B.5 (1) *)
 Lemma applyty_bot : forall B C,
@@ -1035,7 +1038,7 @@ Proof with eauto.
   introv Lc. induction* Lc.
 Qed.
 
-(*****************************************************************************)
+(*------------------------------ Lemma B.22 -----------------------------------*)
 
 (* B.22 (1) *)
 Lemma applyty_arrow_complete : forall A B C,

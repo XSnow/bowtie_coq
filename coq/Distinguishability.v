@@ -539,8 +539,7 @@ Proof with auto_lc; inverts_all_spl; solve_false.
 Qed.
 
 (******************************************************************************)
-(* B.13 *)
-
+(* Lemma B.13 *)
 Lemma distinguishability_valtyp_not_psub : forall V U,
     Distinguishability V U -> isValTyp V -> isValTyp U -> V <p U -> False.
 Proof with try eassumption; elia.
@@ -623,4 +622,25 @@ Proof with solve_false.
     forwards~ [?|?]: psub_splu_inv Hu SubA. clear SubA.
     applys IH H SubB; first_match; try eassumption; elia; eauto.
     applys IH H0 SubB; first_match; try eassumption; elia; eauto.
+Qed.
+
+(******************************************************************************)
+(* The alternative definition of distinguishability is equivalent *)
+
+Lemma distinguishability2Alt : forall A B,
+    Distinguishability A B <-> DistinguishabilityAlt A B.
+Proof.
+  split; introv H.
+  - induction~ H.
+    + applys DA_DistMono.
+      applys DA_DistUnion IHDistinguishability1 IHDistinguishability2.
+      applys~ dsub_or.
+    + applys DA_DistMonoSym.
+      applys DA_DistUnionSym IHDistinguishability1 IHDistinguishability2.
+      applys~ dsub_or.
+  - induction~ H.
+    + applys* DistUnion.
+    + applys* DistUnionSym.
+    + applys DistSym. applys* distinguishability_downward.
+    + applys* distinguishability_downward.
 Qed.

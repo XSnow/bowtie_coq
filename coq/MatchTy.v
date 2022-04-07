@@ -102,12 +102,10 @@ Qed.
 
 #[export] Hint Immediate nmatchty_spli_1 nmatchty_spli_2 : core.
 
-(* B.9 *)
+(* Lemma B.9 *)
 Lemma matchty_spli : forall l A B B' C C',
     spli A B C -> MatchTy l B B' -> MatchTy l C C' ->
     exists A', MatchTy l A A' /\ (B' & C') <: A'.
-(*    match l [ (Box_l A) & (B1->B2) ] | (Box_l C) => C *)
-(*  XXX  /\ (spli A' B' C' \/ (A' = B' /\ B' = C')) XXX *)
 Proof with destruct_conj; subst.
   introv Spl Mch1 Mch2. gen B' C'.
   induction Spl; intros; try solve [exists*]; solve_false.
@@ -163,24 +161,6 @@ Proof with try eassumption; eauto.
        convert2asub. use_right_l... }
 Qed.
 
-(* NOT PRECISE ENOUGH; CANNOT SOLVE THE CASE BY THIS LEMMA
-Lemma matchty_splu : forall l A A' B C,
-    splu A B C -> MatchTy l A A' ->
-    (exists B', MatchTy l B B' /\ B' <: A') \/
-    (exists C', MatchTy l C C' /\ C' <: A').
-Proof with try eassumption; eauto.
-  introv Spl Mat. gen A'.
-  induction Spl; intros; try solve [exists*]; solve_false; matchty_inv.
-  1,3: try solve [left; now exists*].
-  1: right; now exists*.
-  1-2: try forwards [?|?]: IHSpl; try eassumption; destruct_conj.
-  1,3: left; now exists*.
-  1,2: right; now exists*.
-  1: (* rcd *){
-       left; exists. split~.
-       convert2asub. use_left_r... }
-Qed. *)
-
 Lemma matchty_splu_1 : forall l A B B' C,
     splu A B C -> MatchTy l B B' ->
     exists A', MatchTy l A A' /\ B' <: A'.
@@ -205,7 +185,7 @@ Proof with try eassumption; eauto.
        convert2asub. use_right_r... }
 Qed.
 
-(* B.10 *)
+(* Lemma B.10 *)
 (*  match l [ (Box_l A) & (B1->B2) ] | (Box_l C) => C *)
 (*  match l [ (Box_l A) | (Box_l C) ] & [ (B1->B2) | (Box_l C) ] => (A|C) & C *)
 Lemma monotonicity_matchty : forall l A A' B,

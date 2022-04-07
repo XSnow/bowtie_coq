@@ -19,6 +19,8 @@ Qed.
 
 
 (****************************************************************************)
+
+(* Corollary of B.11 *)
 Lemma distinguishability_downward_both : forall A A' B B',
     Distinguishability A B -> A' <: A -> B' <: B -> Distinguishability A' B'.
 Proof.
@@ -122,46 +124,9 @@ Proof with elia; solve_false.
       * false.
         forwards: dispatch A1 A2 V V'; try eassumption.
         forwards~ : distinguishability_valtyp_not_psub V' V.
-
-      (* The key case? *)
-      (*   Hu : ordu V' *)
-      (*   Hu': ordu V  *)
-      (* PSub : V' <p V *)
-      (*   H0 : ApplyTy A1 V C *)
-      (*   H1 : NApplyTy A2 V *)
-      (*   H5 : NApplyTy A1 V' *)
-      (*   H8 : ApplyTy A2 V' C' *)
-      (*   ============================ *)
-      (*   C <: C' *)
-
-        (* inverts H7; solve_false. (* mergeability *) *)
-        (* ** admit. *)
-        (* ** (* arrow input diff *) *)
-        (*   forwards (SubA & (SubC1 & SubC2)): applyty_arrow_sound_2 H0. (* B.5 (2) *) *)
-        (*   forwards (SubB & (SubC3 & SubC4)): applyty_arrow_sound_2 H11. (* B.5 (2) *) *)
-        (* ** (* arrow return diff *) *)
-        (*   forwards (SubA & (SubC1 & SubC2)): applyty_arrow_sound_2 H0. (* B.5 (2) *) *)
-        (*   forwards (SubB & (SubC3 & SubC4)): applyty_arrow_sound_2 H11. (* B.5 (2) *) *)
-        (*   forwards SubB : applyty_soundness_1 H11. *)
-        (*   forwards~ : applyty_completeness_1 (t_arrow A B) C B... *)
-        (* inverts PSub; solve_false; inverts_typ. *)
      *  false.
         forwards~: dispatch A2 A1 V' V; try eassumption.
         forwards~ : distinguishability_valtyp_not_psub V' V.
-        (* this case require dispatch to be defined as paper *)
-        (* repeat match goal with *)
-        (*         H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ => *)
-        (*               forwards~: IH H1 H2; elia; clear H1 *)
-        (*       end. *)
-       (* Similar case *)
-       (* Hu : ordu V' *)
-       (* Hu' : ordu V *)
-       (* H0 : ApplyTy A1 V C *)
-       (* H1 : NApplyTy A2 V *)
-       (* H5 : ApplyTy A1 V' A1' *)
-       (* H8 : ApplyTy A2 V' A2' *)
-       (* ============================ *)
-       (* C <: A1' & A2' *)
     + (* intersection again *) inverts~ App2...
       2: repeat match goal with
                  H1: ApplyTy ?A _ _, H2: ApplyTy ?A _ _ |- _ =>
@@ -313,21 +278,6 @@ Proof with try eassumption; elia; destruct_conj; subst.
 Qed.
 
 (******************************************************************************)
-
-(* Dispatch lemma w/o ordu constraints *)
-Lemma dispatch_gen : forall (A1 A2 B B' C1 C2' : typ),
-    Mergeability A1 A2 ->
-    ApplyTy A1 B C1 -> NApplyTy A1 B' -> ApplyTy A2 B' C2' ->
-    NApplyTy A2 B -> (* this premise is not on the paper def *)
-    Distinguishability B B'.
-Proof with try eassumption; elia; destruct_conj; subst.
-  introv Meg App1 Napp1 App2 Napp2.
-  indTypSize (size_typ B + size_typ B').
-  lets~ [Hu|(?&?&Hu)]: ordu_or_split B. auto_lc.
-  lets~ [Hu'|(?&?&Hu')]: ordu_or_split B'. auto_lc.
-  - applys dispatch...
-  - Abort.
-
 
 (* Two types are sim iff they are splu from a value type *)
 Lemma sim_isvaltyp : forall A B,

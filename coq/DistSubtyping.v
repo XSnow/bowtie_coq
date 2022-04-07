@@ -1045,6 +1045,8 @@ end.
 #[local] Hint Extern 1 (algo_sub _ _) => solve_algo_sub : core.
 
 (* algorithm correctness *)
+
+(* Lemma B.4 (1) *)
 Lemma algo_sub_rcd_inv : forall l1 l2 A B,
     algo_sub (t_rcd l1 A) (t_rcd l2 B) -> l1=l2 /\ algo_sub A B.
 Proof.
@@ -1057,40 +1059,6 @@ Proof.
   all: eauto.
 Qed.
 
-(* no need
-Lemma algo_sub_forall_inv : forall A B X,
-    algo_sub (t_forall A) (t_forall B) ->
-    (exists L, X `notin` L -> algo_sub (A -^ X) (B -^ X)).
-Proof.
-  introv H.
-  indTypSize (size_typ (A -^ X) + size_typ (B -^ X)).
-  inverts H; inverts_all_spl; inverts_all_ord; try assumption;
-    repeat match goal with
-           | H: algo_sub (t_forall _) (t_forall _) |- _ => forwards(?&?): IH H; elia; clear H
-           end.
-  1: exists*.
-  all: pick_fresh Y;
-    match type of Fr with
-      _ `notin` ?U => exists U; intros Fry; instantiate_cofinites_with X; eauto
-    end.
-  Unshelve. apply empty.
-Qed.
-
-Lemma algo_sub_forall_inv_2 : forall A B,
-    algo_sub (t_forall A) (t_forall B) ->
-    (exists L, forall X, X `notin` L -> algo_sub (A -^ X) (B -^ X)).
-Proof with (try eassumption; eauto).
-  intros.
-  indTypSize (size_typ A + size_typ B).
-  inverts H; inverts_all_spl; inverts_all_lc; try assumption;
-    repeat match goal with
-           | H: algo_sub (t_forall _) (t_forall _) |- _ => forwards(?&?): IH H; elia; clear H
-           end.
-  1: exists*.
-  all: pick_fresh Y; assert (algo_sub (A -^ Y) (B -^ Y)); instantiate_cofinites_with Y...
-  Unshelve. all: applys empty.
-Qed.
-*)
 Lemma algo_sub_forall_inv : forall A B X,
     algo_sub (t_forall A) (t_forall B) -> algo_sub (A -^ X) (B -^ X).
 Proof with (try eassumption).
@@ -1218,6 +1186,7 @@ Proof with (solve_false; auto_unify; try eassumption; elia; eauto 3).
     Unshelve. all: apply empty.
 Qed.
 
+(* Lemma B.4 (2) *)
 Lemma algo_sub_and_inv : forall A B B1 B2,
     algo_sub A B -> spli B B1 B2 -> algo_sub A B1 /\ algo_sub A B2.
 Proof with (try eassumption).
