@@ -401,7 +401,3 @@ Proof with destruct_conj; try subst; try solve [exists*].
   introv HA.
   inverts HA; solve_false...
 Qed.
-
-(* new lemma *)
-Lemma sub_inv_distinguishabe_union : forall A B1 B2,
-    isValTyp A -> A <: B1 | B2 -> B1 <<>> B2 -> A <: B1 \/ A <: B2.

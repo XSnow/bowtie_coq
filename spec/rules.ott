@@ -284,11 +284,8 @@ NegTyp :: '' ::=
   neg A & B
 
   neg A
-  ------------------ :: UnionL
-  neg A | B
-
   neg B
-  ------------------ :: UnionR
+  ------------------ :: Union
   neg A | B
 
   ------------------ :: Top
@@ -369,9 +366,9 @@ PSub :: '' ::=
   ---------------- :: In
   In l V <p In l A 
 
-  % val V
-  % -------- :: Top
-  % V <p Top
+  val V
+  -------- :: Top
+  V <p Top
 
   val V
   V <p A
@@ -1247,7 +1244,6 @@ TypeWellformedness :: '' ::=
 
   D |- A1
   D |- A2
-  |- A1 <> A2
   ------------ :: TyWfUnion
   D |- A1 | A2
 
@@ -1276,13 +1272,10 @@ Similarity :: '' ::=
   by
 
   neg A
-  ----------------------- :: NegL
+  neg B
+  ----------------------- :: Neg
   A ~ B
 
-  neg B
-  ----------------------- :: NegR
-  A ~ B
-  
   V1 ~ V2
   ----------------------- :: In
   In l V1 ~ In l V2
