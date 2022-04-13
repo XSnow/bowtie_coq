@@ -10,6 +10,9 @@ Coercion typ_as_ftyp : typ >-> Fty.
 Notation "[| A |]"        := (fty_StackTyArg A)
                                (at level 5) : type_scope.
 
+#[export]
+  Hint Extern 1 => match goal with H: _ = _ |- _ => inverts H; fail end : FalseHd.
+
 Ltac inverts_neg_false :=
   match goal with
   | H: isNegTyp _ |- _ => inverts H; fail
@@ -97,20 +100,32 @@ Proof.
 Qed.
 
 Lemma negtyp_splu_inv : forall A A1 A2,
-    isNegTyp A -> splu A A1 A2 -> isNegTyp A1 /\ isNegTyp A2.
+    isNegTyp A -> splu A A1 A2 -> isNegTyp A1 \/ isNegTyp A2.
 Proof.
   introv Val Spl.
-  induction Spl; inverts~ Val; split*.
-  all: try forwards* (?&?): IHSpl.
+  induction Spl; inverts~ Val; eauto.
+  all: try forwards* [?|?]: IHSpl.
 Qed.
 
-Lemma valtyp_splu_inv : forall A A1 A2,
-    isValTyp A -> splu A A1 A2 -> isValTyp A1 /\ isValTyp A2.
+Lemma valtyp_splu_inv_aux : forall A A1 A2,
+    isValTyp A -> splu A A1 A2 -> isValTyp A1 \/ isValTyp A2.
 Proof.
   introv Val Spl. gen A1 A2.
   induction Val; intros.
   - inverts Spl. forwards* : IHVal.
-  - forwards* (?&?): negtyp_splu_inv H.
+  - forwards* [?|?]: negtyp_splu_inv H.
+Qed.
+
+Lemma valtyp_splu_inv : forall A A1 A2,
+    isValTyp A -> splu A A1 A2 -> isNegTyp A1 \/ isNegTyp A2 \/
+    (exists l B B1 B2, splu B B1 B2 /\ A = t_rcd l B /\ A1 = t_rcd l B1 /\ A2 = t_rcd l B2 /\ (isValTyp A1 \/ isValTyp A2)).
+Proof.
+  introv Val Spl. gen A1 A2.
+  inverts Val; intros.
+  - inverts Spl. right. right. forwards~ [?|?]: valtyp_splu_inv_aux H4.
+    all: exists; splits.
+    all: eauto.
+  - forwards* [?|?]: negtyp_splu_inv H.
 Qed.
 
 Lemma valtyp_rcd_inv : forall l V,
@@ -128,7 +143,7 @@ Ltac inverts_typ :=
     | H1:isValTyp (_ | _) |- _ => inverts H1
     | H1:isValTyp (t_rcd _ _) |- _ => apply valtyp_rcd_inv in H1
     | H1:isValTyp ?A, H2:spli ?A _ _ |- _ => forwards (?, ?) : valtyp_spli_inv H1 H2
-    | H1:isValTyp ?A, H2:splu ?A _ _ |- _ => forwards (?, ?) : valtyp_splu_inv H1 H2
+    | H1:isValTyp ?A, H2:splu ?A _ _ |- _ => forwards [?| [?|(?&(?&(?&(?&?))))] ] : valtyp_splu_inv H1 H2; destruct_conj; subst
     end;
   try
     lazymatch goal with
@@ -139,7 +154,7 @@ Ltac inverts_typ :=
     | H1:isNegTyp (_ | _) |- _ => inverts H1
     (* |- _ => forwards (?, ?) : negtyp_splu_inv H1; [ applys SpU_or |  ]; clear H1 *)
     | H1:isNegTyp ?A, H2:spli ?A _ _ |- _ => forwards (?, ?) : negtyp_spli_inv H1 H2
-    | H1:isNegTyp ?A, H2:splu ?A _ _ |- _ => forwards (?, ?) : negtyp_splu_inv H1 H2
+    | H1:isNegTyp ?A, H2:splu ?A _ _ |- _ => forwards [?|?] : negtyp_splu_inv H1 H2
     end.
 
 #[export] Hint Extern 1 (isValTyp _) => inverts_typ : core.
@@ -658,7 +673,9 @@ Proof.
   - inverts* Val.
   - exfalso.
     inverts Val. inverts_typ.
-    forwards~ (?&?): IHApp1. solve_false.
+    + forwards~ (?&?): IHApp1. solve_false.
+    + forwards~ (?&?): IHApp2. solve_false.
+    + solve_false.
 Qed.
 
 (* B.3 (7) *)

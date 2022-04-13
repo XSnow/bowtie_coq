@@ -270,8 +270,12 @@ Inductive isNegTyp : typ -> Prop :=    (* defn isNegTyp *)
      isNegTyp A ->
      isNegTyp B ->
      isNegTyp (t_and A B)
- | NTypUnion : forall (A B:typ),
+ | NTypUnionL : forall (A B:typ),
+     lc_typ B ->
      isNegTyp A ->
+     isNegTyp (t_or A B)
+ | NTypUnionR : forall (A B:typ),
+     lc_typ A ->
      isNegTyp B ->
      isNegTyp (t_or A B)
  | NTypTop : 
@@ -301,9 +305,6 @@ Inductive PositiveSubtyping : typ -> typ -> Prop :=    (* defn PositiveSubtyping
      isValTyp V ->
      PositiveSubtyping V A ->
      PositiveSubtyping (t_rcd l5 V) (t_rcd l5 A)
- | PSub_Top : forall (V:typ),
-     isValTyp V ->
-     PositiveSubtyping V t_top
  | PSub_UnionL : forall (V A B:typ),
      lc_typ B ->
      isValTyp V ->
@@ -944,6 +945,7 @@ Inductive TypeWF : tctx -> typ -> Prop :=    (* defn TypeWF *)
  | TyWfUnion : forall (D:tctx) (A1 A2:typ),
      TypeWF D A1 ->
      TypeWF D A2 ->
+     Distinguishability A1 A2 ->
      TypeWF D (t_or A1 A2)
  | TyWfFun : forall (D:tctx) (A B:typ),
      TypeWF D A ->
@@ -959,8 +961,12 @@ Inductive TypeWF : tctx -> typ -> Prop :=    (* defn TypeWF *)
 
 (* defns Similarity *)
 Inductive sim : typ -> typ -> Prop :=    (* defn sim *)
- | Sim_Neg : forall (A B:typ),
+ | Sim_NegL : forall (A B:typ),
+     lc_typ B ->
      isNegTyp A ->
+     sim A B
+ | Sim_NegR : forall (A B:typ),
+     lc_typ A ->
      isNegTyp B ->
      sim A B
  | Sim_In : forall (l5:l) (V1 V2:typ),
