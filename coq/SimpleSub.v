@@ -11,10 +11,6 @@ Notation "A <p B"        := (PositiveSubtyping A B)
 Notation "A <n B"        := (NegativeSubtyping A B)
                               (at level 65, B at next level, no associativity) : type_scope.
 
-Ltac auto_lc := try match goal with
-                    | |- lc_typ _ => eauto
-                    end.
-
 #[export]
 Hint Extern 1 False =>
     match goal with
@@ -45,6 +41,53 @@ Proof. introv H. inverts H. inverts H0. Qed.
 
 Ltac solve_false := try intro; try solve [false; eauto 3 with FalseHd].
 
+Lemma psub_lc_1 : forall A B,
+    A <p B -> lc_typ A.
+Proof.
+  introv Sub.
+  induction* Sub.
+Qed.
+
+Lemma psub_lc_2 : forall A B,
+    A <p B -> lc_typ B.
+Proof.
+  introv Sub.
+  induction* Sub.
+Qed.
+
+#[export] Hint Immediate psub_lc_1 psub_lc_2 : core.
+
+Lemma lc_andl_inv : forall A B,
+    lc_typ (A&B) -> lc_typ A.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+Lemma lc_andr_inv : forall A B,
+    lc_typ (A&B) -> lc_typ B.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+Lemma lc_orl_inv : forall A B,
+    lc_typ (A|B) -> lc_typ A.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+Lemma lc_orr_inv : forall A B,
+    lc_typ (A|B) -> lc_typ B.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+#[export] Hint Immediate lc_andl_inv lc_andr_inv lc_orl_inv lc_orr_inv : core.
+
+Ltac auto_lc := try match goal with
+                    | |- lc_typ _ => eauto using psub_lc_1, psub_lc_2, lc_andl_inv, lc_andr_inv, lc_orl_inv, lc_orr_inv
+                  end.
+
+(******************************************************************************)
 
 (* I break this intentionally to save sub2psub *)
 Lemma psub_valtyp : forall A B,
@@ -56,6 +99,7 @@ Abort.
 (* Qed. *)
 
 (* #[export] Hint Immediate psub_valtyp : core. *)
+
 
 Lemma nsub_valfty : forall A B,
     A <n B -> isValFty B.
@@ -95,28 +139,35 @@ Proof.
   inverts* Sub. inverts~ H0.
 Qed.
 
-(* I tried remove the Val condition but then the proof does not work? *)
-Lemma psub_spli_r_inv : forall A B B1 B2,
-    spli B B1 B2 -> isValTyp A -> A <p B -> A <p B1 /\ A <p B2.
-Proof.
-  introv Spl Val Sub. gen A.
-  induction* Spl; split; intros.
-  all: try solve [inverts~ Sub; match goal with H: isNegTyp _ |- _ => inverts~ H end].
-  all: inverts~ Sub; try match goal with H: isNegTyp _ |- _ => inverts~ H end; forwards (?&?): IHSpl; try eassumption; now eauto.
-Qed.
-
 Lemma psub_splu_r_inv : forall A B B1 B2,
-    splu B B1 B2 -> isValTyp A -> A <p B -> A <p B1 \/ A <p B2.
+    splu B B1 B2 -> A <p B -> A <p B1 \/ A <p B2.
 Proof.
-  introv Spl Val Sub. gen A.
+  introv Spl Sub. gen A.
   induction* Spl; intros.
   all: try forwards [?|?]: psub_or_r_inv Sub.
   all: try forwards (?&?): psub_and_r_inv Sub.
   all: try solve [inverts~ Sub; match goal with H: isNegTyp _ |- _ => inverts~ H end].
-  all: try solve [forwards [?|?]: IHSpl; try eassumption; eauto].
-  - (* forall *) left. eauto.
+  - (* inter right *) forwards [?|?]: IHSpl; try eassumption.
+    left*. right*.
+  - (* inter left *) forwards [?|?]: IHSpl; try eassumption.
+    left*. right*.
+  - (* forall *) left. applys* PSub_Neg.
   - (* rcd *) inverts Sub. solve [forwards [?|?]: IHSpl; try eassumption; eauto].
     inverts H0.
+Qed.
+
+Lemma psub_spli_r_inv : forall A B B1 B2,
+    spli B B1 B2 -> A <p B -> A <p B1 /\ A <p B2.
+Proof.
+  introv Spl Sub. gen A.
+  induction* Spl; split; intros.
+  all: try solve [inverts~ Sub; match goal with H: isNegTyp _ |- _ => inverts~ H end].
+  all: try match goal with
+         | H: _ <p _ | _ |- _ => forwards [?|?]: psub_splu_r_inv H; [ eauto | .. ]
+         | H: _ <p t_rcd _ _ |- _ => forwards (?&?&?): psub_rcd_r_inv H; [ eauto | .. ]; subst
+         end.
+  all: try (forwards (?&?): IHSpl; [ eassumption | ] ; eauto).
+  all: eauto.
 Qed.
 
 Lemma psub_and_l_inv : forall A B C,
@@ -164,9 +215,9 @@ Qed.
 (*-------------------------- psub admissible rules  -------------------------*)
 
 Lemma psub_spli_r : forall A B B1 B2,
-    spli B B1 B2 -> isValTyp A -> A <p B1 -> A <p B2 -> A <p B.
+    spli B B1 B2 -> A <p B1 -> A <p B2 -> A <p B.
 Proof.
-  introv Spl Val Sub1 Sub2. gen A.
+  introv Spl Sub1 Sub2. gen A.
   induction* Spl; intros.
   - inverts_psub Sub1; inverts_psub Sub2; eauto.
   - inverts_psub Sub1; inverts_psub Sub2; eauto.
@@ -192,16 +243,15 @@ Proof.
   - (* rcd *) inverts~ Spl; inverts_typ; eauto; solve_false.
 Qed.
 
-Lemma psub_splu_left : forall A B B1 B2,
+Lemma psub_splu_r_1 : forall A B B1 B2,
     splu B B1 B2 -> A <p B1 -> A <p B.
 Proof.
   introv Spl Sub. gen A.
   induction Spl; intros; eauto.
   all: inverts_psub Sub; eauto.
-  (* stuck here because of valtyp conditions; going to remove them in psub *)
-Abort.
+Qed.
 
-Lemma psub_splu_right : forall A B B1 B2,
+Lemma psub_splu_r_2 : forall A B B1 B2,
     splu B B1 B2 -> A <p B2 -> A <p B.
 Proof.
   introv Spl Sub. gen A.
@@ -209,26 +259,28 @@ Proof.
   all: inverts_psub Sub; eauto.
 Qed.
 
-#[export] Hint Immediate psub_spli_l_1 psub_spli_l_2 psub_splu_left psub_splu_right : core.
+#[export] Hint Immediate psub_spli_l_1 psub_spli_l_2 psub_splu_r_1 psub_splu_r_2 : core.
 
-Lemma psub_refl : forall A,
+Lemma psub_val_refl : forall A,
     isValTyp A -> A <p A.
 Proof.
   introv H. induction~ H.
 Qed.
 
+#[export] Hint Immediate psub_val_refl : core.
+
 (* (5) If split(V) => V1 | V2 then V1/V => ok and V2/V => ok *)
-Lemma psub_splu_valtyp_rev : forall A A1 A2,
+Lemma psub_val_splu_rev : forall A A1 A2,
     splu A A1 A2 -> isValTyp A -> A1 <p A \/ A2 <p A.
 Proof.
   introv Spl Val.
   inverts_typ; solve_false.
   3: inverts H3.
-  1,3: left; applys psub_splu_left Spl; applys* psub_refl.
-  all: right; applys psub_splu_right Spl; applys* psub_refl.
+  1,3: left; applys psub_splu_r_1 Spl; applys* psub_val_refl.
+  all: right; applys psub_splu_r_2 Spl; applys* psub_val_refl.
 Qed.
 
-Lemma psub_splu_valtyp : forall A A1 A2,
+Lemma psub_val_splu : forall A A1 A2,
     splu A A1 A2 -> isValTyp A -> A <p A1 \/ A <p A2.
 Proof.
   introv Spl Val.
@@ -242,15 +294,23 @@ Proof.
   - constructor*.
 Qed.
 
-Lemma psub_negtyp : forall V1 V2 A,
+Lemma psub_val_spli : forall A A1 A2,
+    spli A A1 A2 -> isValTyp A -> A1 <p A /\ A2 <p A.
+Proof.
+  introv Spl Val.
+  induction Spl; solve_false.
+  all: try solve [ inverts_typ; split* ].
+Qed.
+
+Lemma psub_neg_any_val : forall V1 V2 A,
     V1 <p A -> isNegTyp V1 -> isValTyp V2 -> V2 <p A.
 Proof.
   introv Sub Neg Val. gen V2.
   induction Sub; try solve [inverts Neg]; intros; eauto.
 Qed.
 
-Lemma psub_forall : forall A1 A2 B,
-    (t_forall A1) <p B -> isValTyp (t_forall A2) -> (t_forall A2) <p B.
+Lemma psub_forall_l : forall A1 A2 B,
+    (t_forall A1) <p B -> lc_typ (t_forall A2) -> (t_forall A2) <p B.
 Proof.
   introv Sub.
   inductions Sub; eauto.
@@ -265,13 +325,25 @@ Proof with try eassumption.
     eauto.
 Qed.
 
-Lemma psub_rcd : forall la V B A,
+Lemma psub_rcd_l : forall la V B A,
     (t_rcd la V) <p B -> A <p V -> (t_rcd la A) <p B.
 Proof.
   introv Sub1 Sub2. gen A.
   inductions Sub1; intros; eauto.
   forwards*: psub_trans Sub2 Sub1.
 Qed.
+
+Lemma psub_arrow_l : forall A B C D1 D2,
+    t_arrow A B <p C -> lc_typ (t_arrow D1 D2) -> t_arrow D1 D2 <p C.
+Proof.
+  introv H Lc.
+  inductions H; eauto.
+  all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
+  all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
+  all: auto_lc.
+Qed.
+
+(* COUNTER-EXAMPLE: t_rcd l5 V | Aneg <p t_rcd l5 A0 *)
 Lemma psub_unionL : forall A A1 A2 B,
     splu A A1 A2 -> isValTyp A -> A1 <p B -> A <p B.
 Proof with solve_false.
@@ -279,7 +351,7 @@ Proof with solve_false.
   indTypFtySize (size_typ A + size_typ B).
   inverts~ Sub.
   - (* record *)
-    inverts Spl...
+    inverts Spl; inverts_typ...
 Abort. (* broken *)
 (*     inverts Val. inverts H3.  inverts H7. solve_false. *)
 (*     + inverts_typ... applys* PSub_Neg. constructor. *)
@@ -289,59 +361,64 @@ Abort. (* broken *)
 (*     forwards: IH H1; [ | eassumption | .. ]; auto; elia. *)
 (*   - *)
 (*   inverts Spl; intros. *)
-(*   - (* union at left *) inverts_typ; eauto. destruct Sub. applys psub_negtyp; try eassumption. *)
+(*   - (* union at left *) inverts_typ; eauto. destruct Sub. applys psub_neg_any_val; try eassumption. *)
 (*   - (* inter at left *) inverts_typ; eauto. inverts_typ; eauto. *)
-(*     applys~ psub_negtyp Sub. *)
+(*     applys~ psub_neg_any_val Sub. *)
 (*   - (* inter at left *) inverts_typ; eauto. inverts_typ; eauto. *)
-(*     applys~ psub_negtyp Sub. *)
-(*   - (* forall *) applys~ psub_forall Sub. *)
+(*     applys~ psub_neg_any_val Sub. *)
+(*   - (* forall *) applys~ psub_forall_l Sub. *)
 (*   -(* record *) *)
 (*     inverts Sub. *)
 (*     + inverts_typ; eauto... forwards: IH H; try eassumption; elia. eauto. *)
 (*     + inverts_typ; eauto... *)
-(*     + inverts Val... applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_left. *)
-(*     + inverts Val... applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_left. *)
+(*     + inverts Val... applys~ PSub_UnionL. applys psub_rcd_l H2. applys* psub_val_splu_left. *)
+(*     + inverts Val... applys~ PSub_UnionR. applys psub_rcd_l H2. applys* psub_val_splu_left. *)
 (*     + inverts Val... applys~ PSub_Intersect. *)
-(*       * applys psub_rcd H1. applys* psub_splu_valtyp_left. *)
-(*       * applys psub_rcd H2. applys* psub_splu_valtyp_left. *)
+(*       * applys psub_rcd_l H1. applys* psub_val_splu_left. *)
+(*       * applys psub_rcd_l H2. applys* psub_val_splu_left. *)
 (*     + inverts Val... eauto. *)
 (* Qed. *)
 
+(* we have Lemma psub_val_splu : forall A A1 A2, *)
+(*     splu A A1 A2 -> isValTyp A -> A <p A1 \/ A <p A2. *)
 
 (* c V / (c A | Bneg) => + *)
 (* V  / (c A | Bneg) => + *)
 (* But (c V | V) / (c A | Bneg) =/> + *)
 (* this union is not a ValTyp *)
-Lemma psub_union : forall A A1 A2 B,
+Lemma psub_splu_l_trans : forall A A1 A2 B,
     splu A A1 A2 -> isValTyp A -> A1 <p B -> A2 <p B -> A <p B.
 Proof with solve_false.
   introv Spl Val Sub1 Sub2.
-  indTypFtySize (size_typ A + size_typ B).
-  inverts Spl; inverts_typ...
-  all: try solve [ applys psub_negtyp; [ | eassumption | ..]; eauto ].
-  all: repeat match goal with
-         | H : _&_ <p _ |- _ => forwards (?&?): psub_and_l_inv H; clear H
-         end.
-  - applys* psub_spli_l_2.
-  - applys* psub_spli_l_1.
-  - applys* psub_negtyp.
-  - (* record *)
-    inverts~ Sub1; inverts~ Sub2...
-    + forwards~: IH H H4 H6; elia.
-    + eapply SpU_in in H. forwards: IH H; try eassumption; elia; eauto.
-    + forwards~ [HN|HN]: psub_splu_valtyp H.
-      all: applys* psub_rcd HN.
-    + forwards~ [HN|HN]: psub_splu_valtyp H.
-      all: applys* psub_rcd HN.
-    + forwards~ [HN|HN]: psub_splu_valtyp H.
-      all: applys* psub_rcd HN.
-    + forwards~ [HN|HN]: psub_splu_valtyp H.
-      all: applys* psub_rcd HN.
+  forwards~ [?|?]: psub_val_splu Spl.
+  all: applys* psub_trans H.
 Qed.
+(*   indTypFtySize (size_typ A + size_typ B). *)
+(*   inverts Spl; inverts_typ... *)
+(*   all: try solve [ applys psub_neg_any_val; [ | eassumption | ..]; eauto ]. *)
+(*   all: repeat match goal with *)
+(*          | H : _&_ <p _ |- _ => forwards (?&?): psub_and_l_inv H; clear H *)
+(*          end. *)
+(*   - applys* psub_spli_l_2. *)
+(*   - applys* psub_spli_l_1. *)
+(*   - applys* psub_neg_any_val. *)
+(*   - (* record *) *)
+(*     inverts~ Sub1; inverts~ Sub2... *)
+(*     + forwards~: IH H H4 H6; elia. *)
+(*     + eapply SpU_in in H. forwards: IH H; try eassumption; elia; eauto. *)
+(*     + forwards~ [HN|HN]: psub_val_splu H. *)
+(*       all: applys* psub_rcd_l HN. *)
+(*     + forwards~ [HN|HN]: psub_val_splu H. *)
+(*       all: applys* psub_rcd_l HN. *)
+(*     + forwards~ [HN|HN]: psub_val_splu H. *)
+(*       all: applys* psub_rcd_l HN. *)
+(*     + forwards~ [HN|HN]: psub_val_splu H. *)
+(*       all: applys* psub_rcd_l HN. *)
+(* Qed. *)
 
 
-Lemma psub_orl_inv : forall A B C,
-    A | B <p C -> (isValTyp A -> A <p C) /\ (isValTyp B -> B <p C).
+Lemma psub_or_l_inv : forall A B C,
+    A | B <p C -> A <p C /\ B <p C.
 Proof.
   introv H.
   inductions H; auto_lc; split; intros; auto.
@@ -351,37 +428,9 @@ Proof.
   all: eauto.
 Qed.
 
-
-Lemma psub_forall_inv : forall A B C,
-    t_forall A <p C -> lc_typ (t_forall B) -> t_forall B <p C.
-Proof.
-  introv H Lc.
-  inductions H; eauto.
-  all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
-  all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
-  all: auto_lc.
-  eauto.
-Qed.
-
-Lemma psub_arrow_inv : forall A B C D1 D2,
-    t_arrow A B <p C -> lc_typ (t_arrow D1 D2) -> t_arrow D1 D2 <p C.
-Proof.
-  introv H Lc.
-  inductions H; eauto.
-  all: try forwards: IHPositiveSubtyping1; try reflexivity; destruct_conj.
-  all: try forwards: IHPositiveSubtyping2; try reflexivity; destruct_conj.
-  all: auto_lc.
-  eauto.
-Qed.
-
-Lemma psub_spli_valtyp : forall A A1 A2,
-    spli A A1 A2 -> isValTyp A -> A1 <p A /\ A2 <p A.
-Proof.
-  introv Spl Val.
-  induction Spl; solve_false.
-  all: try solve [ inverts_typ; split* ].
-  - split; applys* PSub_Neg.
-Qed.
+(* We have this lemma but it requires valtyp               *)
+(*      psub_val_spli : forall A A1 A2,                    *)
+(*       spli A A1 A2 -> isValTyp A -> A1 <p A /\ A2 <p A. *)
 
 (* isValTyp A -> spli/u A A1 A2 -> either there is a neg in A1/2 or they are
 rcd with the same label so from the two psub of A1/2 we can conclude the rest *)
@@ -397,15 +446,9 @@ Proof.
     eauto.
   - forwards (?&?): IH; [ | eassumption | .. ]; try eassumption; elia.
     eauto.
-  - forwards (?&?): IH; [ | eassumption | .. ]; try eassumption; elia.
-    inverts H.
-    + inverts Spl; solve_false.
-      forwards~ (?&?): psub_spli_valtyp H10.
-      split.
-      all : applys~ PSub_Intersect.
-      * applys~ psub_rcd H.
-      * applys~ psub_rcd H0.
-    + split; applys~ PSub_Intersect; applys psub_negtyp; try eassumption.
+  - forwards (?&?): IH H; [ eassumption | .. ]; try eassumption; elia.
+    forwards (?&?): IH H0; [ eassumption | .. ]; try eassumption; elia.
+    eauto.
 Qed.
 
 Ltac inverts_all_psub :=
@@ -413,7 +456,7 @@ Ltac inverts_all_psub :=
     | Sub : _ & _ <p _ |- _ =>
         forwards (?&?): psub_and_l_inv Sub; clear Sub
     | Sub : _ | _ <p _ |- _ =>
-                  forwards (?&?): psub_orl_inv Sub; clear Sub
+                  forwards (?&?): psub_or_l_inv Sub; clear Sub
     | Sub : _ <p _ & _ |- _ =>
         forwards (?&?): psub_and_r_inv Sub; clear Sub
     | Sub : _ <p (t_rcd _ _) |- _ =>
@@ -421,7 +464,7 @@ Ltac inverts_all_psub :=
     | Sub : _ <p ?B, Hspl: spli ?B _ _ |- _ =>
         forwards (?&?): psub_spli_r_inv Hspl Sub; clear Sub
     | Sub : t_forall _ <p _ |- _ =>
-        lets: psub_forall_inv Sub; clear Sub
+        lets: psub_forall_l Sub; clear Sub
     (* | Sub : ?A <p _, Hspl: splu ?A _ _ |- _ => *)
     (*     forwards (?&?): psub_splu_l_inv Hspl Sub; clear Sub *)
     | Sub : ?A <p _, Hspl: spli ?A _ _ |- _ =>
@@ -437,7 +480,7 @@ Lemma nsub_negtyp : forall V1 V2 A,
     A <n (fty_StackArg V1) -> isNegTyp V1 -> isNegTyp V2 -> A <n (fty_StackArg V2).
 Proof.
   introv Sub Neg1 Neg2. gen V2.
-  inductions Sub; try solve [inverts Neg1]; intros; eauto using psub_negtyp.
+  inductions Sub; try solve [inverts Neg1]; intros; eauto using psub_neg_any_val.
 Qed.
 
 (******************************************************************************)
@@ -483,7 +526,7 @@ Proof.
 Qed.
 
 Lemma sim_psub : forall A B,
-    sim A B -> (isValTyp A -> A <p B) \/ (isValTyp B -> B <p A).
+    sim A B -> A <p B \/ B <p A.
 Proof.
   introv H.
   induction* H.
@@ -494,18 +537,25 @@ Lemma sim_psub_trans : forall V A B C D,
 Proof.
   introv HS HP1 HP2 Spl Val. gen V C D.
   induction HS; intros.
-  - applys PSub_UnionL; try applys* psub_negtyp; eauto. admit.
-  - applys PSub_UnionR; try applys* psub_negtyp; eauto. admit.
+  - applys PSub_UnionL; try applys* psub_neg_any_val; eauto.
+  - applys PSub_UnionR; try applys* psub_neg_any_val; eauto.
   - inverts Spl; solve_false.
-Abort. (* maybe not right? not sure how to state the lemma *)
-(*     inverts_typ. forwards~ : IHHS H1. *)
-(*     lets: psub_rcd_r_inv. *)
-(* Qed. *)
+    eapply PSub_UnionL in HP1. eapply PSub_UnionR in HP2.
+    applys* psub_splu_l_trans. all: auto_lc.
+Qed.
 
 (******************************************************************************)
 
 
 (*------------------------------ Lemma B.1 -----------------------------------*)
+
+(* c A | c B is not ValTyp *)
+Lemma valtyp_splu : forall A B C,
+    splu A B C -> isValTyp B -> isValTyp A.
+Proof.
+  introv Spl Val.
+  induction* Spl.
+Abort.
 
 (* B.1 (1) *)
 Lemma sub2psub : forall V A,
@@ -517,18 +567,25 @@ Proof with try eassumption; elia.
   all: eauto.
   all: try (forwards: IH; [ eassumption | eassumption | .. ])...
   all: eauto.
-  - (* refl *) applys~ psub_refl.
+  (* - (* refl *) applys~ psub_val_refl. *)
   - (* intersect on the right *)  forwards: IH H0... applys~ psub_spli_r H.
   - (* on the left *) applys~ psub_spli_l_1 H. applys IH...
-  - (* on the left *) applys psub_negtyp A1... applys* IH...
-  -  applys psub_negtyp A2... applys* IH...
-Abort. (* stuck in the next case *)
-(*   - destruct H4. *)
+  - (* on the left *) applys psub_neg_any_val A1... applys* IH...
+  -  applys psub_neg_any_val A2... applys* IH...
+  - destruct H6; forwards: IH; [eassumption | .. ]...
+  (* H2 : splu x0 x1 x2 *)
+  (* H3 : isValTyp (t_rcd x x1) *)
+  (* H4 : t_rcd x x1 <p A *)
+  (* ============================ *)
+  (* t_rcd x x0 <p A *)
+
+    (* MUST HAVE STRONGER SPLU LEMMA *)
+    applys psub_splu_l_trans. H0 H1. destruct H4.
 (*     + forwards~: IHSub1. *)
 
 (*     applys psub_trans H1. unionL H. *)
-(*   - applys* psub_splu_left H. *)
-(*   - applys* psub_splu_right H. *)
+(*   - applys* psub_splu_r_1 H. *)
+(*   - applys* psub_splu_r_2 H. *)
 (* Qed. *)
 
 Lemma nsub_unionL : forall A B B1 B2,
@@ -640,7 +697,7 @@ Lemma valtyp_sub_rcd_inv_2 : forall V l A,
 Proof.
   introv Val Sub.
   apply sub2psub in Sub.
-  applys~ psub_rcd_r_inv.
+  applys~ psub_rcd_l_r_inv.
   auto.
 Qed.
 
