@@ -401,3 +401,142 @@ Proof with destruct_conj; try subst; try solve [exists*].
   introv HA.
   inverts HA; solve_false...
 Qed.
+
+(* new lemma *)
+Lemma sub_sim_distinguishability_sub_inv : forall A B C D,
+    sim A B -> C <<>> D -> A <: C -> B <: D -> False.
+Proof with try eassumption.
+  intros.
+  applys sim_no_distinguishability H.
+  applys distinguishability_downward_both...
+Qed.
+
+#[export] Hint Immediate sub_sim_distinguishability_sub_inv : FalseHd.
+
+Lemma sub_inv_distinguishabe_union : forall A B1 B2,
+    isValTyp A -> A <:: B1 | B2 -> B1 <<>> B2 -> A <:: B1 \/ A <:: B2.
+Proof with try eassumption; elia; try solve [false; applys sub_sim_distinguishability_sub_inv; convert2dsub; eassumption ].
+  introv Val Sub Dis.
+  indTypSize (size_typ A + size_typ (B1|B2)).
+  lets~ [Hu|(C1&C2&Hu)]: ordu_or_split A.
+  - auto_inv.
+  - assert (Sim: sim C1 C2). {
+      applys sim2similar. unfold similar. eauto.
+    }
+    auto_inv. inverts_typ.
+    forwards [?|?]: IH C1 B1 B2...
+    all: forwards [?|?]: IH C2 B1 B2...
+    all: try solve [left; applys ASub_or; [eassumption |..]; eauto].
+    all: try solve [right; applys ASub_or; [eassumption |..]; eauto].
+    apply DistSym in Dis...
+Qed.
+
+(* Some results about negtyp; were proved for the above lemma *)
+Lemma distinguishability_negtyp_bot : forall V U,
+    Distinguishability V U -> isNegTyp V -> U <:: t_bot.
+Proof with solve_false.
+  introv Dis Neg.
+  indTypSize (size_typ V + size_typ U).
+  inverts Neg; inverts Dis; inverts_all_spl; inverts_typ...
+  all: try solve [match goal with | H: DistinguishabilityAx _ _ |- _ => inverts~ H end].
+  all: repeat match goal with
+         | H: _ <<>> _ |- _ => forwards: IH H; [ now eauto | .. ]; elia; clear H
+         end.
+  all: try solve [solve_algo_sub; try eassumption; auto].
+  all: auto.
+Qed.
+
+Lemma sub_inv_distinguishabe_bot : forall A B1 B2,
+    isNegTyp A -> A <: B1 -> B1 <<>> B2 -> B2 <: t_bot.
+Proof.
+  introv Val Sub Dis.
+  forwards: distinguishability_downward_both Dis Sub.
+  applys* DSub_Refl.
+  convert2asub.
+  applys~ distinguishability_negtyp_bot H.
+Qed.
+
+#[export] Hint Resolve negtyp_sub_rcd_inv : FalseHd.
+
+Lemma botlike_or_inv_1 : forall A B,
+    A | B <:: t_bot -> A <:: t_bot.
+Proof.
+  introv H. applys algo_trans H. use_left_r. eauto.
+Qed.
+Lemma botlike_or_inv_2 : forall A B,
+    A | B <:: t_bot -> B <:: t_bot.
+Proof.
+  introv H. applys algo_trans H. use_right_r. eauto.
+Qed.
+
+#[export] Hint Immediate botlike_or_inv_1 botlike_or_inv_2 : core.
+
+Lemma botlike_spli_inv : forall C A B,
+    C <:: t_bot -> spli C A B -> A <:: t_bot \/ B <:: t_bot.
+Proof with inverts_all_spl; solve_false.
+  introv Sub Spl.
+  inductions Spl...
+  - applys~ botlike_inv.
+  - forwards* [?|?]: IHSpl.
+  - forwards* [?|?]: IHSpl.
+Qed.
+
+Lemma botlike_splu_inv : forall A B C,
+    C <:: t_bot -> splu C A B -> A <:: t_bot /\ B <:: t_bot.
+Proof.
+  introv H. split; applys algo_trans H.
+  2: use_right_r. 1: use_left_r. 1, 3: eassumption.
+  all: eauto.
+Qed.
+
+Ltac inv_botlike :=
+    repeat try lazymatch goal with
+         | H1: ?A <:: t_bot , H2: spli ?A _ _ |- _ =>
+           forwards [?|?]: botlike_spli_inv H1 H2; clear H1
+         | H1: _ & _ <:: t_bot |- _ =>
+           forwards [?|?]: botlike_inv H1; clear H1
+         | H1: _ | _ <:: t_bot |- _ =>
+           forwards : botlike_or_inv_1 H1; forwards : botlike_or_inv_2 H1; clear H1
+         | H1: ?A <:: t_bot , H2: splu ?A _ _ |- _ =>
+           forwards (?&?): botlike_splu_inv H1 H2; clear H1
+      end.
+
+Lemma negtyp_sub_bot_inv : forall Aneg,
+    isNegTyp Aneg -> Aneg <: t_bot -> False.
+Proof with try eassumption; solve_false.
+  introv Neg Sub. convert2asub.
+  induction Neg; inv_botlike...
+Qed.
+
+#[export] Hint Immediate negtyp_sub_bot_inv : FalseHd.
+
+Lemma sub_trans_bot : forall A B,
+    A <:: t_bot -> lc_typ B -> A <:: B.
+Proof.
+  introv Sub Lc.
+  applys* algo_trans Sub.
+Qed.
+
+#[export] Hint Immediate sub_trans_bot : core.
+
+Lemma sub_union_bot_inv : forall A B C,
+    A <:: B | C -> B <:: t_bot -> A <:: C.
+Proof with try eassumption; elia.
+  introv Sub SubB.
+  indTypSize (size_typ A + size_typ B + size_typ C).
+  lets~ [Hu|(C1&C2&Hu)]: ordu_or_split A.
+  - assert (lc_typ C) by eauto.
+    auto_inv. applys~ algo_trans B.
+  - inverts Sub; inverts_all_spl.
+    all: auto.
+    all: inv_botlike.
+    all: try (forwards: IH; [eassumption | eassumption | .. ]; [ now elia | ] ).
+    all: auto.
+    + applys~ ASub_or.
+    + applys~ ASub_and H7. applys IH...
+    + use_left_l...
+    + use_right_l...
+    + clear H1. forwards: IH; [eassumption | eassumption | .. ]; [ now elia | ].
+      applys ASub_or...
+    + forwards~ : algo_trans H0 SubB.
+Qed.

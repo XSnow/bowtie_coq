@@ -1253,6 +1253,18 @@ Proof with (try eassumption; elia).
     Unshelve. all: apply empty.
 Qed.
 
+Lemma botlike_inv : forall A B,
+    algo_sub (t_and A B) t_bot -> algo_sub A t_bot \/ algo_sub B t_bot.
+Proof with inverts_all_spl; solve_false.
+  introv Sub.
+  inductions Sub...
+  all: auto.
+  all: forwards [?|?]: IHSub1; try reflexivity; try eassumption; elia.
+  all: forwards [?|?]: IHSub2; try reflexivity; try eassumption; elia.
+  all: try solve [left*].
+  all: try solve [right*].
+Qed.
+
 (********************************************)
 (*                                          *)
 (*             Ltac auto_inv                *)
@@ -1262,7 +1274,7 @@ Qed.
 (*                                          *)
 (********************************************)
 Ltac auto_inv :=
-  repeat try match goal with
+  repeat try lazymatch goal with
          | [ H1: algo_sub (t_arrow _ _) (t_arrow _ _) |- _ ] =>
            try (forwards~ (?&?): algo_sub_arrow_inv H1; clear H1)
          | [ H1: algo_sub (t_forall _) (t_forall _) |- _ ] =>
@@ -1272,25 +1284,25 @@ Ltac auto_inv :=
          | [ H1: algo_sub ?A (t_and _ _) |- _ ] =>
            try (forwards~ (?&?): algo_sub_and_inv H1; clear H1)
       end;
-  repeat try match goal with
+  repeat try lazymatch goal with
          | [ H1: algo_sub ?A ?B, H2: spli ?B _ _ |- _ ] =>
            try (forwards~ (?&?): algo_sub_and_inv H1 H2; clear H1)
          | [ H1: algo_sub ?A (t_and _ _) |- _ ] =>
            try (forwards~ (?&?): algo_sub_and_inv H1; clear H1)
       end;
-  repeat try match goal with
+  repeat try lazymatch goal with
          | [ Hord: ordi ?B, H1: algo_sub ?A ?B, H2: spli ?A _ _ |- _ ] =>
            try (forwards~ [?|?]: algo_sub_andlr_inv H1 H2 Hord; clear H1)
          | [ Hord: ordi ?B, H1: algo_sub (t_and  _ _)  ?B |- _ ] =>
            try (forwards~ [?|?]: algo_sub_andlr_inv H1 Hord; clear H1)
       end;
-  repeat try match goal with
+  repeat try lazymatch goal with
          | [ H1: algo_sub ?A ?B, H2: splu ?A _ _ |- _ ] =>
            try (forwards~ (?&?): algo_sub_or_inv H1 H2; clear H1)
          | [ H1: algo_sub (t_or _ _) ?B |- _ ] =>
            try (forwards~ (?&?): algo_sub_or_inv H1; clear H1)
          end;
-  repeat try match goal with
+  repeat try lazymatch goal with
          | [ Hord: ordu ?A, H1: algo_sub ?A ?B, H2: splu ?B _ _ |- _ ] =>
            try (forwards~ [?|?]: algo_sub_orlr_inv H1 Hord H2; clear H1)
          | [ Hord: ordu ?A, H1: algo_sub ?A (t_or _ _) |- _ ] =>
@@ -1691,6 +1703,36 @@ Proof.
 Qed.
 
 #[export] Hint Immediate sub_inv_10 sub_inv_11 sub_inv_12 : FalseHd.
+
+Lemma sub_inv_13 :
+    algo_sub t_top t_bot -> False.
+Proof.
+  introv H.
+  inverts H; solve_false.
+Qed.
+
+Lemma sub_inv_14 : forall A B,
+    algo_sub (t_arrow A B) t_bot -> False.
+Proof.
+  introv H.
+  inductions H; inverts_all_spl; solve_false.
+Qed.
+
+Lemma sub_inv_15 : forall l A,
+    algo_sub (t_rcd l A) t_bot -> False.
+Proof.
+  introv H.
+  inductions H; inverts_all_spl; solve_false.
+Qed.
+
+Lemma sub_inv_16 : forall A,
+    algo_sub (t_forall A) t_bot -> False.
+Proof.
+  introv H.
+  inductions H; inverts_all_spl; solve_false.
+Qed.
+
+#[export] Hint Immediate sub_inv_13 sub_inv_14 sub_inv_15 sub_inv_16 : FalseHd.
 
 (******** nondeterministic split & alternative subtyping definition *******)
 
