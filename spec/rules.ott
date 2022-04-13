@@ -364,7 +364,7 @@ PSub :: '' ::=
   {{ com Positive Subtyping }}
   by
 
-  val V
+  % val V
   V <p A
   ---------------- :: In
   In l V <p In l A 
@@ -373,23 +373,23 @@ PSub :: '' ::=
   % -------- :: Top
   % V <p Top
 
-  val V
+  % val V
   V <p A
   ---------- :: UnionL
   V <p A | B
 
-  val V
+  % val V
   V <p B
   ---------- :: UnionR
   V <p A | B
 
-  val V
+  % val V
   V <p A
   V <p B
   ---------- :: Intersect
   V <p A & B
 
-  val V
+  % val V
   neg Aneg
   --------- :: Neg
   V <p Aneg

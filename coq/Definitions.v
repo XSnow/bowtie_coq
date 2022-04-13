@@ -302,26 +302,22 @@ Inductive isValFty : Fty -> Prop :=    (* defn isValFty *)
 (* defns PSub *)
 Inductive PositiveSubtyping : typ -> typ -> Prop :=    (* defn PositiveSubtyping *)
  | PSub_In : forall (l5:l) (V A:typ),
-     isValTyp V ->
      PositiveSubtyping V A ->
      PositiveSubtyping (t_rcd l5 V) (t_rcd l5 A)
  | PSub_UnionL : forall (V A B:typ),
      lc_typ B ->
-     isValTyp V ->
      PositiveSubtyping V A ->
      PositiveSubtyping V (t_or A B)
  | PSub_UnionR : forall (V A B:typ),
      lc_typ A ->
-     isValTyp V ->
      PositiveSubtyping V B ->
      PositiveSubtyping V (t_or A B)
  | PSub_Intersect : forall (V A B:typ),
-     isValTyp V ->
      PositiveSubtyping V A ->
      PositiveSubtyping V B ->
      PositiveSubtyping V (t_and A B)
  | PSub_Neg : forall (V Aneg:typ),
-     isValTyp V ->
+     lc_typ V ->
      isNegTyp Aneg ->
      PositiveSubtyping V Aneg.
 
