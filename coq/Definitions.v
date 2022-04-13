@@ -333,6 +333,8 @@ Inductive NegativeSubtyping : typ -> Fty -> Prop :=    (* defn NegativeSubtyping
      lc_typ B ->
      NegativeSubtyping (t_forall A) (fty_StackTyArg B)
  | NSub_Union : forall (Aneg1 Aneg2:typ) (Ftyalt:Fty),
+     isNegTyp Aneg1 ->
+     isNegTyp Aneg2 ->
      NegativeSubtyping Aneg1 Ftyalt ->
      NegativeSubtyping Aneg2 Ftyalt ->
      NegativeSubtyping (t_or Aneg1 Aneg2) Ftyalt

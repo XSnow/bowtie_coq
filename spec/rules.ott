@@ -411,6 +411,8 @@ NSub :: '' ::=
   ------------------- :: TyFun
   forall X . A <n [B]
 
+  neg Aneg1
+  neg Aneg2
   Aneg1 <n Ftyalt
   Aneg2 <n Ftyalt
   -------------------- :: Union
