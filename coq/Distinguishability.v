@@ -530,13 +530,19 @@ Qed.
 
 Lemma sim_no_distinguishability : forall A B,
     sim A B -> Distinguishability A B -> False.
-Proof with auto_lc; inverts_all_spl; solve_false.
-  introv Sim Dis.
-  induction Sim; intros.
-  - induction Dis; try inverts_typ...
-    + inverts H1...
-  - forwards* : distinguishability_rcd_inv Dis.
-Qed.
+Admitted.
+
+Lemma sim_no_distinguishability_new : forall A B,
+    sim A B -> Distinguishability A B -> A ~~ t_bot \/ B ~~ t_bot.
+Admitted.
+(* Proof with auto_lc; inverts_all_spl; solve_false. *)
+(*   introv Sim Dis. *)
+(*   induction Sim; intros. *)
+(*   - induction Dis; try inverts_typ... *)
+(*     all: try solve [false; eauto]. *)
+(*     + inverts H1... eauto. *)
+(*   - forwards* : distinguishability_rcd_inv Dis. *)
+(* Qed. *)
 
 (******************************************************************************)
 (* Lemma B.13 *)
@@ -559,10 +565,11 @@ Proof with try eassumption; elia.
   - inverts_all_distinguishability.
     inverts_all_psub.
     applys* IH x U. elia.
-  - inverts_typ. inverts_all_distinguishability.
-    forwards [?|?]: psub_splu_inv Sub...
-    all: applys IH; [ | | | eassumption | ..]...
-Qed.
+    inverts_typ. inverts_all_distinguishability.
+    Admitted.
+(*     forwards [?|?]: psub_splu_inv Sub... *)
+(*     all: applys IH; [ | | | eassumption | ..]... *)
+(* Qed. *)
 
 Lemma distinguishability_negtyp_false : forall V U,
     Distinguishability V U -> isValTyp V -> isNegTyp U -> False.
@@ -608,21 +615,22 @@ Proof with solve_false.
              inverts_all_distinguishability;
              applys IH; try eassumption; elia; eauto].
     + apply distinguishability_rcd_inv in Dis.
-      applys IH Dis; try eassumption; elia.
-    + destruct H2... all: inverts Dis...
-      all: applys IH; try eassumption; elia; eauto.
-    + inverts_all_distinguishability.
-      applys IH H0; try eassumption; elia; eauto.
-      applys IH H1; try eassumption; elia; eauto.
-  - inverts_all_distinguishability.
-    forwards~ [?|?]: psub_splu_inv Hu' SubB. clear SubB.
-    applys IH H SubA; first_match; try eassumption; elia; eauto.
-    applys IH H0 SubA; first_match; try eassumption; elia; eauto.
-  - inverts_all_distinguishability.
-    forwards~ [?|?]: psub_splu_inv Hu SubA. clear SubA.
-    applys IH H SubB; first_match; try eassumption; elia; eauto.
-    applys IH H0 SubB; first_match; try eassumption; elia; eauto.
-Qed.
+      Admitted.
+(*       applys IH Dis; try eassumption; elia. *)
+(*     + destruct H2... all: inverts Dis... *)
+(*       all: applys IH; try eassumption; elia; eauto. *)
+(*     + inverts_all_distinguishability. *)
+(*       applys IH H0; try eassumption; elia; eauto. *)
+(*       applys IH H1; try eassumption; elia; eauto. *)
+(*   - inverts_all_distinguishability. *)
+(*     forwards~ [?|?]: psub_splu_inv Hu' SubB. clear SubB. *)
+(*     applys IH H SubA; first_match; try eassumption; elia; eauto. *)
+(*     applys IH H0 SubA; first_match; try eassumption; elia; eauto. *)
+(*   - inverts_all_distinguishability. *)
+(*     forwards~ [?|?]: psub_splu_inv Hu SubA. clear SubA. *)
+(*     applys IH H SubB; first_match; try eassumption; elia; eauto. *)
+(*     applys IH H0 SubB; first_match; try eassumption; elia; eauto. *)
+(* Qed. *)
 
 (******************************************************************************)
 (* The alternative definition of distinguishability is equivalent *)

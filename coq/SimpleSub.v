@@ -101,20 +101,6 @@ Abort.
 (* #[export] Hint Immediate psub_valtyp : core. *)
 
 
-Lemma nsub_valfty : forall A B,
-    A <n B -> isValFty B.
-Proof.
-  introv H. induction~ H.
-Qed.
-
-Lemma nsub_valtyp : forall A B,
-    A <n (fty_StackArg B) -> isValTyp B.
-Proof.
-  introv H. inductions H; eauto.
-Qed.
-
-#[export] Hint Immediate nsub_valfty nsub_valtyp : core.
-
 (*-------------------------- psub inversion lemmas  -------------------------*)
 
 Lemma psub_or_r_inv : forall V B1 B2,
@@ -453,13 +439,6 @@ Ltac inverts_all_psub :=
     end;
   try lazymatch goal with |- isValTyp _ => eauto 2 end.
 
-Lemma nsub_negtyp : forall V1 V2 A,
-    A <n (fty_StackArg V1) -> isNegTyp V1 -> isNegTyp V2 -> A <n (fty_StackArg V2).
-Proof.
-  introv Sub Neg1 Neg2. gen V2.
-  inductions Sub; try solve [inverts Neg1]; intros; eauto using psub_neg.
-Qed.
-
 (******************************************************************************)
 (** similar *)
 
@@ -642,6 +621,45 @@ Abort.
 (*   introv Spl Val. applys psub_val_splu_rev_both Spl Val. *)
 (* Qed. *)
 
+(*------------------------------ Lemma B.2 -----------------------------------*)
+
+Lemma psub_sub_bot_inv : forall V A,
+    V <p A -> A <: t_bot -> False.
+Admitted.
+(* Proof. *)
+(*   introv PSub Sub. convert2asub. gen V. *)
+(*   inductions Sub; intros; eauto; solve_false. *)
+(*   inverts_psub PSub; now eauto. *)
+(*   inverts_psub PSub; now eauto. *)
+(*   inverts_psub PSub; now eauto. *)
+(* Qed. *)
+
+(******************************************************************************)
+(* nsub *)
+
+Lemma nsub_valfty : forall A B,
+    A <n B -> isValFty B.
+Admitted.
+(* Proof. *)
+(*   introv H. induction~ H. *)
+(* Qed. *)
+
+Lemma nsub_valtyp : forall A B,
+    A <n (fty_StackArg B) -> isValTyp B.
+Admitted.
+(* Proof. *)
+(*   introv H. inductions H; eauto. *)
+(* Qed. *)
+
+#[export] Hint Immediate nsub_valfty nsub_valtyp : core.
+
+Lemma nsub_negtyp : forall V1 V2 A,
+    A <n (fty_StackArg V1) -> isNegTyp V1 -> isNegTyp V2 -> A <n (fty_StackArg V2).
+Proof.
+  introv Sub Neg1 Neg2. gen V2.
+  inductions Sub; try solve [inverts Neg1]; intros; eauto using psub_neg.
+Qed.
+
 Lemma nsub_unionL : forall A B B1 B2,
     splu B B1 B2 -> isNegTyp A -> isValTyp B ->
     A <n (fty_StackArg B1) -> A <n (fty_StackArg B).
@@ -684,58 +702,108 @@ Abort.
 (*     inverts* Sub. *)
 (* Qed. *)
 
+Lemma sim_apply_inv_1 : forall V A B C A',
+   sim A B -> splu V A B -> isValTyp V -> isValTyp A -> ApplyTy C A A'
+   -> (exists B', ApplyTy C B B') \/ isValTyp B.
+Proof with try eassumption; elia; solve_false.
+  introv HS Spl Val1 Val2 HP.
+  indTypFtySize (size_typ A + size_typ B + size_typ C).
+  inverts HS; intros.
+  - left. exists. admit. (* ??? *)
+    (* try applys* psub_neg; eauto. *)
+  - right*.
+  (* - inverts HP... eapply Sim_In in H. *)
+  (*   forwards [(?&?)|?]: IH H Spl H1... *)
+  (*   all: forwards [(?&?)|?]: IH H Spl H2... *)
+  (*   + left. exists*. *)
+  (*     all: right*. *)
+Admitted.
+
+(* wrongly stated ? *)
+Lemma sim_apply_inv_1_old : forall V A B C A',
+   sim A B -> splu V A B -> isValTyp V -> isValTyp A -> ApplyTy A C A'
+   -> (exists B', ApplyTy B C B') \/ isValTyp B.
+Proof with try eassumption; elia; solve_false.
+  introv HS Spl Val1 Val2 HP.
+  indTypFtySize (size_typ A + size_typ B + size_Fty C).
+  inverts HS; intros.
+  - left. exists. admit. (* ??? *)
+    (* try applys* psub_neg; eauto. *)
+  - right*.
+  - inverts HP... eapply Sim_In in H.
+    forwards [(?&?)|?]: IH H Spl H1...
+    all: forwards [(?&?)|?]: IH H Spl H2...
+    + left. exists*.
+      all: right*.
+Admitted.
+(*     all: try (forwards [(?&?)|?]: IH; [ | | eassumption | eassumption | | eassumption | ..]; try eassumption; elia)... *)
+(*     all: try solve [ left* ]. *)
+(*     all: try solve [ right* ]. *)
+(*     all: eapply Sim_In in H; eapply SpU_in in H2. *)
+(*     1-2: try (forwards [?|?]: IH; [ | | eassumption | eassumption | ..]; try eassumption; elia; eauto)... *)
+(*     + eapply VTypIn in H1. eapply VTypIn in H3. *)
+(*       forwards [?|?]: IH H H2 H0; try eassumption; elia. *)
+(*       all: forwards [?|?]: IH H H2 H4; try eassumption; elia. *)
+(*       all: eauto. *)
+(* Qed. *)
+
 (* B.1 (2) *)
 Lemma apply2nsub : forall A F C,
-    isNegTyp A -> isValFty F -> ApplyTy A F C -> A <n F.
+    (* isNegTyp A -> *)
+    isValFty F -> ApplyTy A F C -> A <n F.
+(* Admitted. *)
+(* lack inversion of negtyp *)
 Proof.
-  introv Neg Val App.
-  induction App; try solve [inverts Neg]; inverts Val.
-  - (* forall *) eauto.
+  introv Val App.
+  indTypFtySize (size_Fty F + size_typ A).
+  inverts* App.
+  all: try (forwards: IH H0 ; try eassumption; try eauto; now elia).
+  all: try solve [forwards: IH H0 ; try eassumption; try eauto; elia;
+            forwards: IH H1 ; try eassumption; try eauto; elia].
+  (* - (* forall *) eauto. *)
   - (* arrow *)
-    inverts* H0. constructor~.
+    inverts Val. inverts* H0. constructor~.
     applys~ sub2psub.
-  - (* union *) inverts* Neg. forwards~ : IHApp1.
-  - (* union *) inverts* Neg.
-  - (* splu *) inverts_typ. applys* nsub_unionL.
-  - (* intersection *) inverts* Neg.
-  - (* intersection *) inverts* Neg.
-  - (* intersection *) inverts* Neg.
-  - (* intersection *) inverts* Neg.
-  - (* intersection *) inverts* Neg.
-  - (* intersection *) inverts* Neg.
-Qed.
-
-(*------------------------------ Lemma B.2 -----------------------------------*)
-
-Lemma psub_sub_bot_inv : forall V A,
-    V <p A -> A <: t_bot -> False.
-Proof.
-  introv PSub Sub. convert2asub. gen V.
-  inductions Sub; intros; eauto; solve_false.
-  inverts_psub PSub; now eauto.
-  inverts_psub PSub; now eauto.
-  inverts_psub PSub; now eauto.
-Qed.
+  - (* union *) (* maybe use similar trick? *)
+    inverts Val.
+    assert (Sim: sim B1 B2). {
+      applys sim2similar. unfold similar. eauto.
+    }
+    forwards~ [?|?]: valtyp_splu_inv_aux H.
+    + forwards~ [(?&?)|?]: sim_apply_inv_1 Sim H H0.
+      (* applys ApplyTyUnionArg. *)
+Admitted.
+    (* inverts* Neg. forwards~ : IHApp1. *)
+(*   - (* union *) inverts* Neg. *)
+(*   - (* splu *) inverts_typ. applys* nsub_unionL. *)
+(*   - (* intersection *) inverts* Neg. *)
+(*   - (* intersection *) inverts* Neg. *)
+(*   - (* intersection *) inverts* Neg. *)
+(*   - (* intersection *) inverts* Neg. *)
+(*   - (* intersection *) inverts* Neg. *)
+(*   - (* intersection *) inverts* Neg. *)
+(* Qed. *)
 
 (*------------------------------ Lemma B.3 -----------------------------------*)
 
 Lemma negtyp_sub_rcd_inv : forall Aneg l A,
     isNegTyp Aneg -> Aneg <: (t_rcd l A) -> False.
-Proof with convert2asub; try eassumption; elia.
-  introv Neg Sub.
-  indTypSize (size_typ Aneg + size_typ A).
-  lets [Hi|(?&?&Hi)]: ordi_or_split A... now eauto.
-  - gen l A. inverts Neg; intros; convert2asub; solve_false.
-    + forwards [?|?]: algo_sub_andlr_inv Sub; [eauto | eauto |.. ].
-      applys IH A...  applys IH B...
-    + cut (A <:: t_rcd l A0). cut (B <:: t_rcd l A0).
-      * intros. applys IH...
-      * applys algo_trans Sub. eauto.
-      * applys algo_trans Sub. eauto.
-  - forwards (?&?): algo_sub_and_inv Sub.
-    now eauto.
-    applys IH Neg...
-Qed.
+Admitted.
+(* Proof with convert2asub; try eassumption; elia. *)
+(*   introv Neg Sub. *)
+(*   indTypSize (size_typ Aneg + size_typ A). *)
+(*   lets [Hi|(?&?&Hi)]: ordi_or_split A... now eauto. *)
+(*   - gen l A. inverts Neg; intros; convert2asub; solve_false. *)
+(*     + forwards [?|?]: algo_sub_andlr_inv Sub; [eauto | eauto |.. ]. *)
+(*       applys IH A...  applys IH B... *)
+(*     + cut (A <:: t_rcd l A0). cut (B <:: t_rcd l A0). *)
+(*       * intros. applys IH... *)
+(*       * applys algo_trans Sub. eauto. *)
+(*       * applys algo_trans Sub. eauto. *)
+(*   - forwards (?&?): algo_sub_and_inv Sub. *)
+(*     now eauto. *)
+(*     applys IH Neg... *)
+(* Qed. *)
 
 (* B.3 (1) *)
 Lemma valtyp_sub_rcd_inv : forall V l A,
@@ -753,7 +821,7 @@ Lemma valtyp_sub_rcd_inv_2 : forall V l A,
 Proof.
   introv Val Sub.
   apply sub2psub in Sub.
-  applys~ psub_rcd_l_r_inv.
+  applys~ psub_rcd_r_inv.
   auto.
 Qed.
 

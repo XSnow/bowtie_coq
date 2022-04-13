@@ -411,15 +411,16 @@ NSub :: '' ::=
   ------------------- :: TyFun
   forall X . A <n [B]
 
-  neg Aneg1
-  neg Aneg2
+  % neg Aneg1
+  % neg Aneg2
   Aneg1 <n Ftyalt
   Aneg2 <n Ftyalt
   -------------------- :: Union
   Aneg1 | Aneg2 <n Ftyalt
 
-%  -------------------- :: Empty
-%  Empty <n Fty
+  valF Fty
+  -------------------- :: Empty
+  Empty <n Fty
 
   Aneg1 <n Ftyalt
   -------------------- :: IntersectL
