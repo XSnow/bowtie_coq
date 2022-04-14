@@ -613,9 +613,9 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
 Qed.
 
 (* B.8 (2) *)
-Lemma monotonicity_applyty_2_1 : forall A B B' C,
-    ApplyTy A (fty_StackArg B) C -> B' <: B ->
-    exists C', C' <: C /\ ApplyTy A (fty_StackArg B') C'.
+Lemma monotonicity_applyty_2_1 : forall (A B B' C : typ),
+    ApplyTy A B C -> B' <: B ->
+    exists C', C' <: C /\ ApplyTy A B' C'.
 Proof with try eassumption; elia; solve_false; destruct_conj.
   introv HA HS.
   indTypFtySize (size_typ A + size_typ B' + size_typ B).
@@ -1102,3 +1102,56 @@ Proof with try eassumption; destruct_conj.
     forwards: IH (fty_StackArg x1) A1 A2; try eassumption; elia...
     exists*.
 Qed.
+
+(*------------------------- Type Substitution --------------------------------*)
+Lemma typsubst_iso : forall A B C X,
+  A ~= B -> lc_typ C ->
+  ([X ~~> C] A) ~= ([X ~~> C] B).
+Proof.
+  introv (HS1&HS2) Lc. unfold iso.
+  split; convert2asub;
+    applys~ typsubst_typ_algo_sub.
+Qed.
+
+Lemma applyty_iso : forall (A A' B B' C : typ),
+    ApplyTy A B C -> A' ~= A -> B' ~= B ->
+    exists C', C' <: C /\ ApplyTy A' B' C'.
+Proof with try eassumption.
+  introv App (HS1&HS1') (HS2&HS2').
+  forwards (?&Sub&App'): monotonicity_applyty_1 App...
+  forwards (?&Sub'&App''): monotonicity_applyty_2_1 App'...
+  exists. split. applys DSub_Trans... apply App''.
+Qed.
+
+Lemma typsubst_applyty_ord : forall (A B C U : typ) X,
+    ApplyTy A B C -> lc_typ U -> ordu B ->
+    exists C', C' <: [X ~~> U] C /\ ApplyTy ([X ~~> U] A) ([X ~~> U] B) C'.
+Proof.
+  introv App Lc Ord.
+  forwards: applyty_soundness_1 App.
+  convert2asub. eapply typsubst_typ_algo_sub in H. convert2dsub.
+  forwards: applyty_completeness_1 H.
+  (* completeness needs ordu *)
+Abort.
+
+Lemma typsubst_applyty : forall (A B C U : typ) X,
+    ApplyTy A B C -> lc_typ U ->
+    exists C', ApplyTy ([X ~~> U] A) ([X ~~> U] B) C' /\ C' <: [X ~~> U] C.
+Proof with try reflexivity; try eassumption.
+  introv App Lc.
+  inductions App.
+  all: try forwards: IHApp...
+  all: try forwards: IHApp1...
+  all: try forwards: IHApp2...
+  4: { destruct_conj.
+       forwards App: ApplyTyUnionArg H0 H1. applys* SpU_or.
+       forwards App': applyty_iso App.
+       now applys* iso_refl.
+       apply splu_iso in H. eapply typsubst_iso in H. simpl in H.
+       now applys~ H. now auto. destruct_conj.
+       exists. split... simpl. applys DSub_Trans H4.
+       convert2asub. match_or...
+  }
+  3: { destruct_conj. simpl. exists. split.
+       applys ApplyTyUnion.  (* no ordu *) }
+Abort.
