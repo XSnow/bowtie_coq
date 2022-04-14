@@ -734,6 +734,122 @@ Inductive new_sub : typ -> typ -> Prop :=    (* defn new_sub *)
      new_sub A B2 ->
      new_sub A B.
 
+(* defns ApptyAlt *)
+Inductive ApplyTyAlt : typ -> Fty -> typ -> Prop :=    (* defn ApplyTyAlt *)
+ | ApplyTyAltEmpty : forall (Fty5:Fty),
+     lc_Fty Fty5 ->
+     ApplyTyAlt t_bot Fty5 t_bot
+ | ApplyAltFunTy : forall (A B:typ),
+     lc_typ (t_forall A) ->
+     lc_typ B ->
+     ApplyTyAlt (t_forall A) (fty_StackTyArg B)  (open_typ_wrt_typ  A B ) 
+ | ApplyTyAltFun : forall (A A' B:typ),
+     lc_typ A' ->
+     declarative_subtyping B A ->
+     ApplyTyAlt (t_arrow A A') (fty_StackArg B) A'
+ | ApplyTyAltUnion : forall (A1 A2:typ) (Fty5:Fty) (A1' A2':typ),
+     ApplyTyAlt A1 Fty5 A1' ->
+     ApplyTyAlt A2 Fty5 A2' ->
+     ApplyTyAlt (t_or A1 A2) Fty5 (t_or A1' A2')
+ | ApplyTyAltUnionArg : forall (A B B1' B2' B1 B2:typ),
+     new_splu B B1 B2 ->
+     ApplyTyAlt A (fty_StackArg B1) B1' ->
+     ApplyTyAlt A (fty_StackArg B2) B2' ->
+     ApplyTyAlt A (fty_StackArg B) (t_or B1' B2')
+ | ApplyTyAltInterL : forall (A1 A2:typ) (Fty5:Fty) (A1':typ),
+     ApplyTyAlt A1 Fty5 A1' ->
+     NApplyTyAlt A2 Fty5 ->
+     ApplyTyAlt (t_and A1 A2) Fty5 A1'
+ | ApplyTyAltInterR : forall (A1 A2:typ) (Fty5:Fty) (A2':typ),
+     NApplyTyAlt A1 Fty5 ->
+     ApplyTyAlt A2 Fty5 A2' ->
+     ApplyTyAlt (t_and A1 A2) Fty5 A2'
+ | ApplyTyAltInterBoth : forall (A1 A2:typ) (Fty5:Fty) (A1' A2':typ),
+     ApplyTyAlt A1 Fty5 A1' ->
+     ApplyTyAlt A2 Fty5 A2' ->
+     ApplyTyAlt (t_and A1 A2) Fty5 (t_and A1' A2')
+with NApplyTyAlt : typ -> Fty -> Prop :=    (* defn NApplyTyAlt *)
+ | NApplyTyAltTop : forall (Fty5:Fty),
+     lc_Fty Fty5 ->
+     NApplyTyAlt t_top Fty5
+ | NApplyTyAltVar : forall (X:typevar) (Fty5:Fty),
+     lc_Fty Fty5 ->
+     NApplyTyAlt (t_tvar_f X) Fty5
+ | NApplyTyAltIn : forall (l5:l) (A:typ) (Fty5:Fty),
+     lc_typ A ->
+     lc_Fty Fty5 ->
+     NApplyTyAlt (t_rcd l5 A) Fty5
+ | NApplyTyAltAll : forall (A B:typ),
+     lc_typ (t_forall A) ->
+     lc_typ B ->
+     NApplyTyAlt (t_forall A) (fty_StackArg B)
+ | NApplyTyAltFun : forall (A A' B:typ),
+     lc_typ A' ->
+      lc_typ  A  ->
+     UnionOrdinaryFty (fty_StackArg B) ->
+      not (  declarative_subtyping B A  )  ->
+     NApplyTyAlt (t_arrow A A') (fty_StackArg B)
+ | NApplyTyAltFunFty : forall (A A' B:typ),
+     lc_typ A ->
+     lc_typ A' ->
+     lc_typ B ->
+     NApplyTyAlt (t_arrow A A') (fty_StackTyArg B)
+ | NApplyTyAltUnionL : forall (A1 A2:typ) (Fty5:Fty),
+     lc_typ A2 ->
+     UnionOrdinaryFty Fty5 ->
+     NApplyTyAlt A1 Fty5 ->
+     NApplyTyAlt (t_or A1 A2) Fty5
+ | NApplyTyAltUnionR : forall (A1 A2:typ) (Fty5:Fty),
+     lc_typ A1 ->
+     UnionOrdinaryFty Fty5 ->
+     NApplyTyAlt A2 Fty5 ->
+     NApplyTyAlt (t_or A1 A2) Fty5
+ | NApplyTyAltUnionArgL : forall (A B B1 B2:typ),
+     new_splu B B1 B2 ->
+     NApplyTyAlt A (fty_StackArg B1) ->
+     NApplyTyAlt A (fty_StackArg B)
+ | NApplyTyAltUnionArgR : forall (A B B1 B2:typ),
+     new_splu B B1 B2 ->
+     NApplyTyAlt A (fty_StackArg B2) ->
+     NApplyTyAlt A (fty_StackArg B)
+ | NApplyTyAltInter : forall (A1 A2:typ) (Fty5:Fty),
+     UnionOrdinaryFty Fty5 ->
+     NApplyTyAlt A1 Fty5 ->
+     NApplyTyAlt A2 Fty5 ->
+     NApplyTyAlt (t_and A1 A2) Fty5.
+
+(* defns ApptyLs *)
+Inductive ApplyTyLs : typ -> Fty -> typ -> Prop :=    (* defn ApplyTyLs *)
+ | ApplyTyLsEmpty : forall (Fty5:Fty),
+     lc_Fty Fty5 ->
+     ApplyTyLs t_bot Fty5 t_bot
+ | ApplyLsFunTy : forall (A B:typ),
+     lc_typ (t_forall A) ->
+     lc_typ B ->
+     ApplyTyLs (t_forall A) (fty_StackTyArg B)  (open_typ_wrt_typ  A B ) 
+ | ApplyTyLsFun : forall (A A' B:typ),
+     lc_typ A' ->
+     declarative_subtyping B A ->
+     ApplyTyLs (t_arrow A A') (fty_StackArg B) A'
+ | ApplyTyLsUnion : forall (A1 A2:typ) (Fty5:Fty) (A1' A2':typ),
+     ApplyTyLs A1 Fty5 A1' ->
+     ApplyTyLs A2 Fty5 A2' ->
+     ApplyTyLs (t_or A1 A2) Fty5 (t_or A1' A2')
+ | ApplyTyLsInterL : forall (A1 A2:typ) (Fty5:Fty) (A1':typ),
+     lc_typ A2 ->
+     ApplyTyLs A1 Fty5 A1' ->
+     (PARSE_ERROR "File ../spec/rules.ott on line 1081 - 1082" "no parses (char 21):   applyLs(A2, Fty) =/***> ") ->
+     ApplyTyLs (t_and A1 A2) Fty5 A1'
+ | ApplyTyLsInterR : forall (A1 A2:typ) (Fty5:Fty) (A2':typ),
+     lc_typ A1 ->
+     (PARSE_ERROR "File ../spec/rules.ott on line 1085 - 1086" "no parses (char 21):   applyLs(A1, Fty) =/***> ") ->
+     ApplyTyLs A2 Fty5 A2' ->
+     ApplyTyLs (t_and A1 A2) Fty5 A2'
+ | ApplyTyLsInterBoth : forall (A1 A2:typ) (Fty5:Fty) (A1' A2':typ),
+     ApplyTyLs A1 Fty5 A1' ->
+     ApplyTyLs A2 Fty5 A2' ->
+     ApplyTyLs (t_and A1 A2) Fty5 (t_and A1' A2').
+
 (* defns NotDistinguishableTypes *)
 Inductive NotDistinguishableTypes : typ -> Prop :=    (* defn NotDistinguishableTypes *)
  | NDArr : forall (A B:typ),
@@ -969,6 +1085,6 @@ Inductive sim : typ -> typ -> Prop :=    (* defn sim *)
 
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability DistinguishabilityAlt MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub ApplyTyAlt NApplyTyAlt ApplyTyLs NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability DistinguishabilityAlt MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
 
 

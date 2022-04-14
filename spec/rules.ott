@@ -949,6 +949,151 @@ NewAlgorithmicSubtyping :: '' ::=
   ------------------------- :: orr
   A <na B
 
+defns
+ApptyAlt :: '' ::=
+
+  defn
+  applyAlt ( A , Fty ) => B
+  :: :: ApplyTyAlt :: ''
+  {{ tex \applyty{[[ A ]]}{[[ Fty ]]}{[[ B ]]} }}
+  by
+
+  % ordinaryUFty Fty
+  -------------------------- :: ApplyTyAltEmpty
+  applyAlt(Empty, Fty) => Empty
+
+  ------------------------------------ :: ApplyAltFunTy
+  applyAlt(forall X . A, [B]) => A[X~>B]
+
+  % ordinaryUFty B
+  B <: A
+  ----------------------- :: ApplyTyAltFun
+  applyAlt(A -> A', B) => A'
+
+  % ordinaryUFty Fty
+  applyAlt(A1, Fty) => A1'
+  applyAlt(A2, Fty) => A2'
+  -------------------------------- :: ApplyTyAltUnion
+  applyAlt(A1 | A2, Fty) => A1' | A2'
+
+  splitU B ~ B1 | B2
+  applyAlt(A, B1) => B1'
+  applyAlt(A, B2) => B2'
+  ------------------------ :: ApplyTyAltUnionArg
+  applyAlt(A, B) => B1' | B2'
+
+  % ordinaryUFty Fty
+  applyAlt(A1, Fty) => A1'
+  applyAlt(A2, Fty) =/>
+  ------------------------------ :: ApplyTyAltInterL
+  applyAlt(A1 & A2, Fty) => A1'
+
+  % ordinaryUFty Fty
+  applyAlt(A1, Fty) =/>
+  applyAlt(A2, Fty) => A2'
+  ------------------------------ :: ApplyTyAltInterR
+  applyAlt(A1 & A2, Fty) => A2'
+
+  % ordinaryUFty Fty
+  applyAlt(A1, Fty) => A1'
+  applyAlt(A2, Fty) => A2'
+  ------------------------------ :: ApplyTyAltInterBoth
+  applyAlt(A1 & A2, Fty) => A1' & A2'
+  
+  defn
+  applyAlt ( A , Fty ) =/>
+  :: :: NApplyTyAlt :: ''
+  {{ tex \napplyAltty{[[ A ]]}{[[ Fty ]]} }}
+  by
+
+  ---------------------------------- :: NApplyTyAltTop
+  applyAlt(Top, Fty) =/>
+  
+  ---------------------------------- :: NApplyTyAltVar
+  applyAlt(X, Fty) =/>
+  
+  ---------------------------------- :: NApplyTyAltIn
+  applyAlt(In l A, Fty) =/>
+  
+  ---------------------------------- :: NApplyTyAltAll
+  applyAlt(forall X . A, B) =/>
+
+  lc_typ A 
+  ordinaryUFty B
+  not (B <: A)
+  ----------------------- :: NApplyTyAltFun
+  applyAlt(A -> A', B) =/>
+
+  ----------------------- :: NApplyTyAltFunFty
+  applyAlt(A -> A', [B]) =/>
+
+  ordinaryUFty Fty
+  applyAlt(A1, Fty) =/>
+  -------------------------------- :: NApplyTyAltUnionL
+  applyAlt(A1 | A2, Fty) =/>
+
+  ordinaryUFty Fty
+  applyAlt(A2, Fty) =/>
+  -------------------------------- :: NApplyTyAltUnionR
+  applyAlt(A1 | A2, Fty) =/>
+  
+  splitU B ~ B1 | B2
+  applyAlt(A, B1) =/>
+  ------------------------ :: NApplyTyAltUnionArgL
+  applyAlt(A, B) =/>
+  
+  splitU B ~ B1 | B2
+  applyAlt(A, B2) =/>
+  ------------------------ :: NApplyTyAltUnionArgR
+  applyAlt(A, B) =/>
+
+  ordinaryUFty Fty
+  applyAlt(A1, Fty) =/>
+  applyAlt(A2, Fty) =/>
+  ------------------------------ :: NApplyTyAltInter
+  applyAlt(A1 & A2, Fty) =/>
+
+defns
+ApptyLs :: '' ::=
+
+  defn
+  applyLs ( A , Fty ) => B
+  :: :: ApplyTyLs :: ''
+  {{ tex \applyty{[[ A ]]}{[[ Fty ]]}{[[ B ]]} }}
+  by
+
+  -------------------------- :: ApplyTyLsEmpty
+  applyLs(Empty, Fty) => Empty
+
+  ------------------------------------ :: ApplyLsFunTy
+  applyLs(forall X . A, [B]) => A[X~>B]
+
+  B <: A
+  ----------------------- :: ApplyTyLsFun
+  applyLs(A -> A', B) => A'
+
+  applyLs(A1, Fty) => A1'
+  applyLs(A2, Fty) => A2'
+  -------------------------------- :: ApplyTyLsUnion
+  applyLs(A1 | A2, Fty) => A1' | A2'
+
+  applyLs(A1, Fty) => A1'
+  applyLs(A2, Fty) =/>
+  ------------------------------ :: ApplyTyLsInterL
+  applyLs(A1 & A2, Fty) => A1'
+
+  applyLs(A1, Fty) =/>
+  applyLs(A2, Fty) => A2'
+  ------------------------------ :: ApplyTyLsInterR
+  applyLs(A1 & A2, Fty) => A2'
+
+  applyLs(A1, Fty) => A1'
+  applyLs(A2, Fty) => A2'
+  ------------------------------ :: ApplyTyLsInterBoth
+  applyLs(A1 & A2, Fty) => A1' & A2'
+
+% Hard to define the negation
+  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 defns
