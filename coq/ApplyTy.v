@@ -613,9 +613,9 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
 Qed.
 
 (* B.8 (2) *)
-Lemma monotonicity_applyty_2_1 : forall A B B' C,
-    ApplyTy A (fty_StackArg B) C -> B' <: B ->
-    exists C', C' <: C /\ ApplyTy A (fty_StackArg B') C'.
+Lemma monotonicity_applyty_2_1 : forall (A B B' C : typ),
+    ApplyTy A B C -> B' <: B ->
+    exists C', C' <: C /\ ApplyTy A B' C'.
 Proof with try eassumption; elia; solve_false; destruct_conj.
   introv HA HS.
   indTypFtySize (size_typ A + size_typ B' + size_typ B).
@@ -1103,261 +1103,55 @@ Proof with try eassumption; destruct_conj.
     exists*.
 Qed.
 
-(*****************************************************************************)
-
-Lemma napplytyalt_complete : forall A B,
-    NApplyTy A B -> NApplyTyAlt A B.
+(*------------------------- Type Substitution --------------------------------*)
+Lemma typsubst_iso : forall A B C X,
+  A ~= B -> lc_typ C ->
+  ([X ~~> C] A) ~= ([X ~~> C] B).
 Proof.
-  introv H.
-  induction* H.
+  introv (HS1&HS2) Lc. unfold iso.
+  split; convert2asub;
+    applys~ typsubst_typ_algo_sub.
 Qed.
 
-#[local] Hint Resolve napplytyalt_complete : core.
-
-Lemma applytyalt_complete : forall A B C,
-    ApplyTy A B C -> ApplyTyAlt A B C.
-Proof with new_elia; try easy.
-  introv H.
-  induction* H.
-Qed.
-
-Lemma new_splu_ord_false : forall A B C,
-    new_splu A B C -> ordu A -> False.
-Proof with solve_false.
-  introv Spl Ord. forwards (D1&D2&HDS) : nsplu2splu Spl...
-Qed.
-
-#[export] Hint Immediate new_splu_ord_false : FalseHd.
-
-Lemma double_splu : forall T A1 A2 B1 B2,
-    splu T A1 A2 -> new_splu T B1 B2 ->
-    (A1 = B1 /\ A2 = B2 ) \/
-    (exists T1 T2 C1 C2 D1 D2, T = T1 & T2 /\ splu T1 C1 C2 /\
-      new_splu T1 D1 D2 /\ A1 = C1 & T2 /\ A2 = C2 & T2 /\ B1 = D1 & T2 /\ B2 = D2 & T2) \/
-    (exists T1 T2 C1 C2 D1 D2, T = T1 & T2 /\ splu T1 C1 C2 /\
-      new_splu T2 D1 D2 /\ A1 = C1 & T2 /\ A2 = C2 & T2 /\ B1 = T1 & D1 /\ B2 = T1 & D2) \/
-    (exists T1 T2 C1 C2 D1 D2, T = T1 & T2 /\ splu T2 C1 C2 /\
-      new_splu T2 D1 D2 /\ A1 = T1 & C1 /\ A2 = T1 & C2 /\ B1 = T1 & D1 /\ B2 = T1 & D2) \/
-    (exists T2, T = t_forall T2) \/
-    (exists T1 T2 C1 C2 D1 D2, T = t_rcd T1  T2 /\ splu T2 C1 C2 /\
-      new_splu T2 D1 D2 /\ A1 = t_rcd T1 C1 /\ A2 = t_rcd T1 C2 /\ B1 = t_rcd T1 D1 /\ B2 = t_rcd T1 D2).
-Proof with try exists; try splits; subst; eauto.
-  introv Hu Hi.
-  inverts keep Hu; inverts keep Hi; solve_false.
-  - left...
-  - right. left...
-  - right. right. left...
-  - right. right. right. left...
-  - right. right. right. right. left...
-  - right. right. right. right. right...
-Qed.
-
-Lemma double_new_splu : forall T A1 A2 B1 B2,
-    new_splu T A1 A2 -> new_splu T B1 B2 ->
-    (A1 = B1 /\ A2 = B2 ) \/
-    (exists T1 T2 C1 C2 D1 D2, T = T1 & T2 /\ new_splu T1 C1 C2 /\
-      new_splu T1 D1 D2 /\ A1 = C1 & T2 /\ A2 = C2 & T2 /\ B1 = D1 & T2 /\ B2 = D2 & T2) \/
-    (exists T1 T2 C1 C2 D1 D2, T = T1 & T2 /\ new_splu T1 C1 C2 /\
-      new_splu T2 D1 D2 /\ A1 = C1 & T2 /\ A2 = C2 & T2 /\ B1 = T1 & D1 /\ B2 = T1 & D2) \/
-    (exists T1 T2 C1 C2 D1 D2, T = T1 & T2 /\ new_splu T2 C1 C2 /\
-      new_splu T1 D1 D2 /\ A1 = T1 & C1 /\ A2 = T1 & C2 /\ B1 = D1 & T2 /\ B2 = D2 & T2) \/
-    (exists T1 T2 C1 C2 D1 D2, T = T1 & T2 /\ new_splu T2 C1 C2 /\
-      new_splu T2 D1 D2 /\ A1 = T1 & C1 /\ A2 = T1 & C2 /\ B1 = T1 & D1 /\ B2 = T1 & D2) \/
-    (exists T2, T = t_forall T2) \/
-    (exists T1 T2 C1 C2 D1 D2, T = t_rcd T1  T2 /\ new_splu T2 C1 C2 /\
-      new_splu T2 D1 D2 /\ A1 = t_rcd T1 C1 /\ A2 = t_rcd T1 C2 /\ B1 = t_rcd T1 D1 /\ B2 = t_rcd T1 D2).
-Proof with try exists; try splits; subst; eauto.
-  introv Hu Hi.
-  inverts keep Hu; inverts keep Hi; solve_false.
-  - left...
-  - right. left. exists. splits. reflexivity. apply H0. apply H6. all: eauto.
-  - right. right. left...
-  - right. right. right. left...
-  - right. right. right. right. left.
-     exists. splits. reflexivity. apply H0. apply H6. all: eauto.
-  - right. right. right. right. right. left...
-  - right. right. right. right. right. right.
-     exists. splits. reflexivity. apply H. apply H4. all: eauto.
-Qed.
-
-Lemma napplytyalt_inter_arg_inv : forall A B1 B2,
-    NApplyTyAlt A (B1&B2) ->
-    NApplyTyAlt A B1 /\ NApplyTyAlt A B2.
-Proof with solve_false.
-  introv HN.
-  indTypFtySize(size_typ A + size_Fty B1).
-Admitted.
-
-Lemma napplytyalt_inter_arg : forall (A B1 B2 : typ),
-    NApplyTyAlt A B1 -> NApplyTyAlt A B2 ->
-    NApplyTyAlt A (B1&B2).
-Proof with solve_false.
-  introv HN1 HN2.
-  assert (lc_typ (B1&B2)) by admit.
-  assert (lc_Fty (B1&B2)) by eauto.
-  forwards~ [?|(?&?&?)]: ordu_or_split (B1&B2)...
-  - inverts_all_ord. inverts HN1; inverts HN2... all: eauto.
-    + forwards~ [?|?]: sub_dec (B1&B2) A0.
-      * convert2asub. auto_inv.
-Abort. (* This lemma does not hold generally: consider apply a function ... *)
-
-
-Lemma napplytyalt_sound_aux : forall C D,
-    (forall A B B1 B2, size_typ A + size_typ B <= size_typ C + size_typ D  -> NApplyTyAlt A B -> new_splu B B1 B2 -> NApplyTyAlt A B1 \/ NApplyTyAlt A B2) ->
-    NApplyTyAlt C D -> NApplyTy C D.
-Proof with try eassumption; new_elia.
-  introv HL H.
-  indTypFtySize (size_typ C + size_Fty D).
-  inverts* H.
-  - forwards: IH; [ | eassumption | |..]; new_elia. intros; applys HL... now eauto.
-  - forwards: IH; [ | eassumption | |..]; new_elia. intros; applys HL... now eauto.
-  - forwards (D1&D2&HDS) : nsplu2splu; [eassumption | ..]; eauto.
-    forwards HDS' : splu2nsplu HDS.
-    eapply NApplyTyAltUnionArgL in H1...
-    forwards [HN|HN]: HL HDS'...
-    all: forwards*: IH HN...
-    all: intros; applys HL...
-  - forwards (D1&D2&HDS) : nsplu2splu; [eassumption | ..]; eauto.
-    forwards HDS' : splu2nsplu HDS.
-    eapply NApplyTyAltUnionArgR in H1...
-    forwards [HN|HN]: HL HDS'...
-    all: forwards*: IH HN...
-    all: intros; applys HL...
-  - forwards: IH H1... all: forwards: IH H2...
-    1-3 : intros; applys HL...
-    now eauto.
-Qed.
-
-Lemma napplytyalt_splitu_arg_inv : forall (A B B1 B2 : typ),
-    (forall C D, size_typ C + size_typ D < size_typ A + size_typ B -> NApplyTyAlt C D -> NApplyTy C D) ->
-    NApplyTyAlt A B -> new_splu B B1 B2 ->
-    NApplyTyAlt A B1 \/ NApplyTyAlt A B2.
-Proof with try eassumption; new_elia; solve_false.
-  introv HL HN HS.
-  indTypSize (size_typ A + size_typ B).
-  inverts HN.
-  all: try match goal with | H: UnionOrdinaryFty _ |- _ => inverts H end...
-  all: try solve [ left; eauto ]. (* only the two splu cases remain *)
-  all: match goal with
-       | H1: new_splu ?B _ _, H2: new_splu ?B _ _ |- _ =>
-           forwards [ ?| [?|?] ]: double_new_splu H1 H2; destruct_conj; subst
-       end.
-  all: try solve [ left; eauto ]; try solve [ right; eauto ]. (* elim two simple cases *)
-  - forwards (?&?): napplytyalt_inter_arg_inv H2.
-    eapply NApplyTyAltUnionArgL in H...
-    forwards [?|?]: IH H H1... 1: { intros; applys HL... }
-    1: left. 2: right. (* all: applys napplytyalt_inter_arg... WRONG *) all: admit.
-  - admit.
-  - forwards (?&?): napplytyalt_inter_arg_inv H2.
-    eapply NApplyTyAltUnionArgR in H...
-Admitted.
-
-Lemma napplytyalt_sound : forall A B,
-    NApplyTyAlt A B -> NApplyTy A B.
-Proof with try eassumption; new_elia.
-  introv H.
-  indTypFtySize(size_typ A + size_Fty B).
-  inverts* H.
-  all: try( forwards: IH; [eassumption | new_elia |..]; now eauto ).
-  - forwards (D1&D2&HDS) : nsplu2splu; [eassumption | ..]; eauto.
-    forwards HDS' : splu2nsplu HDS.
-    eapply NApplyTyAltUnionArgL in H1...
-    forwards [HN|HN]: napplytyalt_splitu_arg_inv H1 HDS'...
-    (* all: forwards*: IH HN... *)
-Admitted.
-
-(* napplytyAlt is not sound *)
-(****************************)
-
-(* Lemma applytyalt_splitu_arg_inv : forall (A B B1 B2 : typ), *)
-(*     (forall C D, size_typ C + size_typ D < size_typ A + size_typ B -> ApplyTyAlt A B C -> exists C' , ApplyTy A B C' /\ C' <: C) -> *)
-(*     ApplyTyAlt A B C -> new_splu B B1 B2 -> *)
-(*     exists C', ApplyTyAlt A B1 C' \/ ApplyTyAlt A B2 C'. *)
-(* Proof with try eassumption; new_elia; solve_false. *)
-(*   introv HL HN HS. *)
-(*   indTypSize (size_typ A + size_typ B). *)
-(*   inverts HN. *)
-(*   all: try match goal with | H: UnionOrdinaryFty _ |- _ => inverts H end... *)
-(*   all: try solve [ left; eauto ]. (* only the two splu cases remain *) *)
-(*   all: match goal with *)
-(*        | H1: new_splu ?B _ _, H2: new_splu ?B _ _ |- _ => *)
-(*            forwards [ ?| [?|?] ]: double_new_splu H1 H2; destruct_conj; subst *)
-(*        end. *)
-(*   all: try solve [ left; eauto ]; try solve [ right; eauto ]. (* elim two simple cases *) *)
-(*   - forwards (?&?): napplytyalt_inter_arg_inv H2. *)
-(*     eapply NApplyTyAltUnionArgL in H... *)
-(*     forwards [?|?]: IH H H1... 1: { intros; applys HL... } *)
-(*     1: left. 2: right. (* all: applys napplytyalt_inter_arg... WRONG *) all: admit. *)
-(*   - admit. *)
-(*   - forwards (?&?): napplytyalt_inter_arg_inv H2. *)
-(*     eapply NApplyTyAltUnionArgR in H... *)
-(* Admitted. *)
-
-Lemma applytyalt_sound : forall A B C,
-    ApplyTyAlt A B C -> exists C' , ApplyTy A B C' /\ C' <: C.
-Proof with try eassumption; new_elia.
-  introv App.
-  indTypFtySize (size_typ A + size_Fty B).
-  Local Ltac applyih IH := forwards: IH; [ | eassumption | |..].
-  inverts* App.
-  - exists. split~. admit.
-  - applyih IH... clear H1.
-    applyih IH... destruct_conj.
-    exists. split. eauto. admit.
-  - applyih IH... clear H1.
-    applyih IH... destruct_conj.
-    (* new_splu case *)
-    (* forwards (D1&D2&HDS) : nsplu2splu... forwards HDS' : splu2nsplu HDS. *)
-    (* exists. split. eauto. admit. *)
-    inverts H. (* 5 cases for all new_splu *)
-    + exists. split. eauto. admit.
-    + forwards (D1&D2&HDS) : nsplu2splu...
-      exists. split. applys* ApplyTyUnionArg.
-  -
-
-    intros; applys HL... now eauto.
-  - forwards: IH; [ | eassumption | |..]; new_elia. intros; applys HL... now eauto.
-  - forwards (D1&D2&HDS) : nsplu2splu; [eassumption | ..]; eauto.
-    forwards HDS' : splu2nsplu HDS.
-    eapply NApplyTyAltUnionArgL in H1...
-    forwards [HN|HN]: HL HDS'...
-    all: forwards*: IH HN...
-    all: intros; applys HL...
-  - forwards (D1&D2&HDS) : nsplu2splu; [eassumption | ..]; eauto.
-    forwards HDS' : splu2nsplu HDS.
-    eapply NApplyTyAltUnionArgR in H1...
-    forwards [HN|HN]: HL HDS'...
-    all: forwards*: IH HN...
-    all: intros; applys HL...
-  - forwards: IH H1... all: forwards: IH H2...
-    1-3 : intros; applys HL...
-    now eauto.
-Qed.
-
-Lemma typsubst_typ_applytyalt : forall (A B C D : typ) X,
-  ApplyTyAlt A B C -> lc_typ D ->
-  ApplyTyAlt ([X ~~> D] A) ([X ~~> D] B) ([X ~~> D] C).
-Admitted. (* I removed all ordu condition in ApplyTyAlt to make this trivially true *)
-
-Lemma typsubst_typ_applyty : forall (A B C D : typ) X,
-  ApplyTy A B C -> lc_typ D ->
-  exists C', ApplyTy ([X ~~> D] A) ([X ~~> D] B) C' /\ C' <: ([X ~~> D] C).
-Proof.
-  introv App Lc.
-  apply applytyalt_complete in App.
-  forwards App': typsubst_typ_applytyalt X App Lc.
-  forwards (?&?&?): applytyalt_sound App'.
-  eauto.
-Qed.
-
-(******************************* draft *************************************)
-Lemma napplytyalt_sound_splu_1 : forall (A B B1 B2 : typ),
-    NApplyTyAlt A B1 -> new_splu B B1 B2 -> NApplyTy A B.
+Lemma applyty_iso : forall (A A' B B' C : typ),
+    ApplyTy A B C -> A' ~= A -> B' ~= B ->
+    exists C', C' <: C /\ ApplyTy A' B' C'.
 Proof with try eassumption.
-  introv HN HS.
-  forwards (D1&D2&HDS) : nsplu2splu HS.
-  indTypSize(size_typ A + size_typ B).
-  forwards [ ?| [?|?] ]: double_splu HS; try eassumption; destruct_conj; subst.
-  all: try( forwards: IH; [ | eassumption | eassumption |..]; try eassumption; now new_elia ).
-  - econstructor...
-    forwards: IH; [ | eassumption | eassumption |..]; try eassumption. now new_eli
+  introv App (HS1&HS1') (HS2&HS2').
+  forwards (?&Sub&App'): monotonicity_applyty_1 App...
+  forwards (?&Sub'&App''): monotonicity_applyty_2_1 App'...
+  exists. split. applys DSub_Trans... apply App''.
+Qed.
+
+Lemma typsubst_applyty_ord : forall (A B C U : typ) X,
+    ApplyTy A B C -> lc_typ U -> ordu B ->
+    exists C', C' <: [X ~~> U] C /\ ApplyTy ([X ~~> U] A) ([X ~~> U] B) C'.
+Proof.
+  introv App Lc Ord.
+  forwards: applyty_soundness_1 App.
+  convert2asub. eapply typsubst_typ_algo_sub in H. convert2dsub.
+  forwards: applyty_completeness_1 H.
+  (* completeness needs ordu *)
+Abort.
+
+Lemma typsubst_applyty : forall (A B C U : typ) X,
+    ApplyTy A B C -> lc_typ U ->
+    exists C', ApplyTy ([X ~~> U] A) ([X ~~> U] B) C' /\ C' <: [X ~~> U] C.
+Proof with try reflexivity; try eassumption.
+  introv App Lc.
+  inductions App.
+  all: try forwards: IHApp...
+  all: try forwards: IHApp1...
+  all: try forwards: IHApp2...
+  4: { destruct_conj.
+       forwards App: ApplyTyUnionArg H0 H1. applys* SpU_or.
+       forwards App': applyty_iso App.
+       now applys* iso_refl.
+       apply splu_iso in H. eapply typsubst_iso in H. simpl in H.
+       now applys~ H. now auto. destruct_conj.
+       exists. split... simpl. applys DSub_Trans H4.
+       convert2asub. match_or...
+  }
+  (* 3: { destruct_conj. simpl. exists. split. *)
+  (*      applys ApplyTyUnion.  (* no ordu *) } *)
+Abort.

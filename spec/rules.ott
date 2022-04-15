@@ -1092,7 +1092,45 @@ ApptyLs :: '' ::=
   ------------------------------ :: ApplyTyLsInterBoth
   applyLs(A1 & A2, Fty) => A1' & A2'
 
-% Hard to define the negation
+
+  defn
+  applyLs ( A , Fty ) =/>
+  :: :: NApplyTyLs :: ''
+  {{ tex \napplyLsty{[[ A ]]}{[[ Fty ]]} }}
+  by
+
+  ---------------------------------- :: NApplyTyLsTop
+  applyLs(Top, Fty) =/>
+  
+  ---------------------------------- :: NApplyTyLsVar
+  applyLs(X, Fty) =/>
+  
+  ---------------------------------- :: NApplyTyLsIn
+  applyLs(In l A, Fty) =/>
+  
+  ---------------------------------- :: NApplyTyLsAll
+  applyLs(forall X . A, B) =/>
+
+  lc_typ A 
+  not (B <: A)
+  ----------------------- :: NApplyTyLsFun
+  applyLs(A -> A', B) =/>
+
+  ----------------------- :: NApplyTyLsFunFty
+  applyLs(A -> A', [B]) =/>
+
+  applyLs(A1, Fty) =/>
+  -------------------------------- :: NApplyTyLsUnionL
+  applyLs(A1 | A2, Fty) =/>
+
+  applyLs(A2, Fty) =/>
+  -------------------------------- :: NApplyTyLsUnionR
+  applyLs(A1 | A2, Fty) =/>
+  
+  applyLs(A1, Fty) =/>
+  applyLs(A2, Fty) =/>
+  ------------------------------ :: NApplyTyLsInter
+  applyLs(A1 & A2, Fty) =/>
   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

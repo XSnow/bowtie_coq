@@ -836,19 +836,54 @@ Inductive ApplyTyLs : typ -> Fty -> typ -> Prop :=    (* defn ApplyTyLs *)
      ApplyTyLs A2 Fty5 A2' ->
      ApplyTyLs (t_or A1 A2) Fty5 (t_or A1' A2')
  | ApplyTyLsInterL : forall (A1 A2:typ) (Fty5:Fty) (A1':typ),
-     lc_typ A2 ->
      ApplyTyLs A1 Fty5 A1' ->
-     (PARSE_ERROR "File ../spec/rules.ott on line 1081 - 1082" "no parses (char 21):   applyLs(A2, Fty) =/***> ") ->
+     NApplyTyLs A2 Fty5 ->
      ApplyTyLs (t_and A1 A2) Fty5 A1'
  | ApplyTyLsInterR : forall (A1 A2:typ) (Fty5:Fty) (A2':typ),
-     lc_typ A1 ->
-     (PARSE_ERROR "File ../spec/rules.ott on line 1085 - 1086" "no parses (char 21):   applyLs(A1, Fty) =/***> ") ->
+     NApplyTyLs A1 Fty5 ->
      ApplyTyLs A2 Fty5 A2' ->
      ApplyTyLs (t_and A1 A2) Fty5 A2'
  | ApplyTyLsInterBoth : forall (A1 A2:typ) (Fty5:Fty) (A1' A2':typ),
      ApplyTyLs A1 Fty5 A1' ->
      ApplyTyLs A2 Fty5 A2' ->
-     ApplyTyLs (t_and A1 A2) Fty5 (t_and A1' A2').
+     ApplyTyLs (t_and A1 A2) Fty5 (t_and A1' A2')
+with NApplyTyLs : typ -> Fty -> Prop :=    (* defn NApplyTyLs *)
+ | NApplyTyLsTop : forall (Fty5:Fty),
+     lc_Fty Fty5 ->
+     NApplyTyLs t_top Fty5
+ | NApplyTyLsVar : forall (X:typevar) (Fty5:Fty),
+     lc_Fty Fty5 ->
+     NApplyTyLs (t_tvar_f X) Fty5
+ | NApplyTyLsIn : forall (l5:l) (A:typ) (Fty5:Fty),
+     lc_typ A ->
+     lc_Fty Fty5 ->
+     NApplyTyLs (t_rcd l5 A) Fty5
+ | NApplyTyLsAll : forall (A B:typ),
+     lc_typ (t_forall A) ->
+     lc_typ B ->
+     NApplyTyLs (t_forall A) (fty_StackArg B)
+ | NApplyTyLsFun : forall (A A' B:typ),
+     lc_typ A' ->
+      lc_typ  A  ->
+      not (  declarative_subtyping B A  )  ->
+     NApplyTyLs (t_arrow A A') (fty_StackArg B)
+ | NApplyTyLsFunFty : forall (A A' B:typ),
+     lc_typ A ->
+     lc_typ A' ->
+     lc_typ B ->
+     NApplyTyLs (t_arrow A A') (fty_StackTyArg B)
+ | NApplyTyLsUnionL : forall (A1 A2:typ) (Fty5:Fty),
+     lc_typ A2 ->
+     NApplyTyLs A1 Fty5 ->
+     NApplyTyLs (t_or A1 A2) Fty5
+ | NApplyTyLsUnionR : forall (A1 A2:typ) (Fty5:Fty),
+     lc_typ A1 ->
+     NApplyTyLs A2 Fty5 ->
+     NApplyTyLs (t_or A1 A2) Fty5
+ | NApplyTyLsInter : forall (A1 A2:typ) (Fty5:Fty),
+     NApplyTyLs A1 Fty5 ->
+     NApplyTyLs A2 Fty5 ->
+     NApplyTyLs (t_and A1 A2) Fty5.
 
 (* defns NotDistinguishableTypes *)
 Inductive NotDistinguishableTypes : typ -> Prop :=    (* defn NotDistinguishableTypes *)
@@ -1085,6 +1120,6 @@ Inductive sim : typ -> typ -> Prop :=    (* defn sim *)
 
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub ApplyTyAlt NApplyTyAlt ApplyTyLs NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability DistinguishabilityAlt MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub ApplyTyAlt NApplyTyAlt ApplyTyLs NApplyTyLs NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability DistinguishabilityAlt MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
 
 
