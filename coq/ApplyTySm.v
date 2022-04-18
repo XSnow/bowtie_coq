@@ -182,28 +182,66 @@ Proof.
     eauto using algo_trans.
 Qed.
 
-Lemma applyTySimple_subst : forall A B C U X,
+Lemma applyTySimple_subst : forall A X U B C,
     ApplyTySimple A (fty_StackArg B) C ->
     lc_typ U ->
     exists C', ApplyTySimple ([X ~~> U] A) ([X ~~> U] B) C' /\
            C' <: [X ~~> U] C.
 Proof.
-  intros A B C U X.
-  intros Happ ?.
-  induction A; cbn; eexists; inverts Happ; cbn.
-  - admit. (* TODO hard cases *)
-  - admit.
-  - admit.
-  - admit.
-
-  - splits.
+  intros A X U.
+  induction A; intros B C Happ ?; cbn; inverts Happ; cbn.
+  - specializes IHA1; eauto.
+    destruct IHA1 as [ C1 [? ?] ].
+    forwards Hinter: applyTySimple_inter_l. eauto.
+    destruct Hinter as [ C1' [? ?] ].
+    eauto.
+  - specializes IHA2; eauto.
+    destruct IHA2 as [ C2 [? ?] ].
+    forwards Hinter: applyTySimple_inter_r. eauto.
+    destruct Hinter as [ C2' [? ?] ].
+    eauto.
+  - specializes IHA1; eauto.
+    destruct IHA1 as [ C1 [? ?] ].
+    specializes IHA2; eauto.
+    destruct IHA2 as [ C2 [? ?] ].
+    eexists. splits; eauto.
+  - specializes IHA1; eauto.
+    destruct IHA1 as [ C1 [? ?] ].
+    specializes IHA2; eauto.
+    destruct IHA2 as [ C2 [? ?] ].
+    eexists. splits.
+    + constructor; eauto.
+    + convert2asub.
+      solve_algo_sub; eauto.
+  - eexists. splits.
     constructor.
     + admit. (* TODO lc *)
     + convert2asub.
       apply typsubst_typ_algo_sub; auto.
     + constructor.
       admit. (* TODO lc *)
-  - splits; auto.
+  - eexists. splits; auto.
     constructor.
-    admit. (* TODO loc *)
-Qed.
+    admit. (* TODO lc *)
+Admitted.
+
+Lemma applyTy_subst_ordu : forall A X U B C,
+    ApplyTy A (fty_StackArg B) C ->
+    lc_typ U ->
+    ordu B ->
+    exists C', ApplyTy ([X ~~> U] A) ([X ~~> U] B) C' /\
+           C' <: [X ~~> U] C.
+Proof.
+  intros A X U B C Happ Hlc Hord.
+  forwards H: applyTySimple_applyTy.
+  - constructor. exact Hord.
+  - destruct H as [H _].
+    rewrite <- H in Happ.
+    forwards H': applyTySimple_subst; eauto.
+    destruct H' as [C' Hsubst].
+    forwards H'': applyTySimple_applyTy.
+    + admit. (* TODO lc *)
+    + destruct H'' as [H'' _].
+      rewrite H'' in Hsubst.
+      eauto.
+Abort.
