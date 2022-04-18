@@ -1153,5 +1153,5 @@ Proof with try reflexivity; try eassumption.
        convert2asub. match_or...
   }
   3: { destruct_conj. simpl. exists. split.
-       applys ApplyTyUnion.  (* no ordu *) }
+       applys ApplyTyUnion.  all:admit. }
 Abort.

@@ -588,6 +588,83 @@ Inductive ApplyTy : typ -> Fty -> typ -> Prop :=    (* defn ApplyTy *)
      ApplyTy A1 Fty5 A1' ->
      ApplyTy A2 Fty5 A2' ->
      ApplyTy (t_and A1 A2) Fty5 (t_and A1' A2')
+with ApplyTySimple : typ -> Fty -> typ -> Prop :=    (* defn ApplyTySimple *)
+ | ApplyTySmEmpty : forall (Fty5:Fty),
+     lc_Fty Fty5 ->
+     ApplyTySimple t_bot Fty5 t_bot
+ | ApplyTySmFunTy : forall (A B:typ),
+     lc_typ (t_forall A) ->
+     lc_typ B ->
+     ApplyTySimple (t_forall A) (fty_StackTyArg B)  (open_typ_wrt_typ  A B ) 
+ | ApplyTySmFun : forall (A A' B:typ),
+     lc_typ A' ->
+     declarative_subtyping B A ->
+     ApplyTySimple (t_arrow A A') (fty_StackArg B) A'
+ | ApplyTySmUnion : forall (A1 A2:typ) (Fty5:Fty) (A1' A2':typ),
+     ApplyTySimple A1 Fty5 A1' ->
+     ApplyTySimple A2 Fty5 A2' ->
+     ApplyTySimple (t_or A1 A2) Fty5 (t_or A1' A2')
+ | ApplyTySmInterL : forall (A1 A2:typ) (Fty5:Fty) (A1':typ),
+     ApplyTySimple A1 Fty5 A1' ->
+     NApplyTySimple A2 Fty5 ->
+     ApplyTySimple (t_and A1 A2) Fty5 A1'
+ | ApplyTySmInterR : forall (A1 A2:typ) (Fty5:Fty) (A2':typ),
+     NApplyTySimple A1 Fty5 ->
+     ApplyTySimple A2 Fty5 A2' ->
+     ApplyTySimple (t_and A1 A2) Fty5 A2'
+ | ApplyTySmInterBoth : forall (A1 A2:typ) (Fty5:Fty) (A1' A2':typ),
+     ApplyTySimple A1 Fty5 A1' ->
+     ApplyTySimple A2 Fty5 A2' ->
+     ApplyTySimple (t_and A1 A2) Fty5 (t_and A1' A2')
+with NApplyTySimple : typ -> Fty -> Prop :=    (* defn NApplyTySimple *)
+ | NApplyTySmTop : forall (Fty5:Fty),
+     lc_Fty Fty5 ->
+     NApplyTySimple t_top Fty5
+ | NApplyTySmVar : forall (X:typevar) (Fty5:Fty),
+     lc_Fty Fty5 ->
+     NApplyTySimple (t_tvar_f X) Fty5
+ | NApplyTySmIn : forall (l5:l) (A:typ) (Fty5:Fty),
+     lc_typ A ->
+     lc_Fty Fty5 ->
+     NApplyTySimple (t_rcd l5 A) Fty5
+ | NApplyTySmAll : forall (A B:typ),
+     lc_typ (t_forall A) ->
+     lc_typ B ->
+     NApplyTySimple (t_forall A) (fty_StackArg B)
+ | NApplyTySmFun : forall (A A' B:typ),
+     lc_typ A' ->
+      lc_typ  A  ->
+     UnionOrdinaryFty (fty_StackArg B) ->
+      not (  declarative_subtyping B A  )  ->
+     NApplyTySimple (t_arrow A A') (fty_StackArg B)
+ | NApplyTySmFunFty : forall (A A' B:typ),
+     lc_typ A ->
+     lc_typ A' ->
+     lc_typ B ->
+     NApplyTySimple (t_arrow A A') (fty_StackTyArg B)
+ | NApplyTySmUnionL : forall (A1 A2:typ) (Fty5:Fty),
+     lc_typ A2 ->
+     UnionOrdinaryFty Fty5 ->
+     NApplyTySimple A1 Fty5 ->
+     NApplyTySimple (t_or A1 A2) Fty5
+ | NApplyTySmUnionR : forall (A1 A2:typ) (Fty5:Fty),
+     lc_typ A1 ->
+     UnionOrdinaryFty Fty5 ->
+     NApplyTySimple A2 Fty5 ->
+     NApplyTySimple (t_or A1 A2) Fty5
+ | NApplyTySmUnionArgL : forall (A B B1 B2:typ),
+     splu B B1 B2 ->
+     NApplyTySimple A (fty_StackArg B1) ->
+     NApplyTySimple A (fty_StackArg B)
+ | NApplyTySmUnionArgR : forall (A B B1 B2:typ),
+     splu B B1 B2 ->
+     NApplyTySimple A (fty_StackArg B2) ->
+     NApplyTySimple A (fty_StackArg B)
+ | NApplyTySmInter : forall (A1 A2:typ) (Fty5:Fty),
+     UnionOrdinaryFty Fty5 ->
+     NApplyTySimple A1 Fty5 ->
+     NApplyTySimple A2 Fty5 ->
+     NApplyTySimple (t_and A1 A2) Fty5
 with NApplyTy : typ -> Fty -> Prop :=    (* defn NApplyTy *)
  | NApplyTyTop : forall (Fty5:Fty),
      lc_Fty Fty5 ->
@@ -969,6 +1046,6 @@ Inductive sim : typ -> typ -> Prop :=    (* defn sim *)
 
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy NApplyTy new_spli new_splu new_sub NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability DistinguishabilityAlt MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy ApplyTySimple NApplyTySimple NApplyTy new_spli new_splu new_sub NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability DistinguishabilityAlt MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
 
 

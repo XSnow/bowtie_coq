@@ -763,6 +763,97 @@ Appty :: '' ::=
   ------------------------------ :: ApplyTyInterBoth
   apply(A1 & A2, Fty) => A1' & A2'
   
+
+  defn
+  applySm ( A , Fty ) => B
+  :: :: ApplyTySimple :: 'ApplyTySm'
+  {{ tex \applyty{[[ A ]]}{[[ Fty ]]}{[[ B ]]} }}
+  by
+
+  -------------------------- :: Empty
+  applySm(Empty, Fty) => Empty
+
+  ------------------------------------ :: FunTy
+  applySm(forall X . A, [B]) => A[X~>B]
+
+  B <: A
+  ----------------------- :: Fun
+  applySm(A -> A', B) => A'
+
+  applySm(A1, Fty) => A1'
+  applySm(A2, Fty) => A2'
+  -------------------------------- :: Union
+  applySm(A1 | A2, Fty) => A1' | A2'
+
+  applySm(A1, Fty) => A1'
+  applySm(A2, Fty) =/>
+  ------------------------------ :: InterL
+  applySm(A1 & A2, Fty) => A1'
+
+  applySm(A1, Fty) =/>
+  applySm(A2, Fty) => A2'
+  ------------------------------ :: InterR
+  applySm(A1 & A2, Fty) => A2'
+
+  applySm(A1, Fty) => A1'
+  applySm(A2, Fty) => A2'
+  ---------------------------------- :: InterBoth
+  applySm(A1 & A2, Fty) => A1' & A2'
+
+  defn
+  applySm ( A , Fty ) =/>
+  :: :: NApplyTySimple :: 'NApplyTySm'
+  {{ tex \napplyty{[[ A ]]}{[[ Fty ]]} }}
+  by
+
+  ---------------------------------- :: Top
+  applySm(Top, Fty) =/>
+  
+  ---------------------------------- :: Var
+  applySm(X, Fty) =/>
+  
+  ---------------------------------- :: In
+  applySm(In l A, Fty) =/>
+  
+  ---------------------------------- :: All
+  applySm(forall X . A, B) =/>
+
+  lc_typ A 
+  ordinaryUFty B
+  not (B <: A)
+  ----------------------- :: Fun
+  applySm(A -> A', B) =/>
+
+  ----------------------- :: FunFty
+  applySm(A -> A', [B]) =/>
+
+  ordinaryUFty Fty
+  applySm(A1, Fty) =/>
+  -------------------------------- :: UnionL
+  applySm(A1 | A2, Fty) =/>
+
+  ordinaryUFty Fty
+  applySm(A2, Fty) =/>
+  -------------------------------- :: UnionR
+  applySm(A1 | A2, Fty) =/>
+  
+  splitU B = B1 | B2
+  applySm(A, B1) =/>
+  ------------------------ :: UnionArgL
+  applySm(A, B) =/>
+  
+  splitU B = B1 | B2
+  applySm(A, B2) =/>
+  ------------------------ :: UnionArgR
+  applySm(A, B) =/>
+
+  ordinaryUFty Fty
+  applySm(A1, Fty) =/>
+  applySm(A2, Fty) =/>
+  ------------------------------ :: Inter
+  applySm(A1 & A2, Fty) =/>
+
+
   defn
   apply ( A , Fty ) =/>
   :: :: NApplyTy :: ''
