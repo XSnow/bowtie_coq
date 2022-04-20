@@ -71,10 +71,41 @@ Proof.
 Admitted.
 
 Lemma applyTySimple_excl_mid : forall A B,
+    lc_typ A -> lc_typ B -> (exists C, ApplyTySimple A B C) \/
+      (NApplyTySimple A B).
+Proof with try eassumption; elia.
+  introv Lc1 Lc2.
+  indTypFtySize (size_typ A + size_Fty B).
+  lets~ [?|(T&T1&T2&?&?)]: (ordu_or_split_Fty B).
+  - destruct~ Lc1.
+    + (* inter *)
+      forwards [(?&?)|?]: IH A1 B...
+      all: forwards [(?&?)|?]: IH A2 B...
+      all: eauto.
+    + (* union *)
+      forwards [(?&?)|?]: IH A1 B...
+      all: forwards [(?&?)|?]: IH A2 B...
+      all: eauto.
+    + (* arrow *)
+      destruct~ H. forwards~ [?|?]: sub_dec A0 A.
+      eauto.
+    + (* bot *)
+      eauto.
+  - inverts H.
+    forwards~ [(?&?)|?]: IH A T1...
+    all: forwards~ [(?&?)|?]: IH A T2...
+    all: eauto.
+    + left. (* If this case is true, ApplyTySimple is equivalent to ApplyTy? *)
+  (* H : ApplyTySimple A T1 x *)
+  (* x0 : typ *)
+  (* H1 : ApplyTySimple A T2 x0 *)
+  (* ============================ *)
+  (* exists C, ApplyTySimple A T C *)
+Abort.
+
+Lemma applyTySimple_excl_mid : forall A B,
     (exists C, ApplyTySimple A B C) \/
       (NApplyTySimple A B).
-Proof.
-  (* TODO *)
 Admitted.
 
 Lemma applyTySimple_inter_l : forall A1 A2 B C,
