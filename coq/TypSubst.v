@@ -229,13 +229,12 @@ Proof.
   - destruct H as [H _].
     rewrite <- H in Happ.
     forwards H': applyTyLs_subst; eauto.
-    destruct H' as [C' Hsubst].
-    forwards H'': applyTyLs_applyTy.
-    + admit. (* wrong ? *)
-    + destruct H'' as [H'' _].
-      rewrite H'' in Hsubst.
+    destruct H' as [C' [Hsubst ?] ].
+    forwards Hapx: applyTyLs_approx.
+    + exact Hsubst.
+    + destruct Hapx as [C'' [? ?] ].
       eauto.
-Abort.
+Qed.
 
 (************************** previously stuck proofs ***************************)
 (* (* B.15 (1) *) *)
