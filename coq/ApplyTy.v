@@ -479,6 +479,25 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
      convert2asub. eauto.
 Qed.
 
+Lemma applyty_completeness_1_all : forall A B D,
+    A <: (t_arrow B D) ->
+         exists C, ApplyTy A (fty_StackArg B) C /\ (t_arrow B C) <: (t_arrow B D).
+Proof with try eassumption; elia.
+  introv Sub.
+  indTypFtySize (size_Fty B).
+  forwards [?|(T&T1&T2&?&?)]: ordu_or_split_Fty B... now eauto.
+  - applys applyty_completeness_1... inverts~ H.
+  - inverts H.
+    assert (Sub1: A <: t_arrow T1 D).
+    { applys DSub_Trans Sub. constructor~. convert2asub. eauto. }
+    assert (Sub2: A <: t_arrow T2 D).
+    { applys DSub_Trans Sub. constructor~. convert2asub. eauto. }
+    forwards: IH Sub1... forwards: IH Sub2...
+    all: destruct_conj.
+    + exists (x0 | x). split. econstructor...
+      convert2asub.  auto_inv. constructor*.
+Qed.
+
 Lemma applyty_completeness_2 : forall A B,
     A <: (t_forall B) ->
          exists C L, forall X, X `notin` L ->
