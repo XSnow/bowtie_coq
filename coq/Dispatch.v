@@ -413,6 +413,7 @@ Qed.
 
 #[export] Hint Immediate sub_sim_distinguishability_sub_inv : FalseHd.
 
+(* Inversion of Disjoint Union Subtyping *)
 Lemma sub_inv_distinguishabe_union : forall A B1 B2,
     isValTyp A -> A <:: B1 | B2 -> B1 <<>> B2 -> A <:: B1 \/ A <:: B2.
 Proof with try eassumption; elia; try solve [false; applys sub_sim_distinguishability_sub_inv; convert2dsub; eassumption ].

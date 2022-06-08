@@ -471,7 +471,7 @@ Proof with try reflexivity; elia; auto.
     applys DistUnionSym; try eassumption.
 Qed.
 
-(* B.11 *)
+(* B.11 Downward Closure of Distinguishability *)
 Lemma distinguishability_downward : forall A B B',
     Distinguishability A B -> B' <: B -> Distinguishability A B'.
 Proof with try reflexivity; elia; auto.

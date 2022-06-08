@@ -185,7 +185,7 @@ Proof with try eassumption; eauto.
        convert2asub. use_right_r... }
 Qed.
 
-(* Lemma B.10 *)
+(* Lemma B.9 Monotonicity of Abstract Application *)
 (*  match l [ (Box_l A) & (B1->B2) ] | (Box_l C) => C *)
 (*  match l [ (Box_l A) | (Box_l C) ] & [ (B1->B2) | (Box_l C) ] => (A|C) & C *)
 Lemma monotonicity_matchty : forall l A A' B,

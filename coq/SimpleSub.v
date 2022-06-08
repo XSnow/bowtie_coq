@@ -584,6 +584,17 @@ Proof.
   - convert2asub; solve_false.
 Qed.
 
+(* B.3 (4) *)
+Lemma valtyp_bot_inv : forall V,
+    isValTyp V -> V <: t_bot -> False.
+Proof.
+  introv Val Sub.
+  induction~ Val; intros.
+  - convert2asub; solve_false.
+  - induction H; convert2asub; solve_false; auto_inv.
+    forwards~ [?|?]: algo_sub_andlr_inv Sub; clear Sub.
+    all: convert2dsub; eauto.
+Qed.
 
 (******************************************************************************)
 (** similar *)
