@@ -444,6 +444,17 @@ Proof with simpl in *; try eassumption; try applys ASub_refl; try match goal wit
   Unshelve. all: apply empty.
 Qed.
 
+(* B.7 (2) *)
+Lemma applyty_soundness_2_simple : forall A B C,
+    ApplyTy A (fty_StackTyArg B) C ->
+    exists A', A <: t_forall A' /\ C <: (A' ^-^ B).
+Proof.
+  introv H. pick fresh X.
+  forwards~ (?&?&?): applyty_soundness_2 H.
+  subst. forwards~ (?&?): H1 X.
+  exists x. split~. convert2asub. applys* ASub_refl.
+Qed.
+
 Lemma applyty_completeness_1 : forall A B D,
     A <: (t_arrow B D) -> ordu B ->
          exists C, ApplyTy A (fty_StackArg B) C /\ (t_arrow B C) <: (t_arrow B D).
@@ -626,8 +637,9 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
     forwards : algo_sub_forall_inv X H6.
     eapply asub2nsub in H0.
     eapply typsubst_typ_new_sub in H0.
-    rewrite 2 typsubst_typ_spec in H0; rewrite 2 close_typ_wrt_typ_open_typ_wrt_typ in H0.
-    apply asub2nsub. apply~ H0.
+    rewrite 2 typsubst_typ_spec in H0;
+      rewrite 2 close_typ_wrt_typ_open_typ_wrt_typ in H0.
+    apply asub2nsub.
     all: eauto.
 Qed.
 
