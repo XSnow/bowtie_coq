@@ -376,7 +376,7 @@ Qed.
 
 (*------------------------------ Lemma B.7 -----------------------------------*)
 
-(* B.7 (1) *)
+(* B.7 Soundness of Abstract Application (1) *)
 Lemma applyty_soundness_1 : forall A B C,
     ApplyTy A (fty_StackArg B) C -> A <: (t_arrow B C).
 Proof with try eassumption; try applys ASub_refl; try match goal with |- lc_typ _ => eauto with lngen end.
@@ -599,7 +599,7 @@ Qed.
 (*------------------------------ Lemma B.9 -----------------------------------*)
 
 (* B.9 (1) *)
-Lemma monotonicity_applyty_1 : forall A A' F C,
+Lemma monotonicity_applyty_1 : forall A A' (F : Fty) C,
     ApplyTy A F C -> A' <: A -> exists C', C' <: C /\ ApplyTy A' F C'.
 Proof with try eassumption; elia; solve_false; destruct_conj.
   introv HA HS.
@@ -941,10 +941,10 @@ Proof with destruct_conj.
   inverts* H1. eauto with lngen.
 Qed.
 
-(* Lemma for B.6 Inversion of Abstract Application (4) *)
-Lemma napplyty_splitu_inv : forall A B A1 A2,
-    NApplyTy A B -> splu A A1 A2 ->
-    NApplyTy A1 B \/ NApplyTy A2 B.
+(* Lemma for B.6 Inversion of Abstract Application (6) *)
+Lemma napplyty_splitu_inv : forall A (F: Fty) A1 A2,
+    NApplyTy A F -> splu A A1 A2 ->
+    NApplyTy A1 F \/ NApplyTy A2 F.
 Proof.
   introv HA HS. gen A1 A2.
   induction HA; intros; solve_false; inverts_all_spl; auto_unify.
@@ -956,9 +956,9 @@ Proof.
 Qed.
 
 (* B.6 Inversion of Abstract Application (4) *)
-Lemma applyty_splitu_inv : forall A B A1 A2 C,
-    ApplyTy A B C -> splu A A1 A2 ->
-    exists C1 C2, C ~= C1 | C2 /\ ApplyTy A1 B C1 /\ ApplyTy A2 B C2.
+Lemma applyty_splitu_inv : forall A (F: Fty) A1 A2 C,
+    ApplyTy A F C -> splu A A1 A2 ->
+    exists C1 C2, C ~= C1 | C2 /\ ApplyTy A1 F C1 /\ ApplyTy A2 F C2.
 Proof with exists; splits.
   introv HA HS. gen A1 A2.
   induction HA; intros; solve_false; inverts_all_spl; auto_unify.
@@ -1142,35 +1142,15 @@ Proof with try eassumption.
   exists. split. applys DSub_Trans... apply App''.
 Qed.
 
-Lemma typsubst_applyty_ord : forall (A B C U : typ) X,
-    ApplyTy A B C -> lc_typ U -> ordu B ->
-    exists C', C' <: [X ~~> U] C /\ ApplyTy ([X ~~> U] A) ([X ~~> U] B) C'.
-Proof.
-  introv App Lc Ord.
-  forwards: applyty_soundness_1 App.
-  convert2asub. eapply typsubst_typ_algo_sub in H. convert2dsub.
-  forwards: applyty_completeness_1 H.
-  (* completeness needs ordu *)
-Abort.
-
+(* B.28 Type Substitution Over Abstract Application *)
 Lemma typsubst_applyty : forall (A B C U : typ) X,
     ApplyTy A B C -> lc_typ U ->
     exists C', ApplyTy ([X ~~> U] A) ([X ~~> U] B) C' /\ C' <: [X ~~> U] C.
-Proof with try reflexivity; try eassumption.
+Proof with try eassumption.
   introv App Lc.
-  inductions App.
-  all: try forwards: IHApp...
-  all: try forwards: IHApp1...
-  all: try forwards: IHApp2...
-  4: { destruct_conj.
-       forwards App: ApplyTyUnionArg H0 H1. applys* SpU_or.
-       forwards App': applyty_iso App.
-       now applys* iso_refl.
-       apply splu_iso in H. eapply typsubst_iso in H. simpl in H.
-       now applys~ H. now auto. destruct_conj.
-       exists. split... simpl. applys DSub_Trans H4.
-       convert2asub. match_or...
-  }
-  (* 3: { destruct_conj. simpl. exists. split. *)
-  (*      applys ApplyTyUnion.  (* no ordu *) } *)
-Abort.
+  apply applyty_soundness_1 in App.
+  convert2asub. eapply typsubst_typ_algo_sub in App...
+  convert2dsub. simpl in App.
+  forwards (?&?&?): applyty_completeness_1_all App.
+  exists x; split; convert2asub; auto_inv...
+Qed.
