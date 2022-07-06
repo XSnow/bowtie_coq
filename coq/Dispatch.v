@@ -173,8 +173,8 @@ Lemma applyty_andl_sub_1 : forall (A1 A2 B B1 B2 : typ) (V:Fty),
     ApplyTy (A1&A2) V B -> ApplyTy A1 V B1 -> ApplyTy A2 V B2 -> B1&B2 <: B.
 Proof with try eassumption; elia; destruct_conj; subst.
   introv WF Val AppA App1 App2.
-    indTypFtySize (size_typ A1 + size_typ A2 + size_Fty V).
-    lets~ [Hu|(?&?&Hu)]: ordu_or_split_Fty V... now eauto.
+  indTypFtySize (size_typ A1 + size_typ A2 + size_Fty V).
+  lets~ [Hu|(?&?&Hu)]: ordu_or_split_Fty V... now eauto.
   - inverts AppA; solve_false.
     forwards: applyty_unique App1...
     forwards: applyty_unique App2...
@@ -212,8 +212,8 @@ Lemma applyty_andl_sub_2 : forall (A1 A2 B B1 : typ) (V:Fty),
     ApplyTy (A1&A2) V B -> ApplyTy A1 V B1 -> NApplyTy A2 V -> B1 <: B.
 Proof with try eassumption; elia; destruct_conj; subst.
   introv WF Val AppA App1 App2.
-    indTypFtySize (size_typ A1 + size_typ A2 + size_Fty V).
-    lets~ [Hu|(?&?&Hu)]: ordu_or_split_Fty V... now eauto.
+  indTypFtySize (size_typ A1 + size_typ A2 + size_Fty V).
+  lets~ [Hu|(?&?&Hu)]: ordu_or_split_Fty V... now eauto.
   - inverts AppA; solve_false.
     forwards: applyty_unique App1...
     convert2asub. eauto.
@@ -242,8 +242,8 @@ Lemma applyty_andl_sub_3 : forall (A1 A2 B B2 : typ) (V:Fty),
     ApplyTy (A1&A2) V B -> NApplyTy A1 V -> ApplyTy A2 V B2 -> B2 <: B.
 Proof with try eassumption; elia; destruct_conj; subst.
   introv WF Val AppA App1 App2.
-    indTypFtySize (size_typ A1 + size_typ A2 + size_Fty V).
-    lets~ [Hu|(?&?&Hu)]: ordu_or_split_Fty V... now eauto.
+  indTypFtySize (size_typ A1 + size_typ A2 + size_Fty V).
+  lets~ [Hu|(?&?&Hu)]: ordu_or_split_Fty V... now eauto.
   - inverts AppA; solve_false.
     forwards: applyty_unique App2...
     convert2asub. eauto.
@@ -333,7 +333,7 @@ Qed.
 #[local] Hint Immediate sim_split_1 sim_split_2 sim_split_3 sim_split_4 sim_split_5 : core.
 
 (* This lemma is equivalent to dispatch_gen *)
-Lemma applyty_and_sim_inv : forall A A' B B' x1 x2,
+Lemma applyty_and_sim_inv : forall A A B' B' x1 x2,
     TypeWF nil (A&A') ->
     sim B B' -> ApplyTy A B x1 -> ApplyTy A' B' x2 ->
     NApplyTy A B' -> NApplyTy A' B -> False.

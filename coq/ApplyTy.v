@@ -953,7 +953,7 @@ Proof with destruct_conj.
   inverts* H1. eauto with lngen.
 Qed.
 
-(* Lemma for B.6 Inversion of Abstract Application (6) *)
+(* Lemma for B.6 Inversion of Abstract Application (7) *)
 Lemma napplyty_splitu_inv : forall A (F: Fty) A1 A2,
     NApplyTy A F -> splu A A1 A2 ->
     NApplyTy A1 F \/ NApplyTy A2 F.
