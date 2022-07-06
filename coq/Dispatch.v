@@ -401,7 +401,6 @@ Proof with destruct_conj; try subst; try solve [exists*].
   inverts HA; solve_false...
 Qed.
 
-(* new lemma *)
 Lemma sub_sim_distinguishability_sub_inv : forall A B C D,
     sim A B -> C <<>> D -> A <: C -> B <: D -> False.
 Proof with try eassumption.
