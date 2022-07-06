@@ -4,7 +4,6 @@ Definitions.v
 LN_Lemmas.v
 DistSubtyping.v
 ApplyTy.v
-MatchTy.v
 SimpleSub.v
 Distinguishability.v
 Dispatch.v

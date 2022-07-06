@@ -348,58 +348,6 @@ Inductive NegativeSubtyping : typ -> Fty -> Prop :=    (* defn NegativeSubtyping
      NegativeSubtyping Aneg2 Ftyalt ->
      NegativeSubtyping (t_and Aneg1 Aneg2) Ftyalt.
 
-(* defns MatchTy *)
-Inductive MatchTy : l -> typ -> typ -> Prop :=    (* defn MatchTy *)
- | MatchTyTop : forall (l5:l),
-     MatchTy l5 t_top t_top
- | MatchTyIn : forall (l5:l) (A:typ),
-     lc_typ A ->
-     MatchTy l5 (t_rcd l5 A) A
- | MatchTyUnionL : forall (l5:l) (A1 A2 B1:typ),
-     MatchTy l5 A1 B1 ->
-     NMatchTy l5 A2 ->
-     MatchTy l5 (t_or A1 A2) B1
- | MatchTyUnionR : forall (l5:l) (A1 A2 B2:typ),
-     NMatchTy l5 A1 ->
-     MatchTy l5 A2 B2 ->
-     MatchTy l5 (t_or A1 A2) B2
- | MatchTyUnion : forall (l5:l) (A1 A2 B1 B2:typ),
-     MatchTy l5 A1 B1 ->
-     MatchTy l5 A2 B2 ->
-     MatchTy l5 (t_or A1 A2) (t_or B1 B2)
- | MatchTyIntersection : forall (l5:l) (A1 A2 B1 B2:typ),
-     MatchTy l5 A1 B1 ->
-     MatchTy l5 A2 B2 ->
-     MatchTy l5 (t_and A1 A2) (t_and B1 B2)
-with NMatchTy : l -> typ -> Prop :=    (* defn NMatchTy *)
- | NMatchTyEmpty : forall (l5:l),
-     NMatchTy l5 t_bot
- | NMatchTyVar : forall (l5:l) (X:typevar),
-     NMatchTy l5 (t_tvar_f X)
- | NMatchTyFun : forall (l5:l) (A B:typ),
-     lc_typ A ->
-     lc_typ B ->
-     NMatchTy l5 (t_arrow A B)
- | NMatchTyAll : forall (l5:l) (B:typ),
-     lc_typ (t_forall B) ->
-     NMatchTy l5 (t_forall B)
- | NMatchTyIn : forall (l1 l2:l) (A:typ),
-     lc_typ A ->
-      l1  <>  l2  ->
-     NMatchTy l1 (t_rcd l2 A)
- | NMatchTyUnion : forall (l5:l) (A1 A2:typ),
-     NMatchTy l5 A1 ->
-     NMatchTy l5 A2 ->
-     NMatchTy l5 (t_or A1 A2)
- | NMatchTyIntersectionL : forall (l5:l) (A1 A2:typ),
-     lc_typ A2 ->
-     NMatchTy l5 A1 ->
-     NMatchTy l5 (t_and A1 A2)
- | NMatchTyIntersectionR : forall (l5:l) (A1 A2:typ),
-     lc_typ A1 ->
-     NMatchTy l5 A2 ->
-     NMatchTy l5 (t_and A1 A2).
-
 (* defns Ordinary *)
 Inductive ordu : typ -> Prop :=    (* defn ordu *)
  | OrdU_var : forall (X:typevar),
@@ -1005,6 +953,6 @@ Inductive sim : typ -> typ -> Prop :=    (* defn sim *)
 
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy ApplyTySimple NApplyTySimple NApplyTy new_spli new_splu new_sub NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy ApplyTySimple NApplyTySimple NApplyTy new_spli new_splu new_sub NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
 
 

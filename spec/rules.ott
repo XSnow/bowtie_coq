@@ -167,13 +167,9 @@ DSub :: '' ::=
   -------------------- :: CovUnionR
   C | A <: C | B
 
-
-
   A2 <: A1
   -------------------- :: FunCon
   A1 -> B <: A2 -> B
-
-
 
   ------------------------------------- :: CovDistIIn
   (In l A) & (In l B) <: In l (A & B)
@@ -423,81 +419,6 @@ NSub :: '' ::=
   Aneg2 <n Ftyalt
   -------------------- :: IntersectR
   Aneg1 & Aneg2 <n Ftyalt
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% abstract matching
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-defns
-MatchTy :: '' ::=
-
-  defn
-  match ( l , A ) => B
-  :: :: MatchTy :: ''
-  {{ tex \matchty{[[ A ]]}{[[ l ]]}{[[ B ]]}  }}
-  by
-
-  -------------------- :: MatchTyTop
-  match(l, Top) => Top
-
-  --------------------- :: MatchTyIn
-  match(l, In l A) => A
-
-  match(l, A1) => B1
-  match(l, A2) =/>
-  ----------------------- :: MatchTyUnionL
-  match(l, A1 | A2) => B1
-
-  match(l, A1) =/>
-  match(l, A2) => B2
-  ----------------------- :: MatchTyUnionR
-  match(l, A1 | A2) => B2
-
-  match(l, A1) => B1
-  match(l, A2) => B2
-  ---------------------------- :: MatchTyUnion
-  match(l, A1 | A2) => B1 | B2
-
-  match(l, A1) => B1
-  match(l, A2) => B2
-  ---------------------------- :: MatchTyIntersection
-  match(l, A1 & A2) => B1 & B2
-
-  defn
-  match ( l , A ) =/>
-  :: :: NMatchTy :: ''
-  {{ tex \nmatchty{[[ A ]]}{[[ l ]]}  }}
-  by
-
-  ------------------------ :: NMatchTyEmpty
-  match(l, Empty) =/>
-
-  ------------------------ :: NMatchTyVar
-  match(l, X) =/>
-
-  ------------------------ :: NMatchTyFun
-  match(l, A->B) =/>
-
-  ------------------------ :: NMatchTyAll
-  match(l, forall X . B) =/>
-
-  l1 != l2
-  ------------------------ :: NMatchTyIn
-  match(l1, In l2 A) =/>
-
-  match(l, A1) =/>
-  match(l, A2) =/>
-  ----------------------- :: NMatchTyUnion
-  match(l, A1 | A2) =/>
-
-  match(l, A1) =/>
-  ---------------------------- :: NMatchTyIntersectionL
-  match(l, A1 & A2) =/>
-
-  match(l, A2) =/>
-  ---------------------------- :: NMatchTyIntersectionR
-  match(l, A1 & A2) =/>
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

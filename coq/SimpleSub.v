@@ -1,9 +1,7 @@
-(* B.1 B.2 B.3 (1)-(3) *)
-
 Require Import LibTactics.
 Require Import Coq.micromega.Lia.
 Require Import LN_Lemmas.
-Require Export MatchTy.
+Require Export ApplyTy.
 
 Notation "A <p B"        := (PositiveSubtyping A B)
                               (at level 65, B at next level, no associativity) : type_scope.
