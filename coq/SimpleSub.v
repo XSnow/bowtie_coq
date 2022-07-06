@@ -434,9 +434,9 @@ Proof.
   inductions Sub; try solve [inverts Neg1]; intros; eauto using psub_negtyp.
 Qed.
 
-(*------------------------------ Lemma B.1 -----------------------------------*)
+(*--------------- Lemma B.1 Completeness of Coverage Relations ---------------*)
 
-(* B.1 (1) *)
+(* Completeness of Coverage Relations [1] *)
 Lemma sub2psub : forall V A,
     isValTyp V -> V <: A -> V <p A.
 Proof.
@@ -493,7 +493,7 @@ Proof.
     inverts* Sub.
 Qed.
 
-(* B.1 (2) *)
+(* Completeness of Coverage Relations [2] *)
 Lemma apply2nsub : forall A F C,
     isNegTyp A -> isValFty F -> ApplyTy A F C -> A <n F.
 Proof.
@@ -526,7 +526,7 @@ Proof.
   inverts_psub PSub; now eauto.
 Qed.
 
-(*------------------------------ Lemma B.3 -----------------------------------*)
+(*----------- Lemma B.4 Inversion of Subtyping on (Co-)Value types -----------*)
 
 Lemma negtyp_sub_rcd_inv : forall Aneg l A,
     isNegTyp Aneg -> Aneg <: (t_rcd l A) -> False.
@@ -546,7 +546,7 @@ Proof with convert2asub; try eassumption; elia.
     applys IH Neg...
 Qed.
 
-(* B.3 (1) *)
+(* B.4 [1]) *)
 Lemma valtyp_sub_rcd_inv : forall V l A,
     isValTyp V -> V <: (t_rcd l A) -> exists B, V = t_rcd l B.
 Proof.
@@ -556,7 +556,7 @@ Proof.
   - false. applys* negtyp_sub_rcd_inv A0.
 Qed.
 
-(* B.3 (1) *)
+(* B.4 [1] *)
 Lemma valtyp_sub_rcd_inv_2 : forall V l A,
     isValTyp V -> V <: (t_rcd l A) -> exists B, V = t_rcd l B /\ B <p A.
 Proof.
@@ -566,7 +566,7 @@ Proof.
   auto.
 Qed.
 
-(* B.3 (2) *)
+(* B.4 [2] *)
 Lemma valtyp_sub_arrow_inv : forall V A B,
     isValTyp V -> V <: (t_arrow A B) -> isNegTyp V.
 Proof.
@@ -575,7 +575,7 @@ Proof.
   - convert2asub; solve_false.
 Qed.
 
-(* B.3 (3) *)
+(* B.4 [3] *)
 Lemma valtyp_sub_forall_inv : forall V A,
     isValTyp V -> V <: (t_forall A) -> isNegTyp V.
 Proof.
@@ -584,7 +584,7 @@ Proof.
   - convert2asub; solve_false.
 Qed.
 
-(* B.3 (4) *)
+(* B.4 [4] *)
 Lemma valtyp_bot_inv : forall V,
     isValTyp V -> V <: t_bot -> False.
 Proof.
@@ -620,6 +620,7 @@ Proof.
   exists*.
 Qed.
 
+(* Properties of the Union-Split Results of a Value Type (Similar Types) [1] *)
 Lemma sim2similar : forall A B,
     sim A B <-> similar A B.
 Proof.

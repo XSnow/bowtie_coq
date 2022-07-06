@@ -135,9 +135,7 @@ Ltac inverts_typ :=
     | H1:isNegTyp t_bot |- _ => inverts H1
     | H1:isNegTyp (t_rcd _ _) |- _ => inverts H1
     | H1:isNegTyp (_ & _) |- _ => inverts H1
-    (* |- _ => forwards (?, ?) : negtyp_spli_inv H1; [ applys SpI_and |  ]; clear H1 *)
     | H1:isNegTyp (_ | _) |- _ => inverts H1
-    (* |- _ => forwards (?, ?) : negtyp_splu_inv H1; [ applys SpU_or |  ]; clear H1 *)
     | H1:isNegTyp ?A, H2:spli ?A _ _ |- _ => forwards (?, ?) : negtyp_spli_inv H1 H2
     | H1:isNegTyp ?A, H2:splu ?A _ _ |- _ => forwards (?, ?) : negtyp_splu_inv H1 H2
     end.
@@ -350,7 +348,7 @@ Proof with elia; solve_false; try eassumption.
    Unshelve. all: apply t_top.
 Qed.
 
-(* Lemma B.8 *)
+(* Lemma B.9 *)
 Lemma napplyty_splitu_fun : forall A A1 A2 F,
     NApplyTy A1 F \/ NApplyTy A2 F -> splu A A1 A2 -> NApplyTy A F.
 Proof.
@@ -374,9 +372,9 @@ Proof.
   - forwards~: napplyty_rename C H0.
 Qed.
 
-(*------------------------------ Lemma B.7 -----------------------------------*)
+(*------------------------------ Soundness Type-Level Dispatch -----------------------------------*)
 
-(* B.7 Soundness of Abstract Application (1) *)
+(* Soundness of Type-Level Dispatch [1] *)
 Lemma applyty_soundness_1 : forall A B C,
     ApplyTy A (fty_StackArg B) C -> A <: (t_arrow B C).
 Proof with try eassumption; try applys ASub_refl; try match goal with |- lc_typ _ => eauto with lngen end.
@@ -403,7 +401,7 @@ Proof with try eassumption; try applys ASub_refl; try match goal with |- lc_typ 
   - convert2asub. split_r; eauto.
 Qed.
 
-(* B.7 (2) *)
+(* Soundness of Type-Level Dispatch [2] *)
 Lemma applyty_soundness_2 : forall A B C,
     ApplyTy A (fty_StackTyArg B) C ->
     exists C',  C = C'^-^B /\
@@ -444,7 +442,8 @@ Proof with simpl in *; try eassumption; try applys ASub_refl; try match goal wit
   Unshelve. all: apply empty.
 Qed.
 
-(* B.7 (2) *)
+
+(* Soundness of Type-Level Dispatch [2] *)
 Lemma applyty_soundness_2_simple : forall A B C,
     ApplyTy A (fty_StackTyArg B) C ->
     exists A', A <: t_forall A' /\ C <: (A' ^-^ B).
@@ -607,9 +606,9 @@ Qed.
 
 #[export] Hint Immediate napplyty_sub_inv applyty_forall_inv : FalseHd.
 
-(*------------------------------ Lemma B.9 -----------------------------------*)
+(*------------------------------ Lemma B.10 -----------------------------------*)
 
-(* B.9 (1) *)
+(* B.10 [1] *)
 Lemma monotonicity_applyty_1 : forall A A' (F : Fty) C,
     ApplyTy A F C -> A' <: A -> exists C', C' <: C /\ ApplyTy A' F C'.
 Proof with try eassumption; elia; solve_false; destruct_conj.
@@ -643,7 +642,7 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
     all: eauto.
 Qed.
 
-(* B.9 (2) *)
+(* B.10 [2] *)
 Lemma monotonicity_applyty_2_1 : forall (A B B' C : typ),
     ApplyTy A B C -> B' <: B ->
     exists C', C' <: C /\ ApplyTy A B' C'.
@@ -668,9 +667,9 @@ Proof with try eassumption; elia; solve_false; destruct_conj.
     exists (x1|x2). split~. applys~ ApplyTyUnionArg H.
 Qed.
 
-(*------------------------------ Lemma B.3 -----------------------------------*)
+(*---------------------- Inversion of Subtyping on (Co-)Value types ----------*)
 
-(* B.3 (5) *)
+(* [5] *)
 Lemma applyty_arrow : forall A1 A2 V B,
     ApplyTy (t_arrow A1 A2) V B -> isValFty V -> exists V', V = fty_StackArg V' /\ isValTyp V'.
 Proof.
@@ -680,7 +679,7 @@ Proof.
   - inverts* Val.
 Qed.
 
-(* B.3 (6) *)
+(* [6] *)
 Lemma applyty_forall : forall A V B,
     ApplyTy (t_forall A) V B -> isValFty V -> exists C, V = fty_StackTyArg C.
 Proof.
@@ -692,20 +691,20 @@ Proof.
     forwards~ (?&?): IHApp1. solve_false.
 Qed.
 
-(* B.3 (7) *)
+(* [7] *)
 Lemma apply_top_false_1 : forall V,
     isValTyp V -> NApplyTy t_top [| V |].
   introv Val. constructor*.
 Qed.
 
-(* B.3 (7) *)
+(* [7] *)
 Lemma apply_top_false_2 : forall V,
     isValTyp V -> NApplyTy t_top V.
 Proof with eauto.
   introv Val. induction* Val.
 Qed.
 
-(* B.3 (7) *)
+(* [7] *)
 Lemma applyty_top : forall V A,
     ApplyTy t_top V A -> False.
 Proof.
@@ -716,13 +715,13 @@ Qed.
 
 #[export] Hint Immediate applyty_top : FalseHd.
 
-(* B.3 (8) *)
+(* [8] *)
 Lemma apply_box_false_1 : forall l V1 V2,
     isValTyp V1 -> isValTyp V2 -> NApplyTy (t_rcd l V1) [| V2 |].
   introv Val. constructor*.
 Qed.
 
-(* B.3 (8) *)
+(* [8] *)
 Lemma apply_box_false_2 : forall l V1 V2,
     isValTyp V1 -> isValTyp V2 -> NApplyTy (t_rcd l V1) V2.
 Proof with eauto.
@@ -903,19 +902,19 @@ Qed.
 
 #[export] Hint Resolve new_splu_iso splu_iso : core.
 
-(*------------------------------ Lemma B.6 Inversion of Abstract Application -----------------------------------*)
+(*------------------------- Inversion of Type-Level Dispatch -----------------*)
 
-(* B.6 Inversion of Abstract Application (1) *)
+(* [1] *)
 Lemma applyty_bot : forall B C,
     ApplyTy t_bot B C -> C ~= t_bot.
 Proof. introv H. inductions H; eauto using iso_or_2. Qed.
 
-(* B.6 Inversion of Abstract Application (2) the argument must be a type *)
+(* [2] the argument must be a type *)
 Lemma applyty_arrow_sound_1 : forall A B F D,
     ApplyTy (t_arrow A B) F D -> exists (C:typ), F = C.
 Proof. introv H. inverts* H. Qed.
 
-(* B.6 Inversion of Abstract Application (2) *)
+(* [2] *)
 Lemma applyty_arrow_sound_2 : forall (A B C D : typ),
     ApplyTy (t_arrow A B) C D -> C <: A /\ B ~= D.
 Proof with try eassumption; elia; destruct_conj; auto_unify_2.
@@ -935,7 +934,7 @@ Proof with try eassumption; elia; destruct_conj; auto_unify_2.
     + subst. applys~ iso_dup_1.
 Qed.
 
-(* B.6 Inversion of Abstract Application (3) the argument must be a type argument *)
+(* [3] the argument must be a type argument *)
 Lemma applyty_forall_sound_1 : forall A F D,
     ApplyTy (t_forall A) F D -> exists (C:typ), F = [| C |].
 Proof. introv H. inductions H.
@@ -944,7 +943,7 @@ Proof. introv H. inductions H.
          solve_false.
 Qed.
 
-(* B.6 Inversion of Abstract Application (3) *)
+(* [3] *)
 Lemma applyty_forall_sound_2 : forall (A B D : typ),
     ApplyTy (t_forall A) [|B|] D -> D ~= (A ^-^ B).
 Proof with destruct_conj.
@@ -953,7 +952,7 @@ Proof with destruct_conj.
   inverts* H1. eauto with lngen.
 Qed.
 
-(* Lemma for B.6 Inversion of Abstract Application (7) *)
+(* [7] *)
 Lemma napplyty_splitu_inv : forall A (F: Fty) A1 A2,
     NApplyTy A F -> splu A A1 A2 ->
     NApplyTy A1 F \/ NApplyTy A2 F.
@@ -967,7 +966,7 @@ Proof.
   all: try solve [left*]; try solve [right*].
 Qed.
 
-(* B.6 Inversion of Abstract Application (4) *)
+(* [4] *)
 Lemma applyty_splitu_inv : forall A (F: Fty) A1 A2 C,
     ApplyTy A F C -> splu A A1 A2 ->
     exists C1 C2, C ~= C1 | C2 /\ ApplyTy A1 F C1 /\ ApplyTy A2 F C2.
@@ -1045,7 +1044,7 @@ Proof with exists; splits.
     all: iso_inverts_all_lc; eauto.
 Qed.
 
-(* B.6 Inversion of Abstract Application (5) *)
+(* [5] *)
 Lemma napplyty_spliti_inv : forall A B A1 A2,
     NApplyTy A B -> spli A A1 A2 ->
     NApplyTy A1 B /\ NApplyTy A2 B.
@@ -1062,7 +1061,7 @@ Proof with destruct_conj; try match goal with |- lc_typ _ => eauto end; try eass
       applys algo_trans HF. applys ASub_orl... eauto.
 Qed.
 
-(* B.6 Inversion of Abstract Application (6) *)
+(* [6] *)
 Lemma apply_top_false : forall A,
     lc_typ A -> NApplyTy t_top A.
 Proof with eauto.
@@ -1154,7 +1153,7 @@ Proof with try eassumption.
   exists. split. applys DSub_Trans... apply App''.
 Qed.
 
-(* B.28 Type Substitution Over Abstract Application *)
+(* Type Substitution Over Type-Level Dispatch *)
 Lemma typsubst_applyty : forall (A B C U : typ) X,
     ApplyTy A B C -> lc_typ U ->
     exists C', ApplyTy ([X ~~> U] A) ([X ~~> U] B) C' /\ C' <: [X ~~> U] C.

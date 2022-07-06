@@ -62,7 +62,7 @@ Qed.
 
 (****************************************************************************)
 
-(* Lemma B.12 *)
+(* Lemma B.12 Dispatch *)
 Lemma dispatch : forall A1 A2 B B' C1 C2',
     ordu B -> ordu B' -> A1 >><< A2 ->
     ApplyTy A1 B C1 -> NApplyTy A1 B' -> ApplyTy A2 B' C2' ->
@@ -332,8 +332,7 @@ Qed.
 
 #[local] Hint Immediate sim_split_1 sim_split_2 sim_split_3 sim_split_4 sim_split_5 : core.
 
-(* This lemma is equivalent to dispatch_gen *)
-Lemma applyty_and_sim_inv : forall A A B' B' x1 x2,
+Lemma applyty_and_sim_inv : forall A A' B B' x1 x2,
     TypeWF nil (A&A') ->
     sim B B' -> ApplyTy A B x1 -> ApplyTy A' B' x2 ->
     NApplyTy A B' -> NApplyTy A' B -> False.
@@ -372,7 +371,7 @@ Proof.
   unfold similar. exists*.
 Qed.
 
-(* B.16 Inversion of Abstract Application to Value Types *)
+(* B.16 Inversion of Dispatch on Value Types *)
 (* Here we only consider V to be StackArg. *)
 Lemma applyty_valtyp_inter_inv : forall (A A' V B : typ),
     ApplyTy (A&A') V B -> isValTyp V -> TypeWF nil (A&A') ->
@@ -392,7 +391,7 @@ Proof with solve_false.
       all: exists*.
 Qed.
 
-(* B.16 Inversion of Abstract Application to Value Types *)
+(* B.16 Inversion of Dispatch on Value Types *)
 (* Here we only consider V to be StackTypArg. *)
 Lemma applyty_inter_inv : forall A1 A2 B C,
     ApplyTy (A1&A2) [|B|] C ->
