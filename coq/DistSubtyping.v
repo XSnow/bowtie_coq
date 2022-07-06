@@ -1,33 +1,7 @@
-(*******************************************************************************
-*                                                                              *
-*   DistSubtyping.v                                                            *
-*   Xuejing Huang 2021                                                         *
-*   Distributed under the terms of the GPL-v3 license                          *
-*                                                                              *
-*   This file is part of DistributingTypes.                                    *
-*                                                                              *
-*   DistributingTypes is free software: you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by       *
-*   the Free Software Foundation, either version 3 of the License, or          *
-*   (at your option) any later version.                                        *
-*                                                                              *
-*   DistributingTypes is distributed in the hope that it will be useful,       *
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of             *
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              *
-*   GNU General Public License for more details.                               *
-*                                                                              *
-*   You should have received a copy of the GNU General Public License          *
-*   along with DistributingTypes.  If not, see <https://www.gnu.org/licenses/>.*
-*                                                                              *
-*******************************************************************************)
-
 (** This file contains the declarative and algorithmic subtyping formalization.
     The algorithmic system is proved to be sound and complete w.r.t the
     declarative one (in Thereoem dsub2asub).
     Some inversion lemmas (end with _inv) are provided to justify the algorithm.
-    The formulation is the same as ../coq/syntax_ott.v.
-    We hope this stand-alone file can make your work simpler if you are going to
-    use the subtyping part (but not the duotyping) only.
  *)
 
 Require Import LibTactics.
@@ -83,9 +57,8 @@ Ltac destruct_conj :=
                          | exists _ , _ => destruct H
                          | _ /\ _ => destruct H
                          end
-         end.
+    end.
 
-(* Ltac from Alvin *)
 Ltac detect_fresh_var_and_do t :=
   match goal with
   | Fr : ?x `notin` ?L1 |- _ => t x
@@ -344,29 +317,6 @@ Proof.
   induction H; repeat split; firstorder using ordu_lc, ordi_lc.
 Qed.
 
-(*
-Ltac try_lc_typ_constructors :=
-  (now applys lc_t_tvar_f +
-  applys lc_t_top +
-  applys lc_t_bot) +
-  match goal with
-  | |- lc_typ (t_arrow _ _) => applys lc_t_arrow
-  | |- lc_typ (t_and _ _) => applys lc_t_and
-  | |- lc_typ (t_or _ _) => applys lc_t_or
-  | |- lc_typ (t_rcd _ _) => applys lc_t_rcd
-  | |- lc_typ (t_forall _) => applys lc_t_forall; intros; instantiate_cofinites
-                                                            (*
-         (* pick fresh first if no atom exists *)
-  | x : atom |- _ =>
-    (* use the lemma from rule_inf.v instead of lc_t_forall *)
-    applys lc_t_forall_exists x;
-    instantiate_cofinites_with x
-  | |- _ =>
-    let x := fresh in pick fresh x;
-    applys lc_t_forall_exists x;
-    instantiate_cofinites_with x *)
-  end.
-*)
 Lemma spli_lc : forall A B C, spli A B C -> lc_typ A /\ lc_typ B /\ lc_typ C.
 Proof with firstorder using ordu_lc, ordi_lc, splu_lc.
   introv H.
@@ -451,28 +401,6 @@ repeat lazymatch goal with
 | H: spli (t_forall _) _ _ |- _ => inverts H
 | H: splu (t_forall _) _ _ |- _ => inverts H
 end.
-
-(*
-Ltac inverts_for_lc u :=
-  repeat match goal with
-  | H: lc_typ ?B |- _ => match B with
-                           | u => try exact H
-                           | context [ u ] => inverts H
-                         end
-         end.
-
-#[export] Hint Extern 4 (lc_typ ?A ) =>
-destruct_conj; progress inverts_for_lc A : LcHd.
-
-#[export] Hint Extern 4 (lc_typ (?A -^ _) ) =>
-  destruct_conj;
-  progress match A with
-           | t_and ?A1 ?A2 => inverts_for_lc A1; inverts_for_lc A2
-           | _ => inverts_for_lc A
-           end : LcHd.
-
-#[export] Hint Extern 1 (lc_typ _ ) => try_lc_typ_constructors : core.
- *)
 
 (********************* lc & rename & subst **********************************)
 
@@ -1046,7 +974,7 @@ end.
 
 (* algorithm correctness *)
 
-(* Lemma B.4 (1) *)
+(* Lemma Inversion of Subtyping [1] *)
 Lemma algo_sub_rcd_inv : forall l1 l2 A B,
     algo_sub (t_rcd l1 A) (t_rcd l2 B) -> l1=l2 /\ algo_sub A B.
 Proof.
@@ -1089,9 +1017,8 @@ Proof with (try eassumption).
   all: split*.
 Qed.
 
-(* key lemma? *)
-(* may not hold if arrow can splu since spli and splu do not have to happen on the
-same substructure *)
+(* A very useful inversion lemma when the type T is both intersection- and
+   union- splittable *)
 Lemma double_split : forall T A1 A2 B1 B2,
     splu T A1 A2 -> spli T B1 B2 ->
     ((exists C1 C2, spli A1 C1 C2 /\ splu B1 C1 A2 /\ splu B2 C2 A2) \/
@@ -1186,7 +1113,7 @@ Proof with (solve_false; auto_unify; try eassumption; elia; eauto 3).
     Unshelve. all: apply empty.
 Qed.
 
-(* Lemma B.4 (2) *)
+(* Lemma Inversion of Subtyping [2] *)
 Lemma algo_sub_and_inv : forall A B B1 B2,
     algo_sub A B -> spli B B1 B2 -> algo_sub A B1 /\ algo_sub A B2.
 Proof with (try eassumption).
@@ -1224,7 +1151,6 @@ Proof with (try eassumption).
     split*.
 Qed.
 
-(* previous and_inv spl_inv *)
 Lemma algo_sub_andlr_inv : forall A B A1 A2,
     algo_sub A B -> spli A A1 A2 -> ordi B ->
     algo_sub A1 B \/ algo_sub A2 B.
@@ -1361,7 +1287,6 @@ Proof with (solve_false; auto_unify; try (intros Fry; instantiate_cofinites); tr
   - applys ASub_and Hi...
 Qed.
 
-(* #[local] Hint Resolve algo_trans : AllHd. *)
 
 Lemma algo_sub_distArrU: forall A B C,
     lc_typ A -> lc_typ B -> lc_typ C -> algo_sub (t_and (t_arrow A C) (t_arrow B C)) (t_arrow (t_or A B) C).
@@ -1592,6 +1517,7 @@ Ltac convert2dsub :=
            | |- algo_sub _ _ => apply dsub2asub
          end.
 
+(* Some impossible cases *)
 Lemma sub_inv_1 : forall X B D,
     algo_sub (t_tvar_f X) (t_arrow B D) -> False.
 Proof.
@@ -2034,15 +1960,6 @@ Ltac solve_dsub := repeat match goal with
                           | |- declarative_subtyping _ _ => apply dsub2asub
                           end; try solve (solve_algo_sub).
 
-(*
-Lemma dsub_lc_1 : forall A B, declarative_subtyping A B -> lc_typ A.
-Proof.  introv H.  apply dsub2asub in H.  eauto.  Qed.
-
-Lemma dsub_lc_2 : forall A B, declarative_subtyping A B -> lc_typ B.
-Proof.  introv H.  apply dsub2asub in H. eauto.  Qed.
-
-#[export] Hint Immediate dsub_lc_1 dsub_lc_2 : core.
- *)
 
 Lemma sub_dec : forall A B,
     lc_typ A -> lc_typ B -> declarative_subtyping A B \/ ~ (declarative_subtyping A B).

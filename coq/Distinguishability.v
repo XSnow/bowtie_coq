@@ -184,11 +184,6 @@ Proof.
   forwards* : distinguishability_spl_inv Dis.
 Qed.
 
-(* A1 <> B1 *)
-(* A2 <> B2 *)
-(* ---------------------- *)
-(* A1 /\ A2 <> B1 \/ B2 *)
-
 
 Ltac inverts_all_distinguishability :=
   repeat match goal with
@@ -471,7 +466,7 @@ Proof with try reflexivity; elia; auto.
     applys DistUnionSym; try eassumption.
 Qed.
 
-(* B.11 Downward Closure of Distinguishability *)
+(* Lemma Downward Closure of Distinguishability *)
 Lemma distinguishability_downward : forall A B B',
     Distinguishability A B -> B' <: B -> Distinguishability A B'.
 Proof with try reflexivity; elia; auto.
@@ -526,8 +521,9 @@ Proof with try reflexivity; elia; auto.
 Qed.
 
 (******************************************************************************)
-(* sim *)
+(* similarity relation *)
 
+(* Lemma Properties of the Union-Split Results of a Value Type (Similar Types) [2] *)
 Lemma sim_no_distinguishability : forall A B,
     sim A B -> Distinguishability A B -> False.
 Proof with auto_lc; inverts_all_spl; solve_false.
@@ -545,7 +541,6 @@ Lemma distinguishability_valtyp_not_psub : forall V U,
 Proof with try eassumption; elia.
   introv Dis Val1 Val2 Sub.
   indTypSize (size_typ V + size_typ U).
-  (* forwards [?|(?&?&?)]: ordu_or_split V. now eauto. *)
   forwards [?|(?&?&?)]: ordu_or_split U. now eauto.
   forwards [?|(?&?&?)]: ordu_or_split V. now eauto.
   - inverts Dis; solve_false.
@@ -578,9 +573,6 @@ Qed.
   | Dis: Distinguishability ?V ?U, Neg: isNegTyp ?V |- _ =>
       apply DistSym in Dis; applys distinguishability_negtyp_false Dis Neg
   end : FalseHd.
-
-(******************************************************************************)
-(* B.41 *)
 
 Lemma distinguishability_on_valtyp : forall A B V,
     Distinguishability A B -> isValTyp V -> V <p A -> V <p B -> False.
@@ -622,25 +614,4 @@ Proof with solve_false.
     forwards~ [?|?]: psub_splu_inv Hu SubA. clear SubA.
     applys IH H SubB; first_match; try eassumption; elia; eauto.
     applys IH H0 SubB; first_match; try eassumption; elia; eauto.
-Qed.
-
-(******************************************************************************)
-(* The alternative definition of distinguishability is equivalent *)
-
-Lemma distinguishability2Alt : forall A B,
-    Distinguishability A B <-> DistinguishabilityAlt A B.
-Proof.
-  split; introv H.
-  - induction~ H.
-    + applys DA_DistMono.
-      applys DA_DistUnion IHDistinguishability1 IHDistinguishability2.
-      applys~ dsub_or.
-    + applys DA_DistMonoSym.
-      applys DA_DistUnionSym IHDistinguishability1 IHDistinguishability2.
-      applys~ dsub_or.
-  - induction~ H.
-    + applys* DistUnion.
-    + applys* DistUnionSym.
-    + applys DistSym. applys* distinguishability_downward.
-    + applys* distinguishability_downward.
 Qed.

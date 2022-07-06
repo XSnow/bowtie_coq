@@ -1068,47 +1068,6 @@ Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishabili
      Distinguishability B A' ->
      Distinguishability B (t_and A A').
 
-(* defns DistinguishabilityAlt *)
-Inductive DistinguishabilityAlt : typ -> typ -> Prop :=    (* defn DistinguishabilityAlt *)
- | DA_DistAx : forall (A B:typ),
-     DistinguishabilityAx A B ->
-     DistinguishabilityAlt A B
- | DA_DistIn : forall (l5:l) (A B:typ),
-     DistinguishabilityAlt A B ->
-     DistinguishabilityAlt (t_rcd l5 A) (t_rcd l5 B)
- | DA_DistUnion : forall (A1 A2 B:typ),
-     DistinguishabilityAlt A1 B ->
-     DistinguishabilityAlt A2 B ->
-     DistinguishabilityAlt (t_or A1 A2) B
- | DA_DistUnionSym : forall (B A1 A2:typ),
-     DistinguishabilityAlt B A1 ->
-     DistinguishabilityAlt B A2 ->
-     DistinguishabilityAlt B (t_or A1 A2)
- | DA_DistIntersectL : forall (A A' B:typ),
-     lc_typ A' ->
-     DistinguishabilityAlt A B ->
-     DistinguishabilityAlt (t_and A A') B
- | DA_DistIntersectR : forall (A A' B:typ),
-     lc_typ A ->
-     DistinguishabilityAlt A' B ->
-     DistinguishabilityAlt (t_and A A') B
- | DA_DistIntersectLSym : forall (B A A':typ),
-     lc_typ A' ->
-     DistinguishabilityAlt B A ->
-     DistinguishabilityAlt B (t_and A A')
- | DA_DistIntersectRSym : forall (B A A':typ),
-     lc_typ A ->
-     DistinguishabilityAlt B A' ->
-     DistinguishabilityAlt B (t_and A A')
- | DA_DistMono : forall (A2 B A1:typ),
-     DistinguishabilityAlt A1 B ->
-     declarative_subtyping A2 A1 ->
-     DistinguishabilityAlt A2 B
- | DA_DistMonoSym : forall (B A2 A1:typ),
-     DistinguishabilityAlt B A1 ->
-     declarative_subtyping A2 A1 ->
-     DistinguishabilityAlt B A2.
-
 (* defns MergeabilityAx *)
 Inductive MergeabilityAx : typ -> typ -> Prop :=    (* defn MergeabilityAx *)
  | MergeAxTopL : forall (B:typ),
@@ -1198,6 +1157,6 @@ Inductive sim : typ -> typ -> Prop :=    (* defn sim *)
 
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy ApplyTySimple NApplyTySimple NApplyTy new_spli new_splu new_sub ApplyTyAlt NApplyTyAlt ApplyTyLs NApplyTyLs NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability DistinguishabilityAlt MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping MatchTy NMatchTy ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy ApplyTySimple NApplyTySimple NApplyTy new_spli new_splu new_sub ApplyTyAlt NApplyTyAlt ApplyTyLs NApplyTyLs NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
 
 

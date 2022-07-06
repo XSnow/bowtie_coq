@@ -1368,60 +1368,6 @@ Distinguishability :: '' ::=
   % |- A <> B
 
 defns
-DistinguishabilityAlt :: '' ::=
-
-  defn
-  |- A <<>> B
-  :: :: DistinguishabilityAlt :: 'DA_'
-  {{ tex \dist{[[A]]}{[[B]]} }}
-  by
-
-  |-ax A <> B
-  ----------- :: DistAx
-  |- A <<>> B
-
-  |- A <<>> B
-  --------------------- :: DistIn
-  |- In l A <<>> In l B
-
-  |- A1 <<>> B
-  |- A2 <<>> B
-  ---------------- :: DistUnion
-  |- A1|A2 <<>> B
-
-  |- B <<>> A1
-  |- B <<>> A2
-  ---------------- :: DistUnionSym
-  |- B <<>> A1|A2
-
-  |- A <<>> B
-  ---------------- :: DistIntersectL
-  |- A & A' <<>> B
-
-  |- A' <<>> B
-  ---------------- :: DistIntersectR
-  |- A & A' <<>> B
-
-  |- B <<>> A
-  ---------------- :: DistIntersectLSym
-  |- B <<>> A & A'
-
-  |- B <<>> A'
-  ---------------- :: DistIntersectRSym
-  |- B <<>> A & A'
-
-  |- A1 <<>> B
-  A2 <: A1
-  ---------------- :: DistMono
-  |- A2 <<>> B
-
-  |- B <<>> A1
-  A2 <: A1
-  ---------------- :: DistMonoSym
-  |- B <<>> A2
-
-
-defns
 MergeabilityAx :: '' ::=
   
   defn
