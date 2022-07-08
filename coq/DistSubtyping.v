@@ -209,72 +209,8 @@ Ltac find_contradiction_on_split :=
 
 #[export] Hint Extern 1 => applys spli_ord_false; [ eassumption | ] : FalseHd.
 
-(*
-#[export] Hint Extern 0 =>
-match goal with
-| [ H1: spli ?T _ _ , H2: ordi ?T |- _ ] => applys~ spli_ord_false H1 H2
-end : FalseHd.
-
-#[export]
- Hint Extern 3 (False) =>
-match goal with
-| [ H1: forall _, _ `notin` _ -> spli _ _ _ , H2: forall _ , _ `notin` _ -> ordi _ |- _ ]
-  => let Xf := fresh in
-     let H1f := fresh in
-     let H2f := fresh in
-     (pick fresh Xf; forwards~ H1f: H1 Xf; forwards~ H2f: H2 Xf; applys~ spli_ord_false H1f H2f); fail
-| [ H1: forall _, _ `notin` _ -> splu _ _ _ , H2: forall _ , _ `notin` _ -> ordu _ |- _ ]
-  => let Xf := fresh in
-     let H1f := fresh in
-     let H2f := fresh in
-     (pick fresh Xf; forwards~ H1f: H1 Xf; forwards~ H2f: H2 Xf; applys~ splu_ord_false H1f H2f); fail
-end : FalseHd.
-
-#[export]
- Hint Extern 1 => try match goal with
-                               | [ H1: ordi (t_arrow _ ?A), H2: spli ?A _ _ |- _ ] =>
-                                 inverts H1; applys spli_ord_false H2; trivial;
-                                   fail
-                               | [ H1: ordi ?A, H2: spli (t_arrow _ ?A) _ _ |- _ ] =>
-                                 inverts H2; applys spli_ord_false H1; trivial;
-                                   fail
-                               end : FalseHd.
-
- *)
-
 
 (*********************** locally closed types and terms ***********************)
-(*
-Lemma lc_and_inv_1 : forall A B,
-    lc_typ (t_and A B) -> lc_typ A.
-Proof. intros. inverts~ H. Qed.
-
-Lemma lc_and_inv_2 : forall A B,
-    lc_typ (t_and A B) -> lc_typ B.
-Proof. intros. inverts~ H. Qed.
-
-Lemma lc_or_inv_1 : forall A B,
-    lc_typ (t_or A B) -> lc_typ A.
-Proof. intros. inverts~ H. Qed.
-
-Lemma lc_or_inv_2 : forall A B,
-    lc_typ (t_or A B) -> lc_typ B.
-Proof. intros. inverts~ H. Qed.
-
-Lemma lc_arrow_inv_1 : forall A B,
-    lc_typ (t_arrow A B) -> lc_typ A.
-Proof. intros. inverts~ H. Qed.
-
-Lemma lc_arrow_inv_2 : forall A B,
-    lc_typ (t_arrow A B) -> lc_typ B.
-Proof. intros. inverts~ H. Qed.
-
-Lemma lc_record_inv : forall l A,
-    lc_typ (t_rcd l A) -> lc_typ A.
-Proof. intros. inverts~ H. Qed.
-
-#[export] Hint Immediate lc_and_inv_1 lc_and_inv_2 lc_or_inv_1 lc_or_inv_2
- lc_arrow_inv_1 lc_arrow_inv_2 lc_record_inv lc_forall_inv : core. *)
 
 Lemma lc_forall_inv : forall A X,
     lc_typ (t_forall A) -> lc_typ (A -^ X).
@@ -939,6 +875,18 @@ Ltac auto_unify :=
          end.
 
 
+Ltac basic_auto :=
+  destruct_conj; auto_unify;
+  try exists; try splits;
+  try reflexivity;
+  try lazymatch goal with
+      | |- lc_typ _ => eauto
+      | |- spli _ _ _ => try eapply spli_rename_open; try eassumption; econstructor; try eassumption;
+                         eauto
+      | |- splu _ _ _ => try eapply splu_rename_open; try eassumption; econstructor; try eassumption;
+                         eauto
+    end; try eassumption; elia.
+
 (*****************************************************************************)
 
 Ltac solve_algo_sub :=
@@ -1309,6 +1257,7 @@ Proof.
   repeat decide equality.
 Defined.
 
+(* decidability of subtyping algorithm *)
 Theorem decidability : forall A B,
     lc_typ A -> lc_typ B -> algo_sub A B \/ not (algo_sub A B).
 Proof with (elia; inverts_all_lc; try eassumption; simpl in *; solve_false; try solve [right; intros HF; auto_inv; inverts HF; simpl in *; solve_false]; eauto).
@@ -1345,7 +1294,6 @@ Proof with (elia; inverts_all_lc; try eassumption; simpl in *; solve_false; try 
     forwards [IHA2|IHA2] : IH A x0...
   Unshelve. applys empty.
 Defined.
-
 
 Lemma dsub_splu: forall A B C,
     splu A B C -> declarative_subtyping B A /\ declarative_subtyping C A.
@@ -1426,7 +1374,6 @@ Proof.
   intros. applys~ ASub_or.
 Qed.
 
-
 Ltac split_inter_constructors :=
   applys* SpI_and + applys* SpI_orl +
   applys* SpI_in + applys* SpI_arrow + applys* SpI_orl +
@@ -1485,6 +1432,16 @@ Proof with (simpl in *; try applys SpI_and; try applys SpU_or; try eassumption; 
     + (* or *) applys DSub_Trans (t_or A1 A2)...
     + (* orl *) forwards (?&?): dsub_splu H. applys DSub_Trans IHalgo_sub...
     + (* orr *) forwards (?&?): dsub_splu H. applys DSub_Trans IHalgo_sub...
+Qed.
+
+
+Lemma sub_dec : forall A B,
+    lc_typ A -> lc_typ B -> declarative_subtyping A B \/ ~ (declarative_subtyping A B).
+Proof.
+  intros.
+  forwards~ [?|?]: decidability A B.
+  left. applys~ dsub2asub.
+  right. intro HF. apply dsub2asub in HF. eauto.
 Qed.
 
 
@@ -1943,8 +1900,6 @@ Proof with (simpl in *; eauto with lngen; eauto using typsubst_typ_lc_typ, typsu
     all: applys IH; new_elia...
 Qed.
 
-(******** subtyping **********)
-
 
 Lemma typsubst_typ_algo_sub : forall A B C X,
   algo_sub A B -> lc_typ C ->
@@ -1960,16 +1915,6 @@ Ltac solve_dsub := repeat match goal with
                           | |- declarative_subtyping _ _ => apply dsub2asub
                           end; try solve (solve_algo_sub).
 
-
-Lemma sub_dec : forall A B,
-    lc_typ A -> lc_typ B -> declarative_subtyping A B \/ ~ (declarative_subtyping A B).
-Proof.
-  intros.
-  forwards~ [?|?]: decidability A B.
-  left. applys~ dsub2asub.
-  right. intro HF. apply dsub2asub in HF. eauto.
-Qed.
-
 Lemma nsub_splitu : forall A B B1 B2,
     ~ declarative_subtyping B A -> splu B B1 B2 -> lc_typ A ->
     ~ declarative_subtyping B1 A \/ ~ declarative_subtyping B2 A.
@@ -1980,3 +1925,178 @@ Proof.
   exfalso. applys HN.
   apply dsub2asub in H, H0. applys~ dsub2asub.
 Qed.
+
+
+(*****************************************************************************)
+Definition iso A B := A <: B /\ B <: A.
+
+Notation "A ~= B"        := (iso A B)
+                              (at level 65, B at next level, no associativity) : type_scope.
+
+Lemma iso_subst_sub : forall A B C,
+    A <: B -> A ~= C -> C <: B.
+Proof.
+  introv H1 (H2&H3). convert2asub. applys algo_trans; try eassumption.
+Qed.
+
+Lemma iso_lc : forall A B,
+    A ~= B -> lc_typ A /\ lc_typ B.
+Proof.
+  introv (H1&H2). eauto.
+Qed.
+
+Ltac iso_inverts_all_lc := repeat lazymatch goal with
+                             | H: _ ~= _ |- _ => forwards (?&?): iso_lc H; clear H
+                             end;
+                           inverts_all_lc.
+
+Lemma iso_symm : forall A B,
+    A ~= B -> B ~= A.
+Proof.
+  introv (H1&H2).
+  split~.
+Qed.
+
+Lemma iso_refl : forall A,
+    lc_typ A -> A ~= A.
+Proof.
+  introv H. induction H; split.
+  all: applys~ DSub_Refl.
+Qed.
+
+Lemma iso_trans : forall A B C,
+    A ~= B -> B ~= C -> A ~= C.
+Proof. introv (?&?) (?&?).
+       split; applys DSub_Trans; eassumption.
+Qed.
+
+Lemma iso_or : forall A B C,
+    A ~= B -> A ~= C -> A ~= B|C.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; constructor~.
+Qed.
+Lemma iso_or_2 : forall A B C,
+    A ~= C -> B ~= C -> A|B ~= C.
+Proof.
+  introv H1 H2. eauto using iso_or, iso_symm.
+Qed.
+
+Lemma iso_or_match : forall A1 A2 B1 B2,
+    A1 ~= B1 -> A2 ~= B2 -> A1|A2 ~= B1|B2.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; convert2asub; match_or; auto.
+Qed.
+
+Lemma iso_and : forall A B C,
+    A ~= B -> A ~= C -> A ~= B&C.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; constructor~.
+Qed.
+
+Lemma iso_and_match : forall A1 A2 B1 B2,
+    A1 ~= B1 -> A2 ~= B2 -> A1&A2 ~= B1&B2.
+Proof.
+  introv (H1&H2) (H3&H4).
+  all: split; convert2asub; match_and; auto.
+Qed.
+
+Lemma iso_shuffle : forall A B C D,
+    lc_typ A -> lc_typ B -> lc_typ C -> lc_typ D ->
+    (A | B) | (C | D) ~= (A | C) | (B | D).
+Proof.
+  intros. split.
+  - applys DSub_UnionL.
+    convert2asub; match_or; applys* ASub_orl.
+    convert2asub; match_or; applys* ASub_orr.
+  - applys DSub_UnionL.
+    convert2asub; match_or; applys* ASub_orl.
+    convert2asub; match_or; applys* ASub_orr.
+Qed.
+
+Lemma iso_dist_1 : forall A B C,
+    lc_typ A -> lc_typ B -> lc_typ C ->
+    (A | B) & C ~= (A & C) | (B & C).
+Proof.
+  intros. split.
+  all: convert2asub; match_or; eauto.
+Qed.
+
+Lemma iso_dist_2 : forall A B C,
+    lc_typ A -> lc_typ B -> lc_typ C ->
+    C & (A | B) ~= (C & A) | (C & B).
+Proof with try solve [eassumption || constructor; eassumption].
+  intros. split.
+  - convert2asub. swap_and_l...
+    match_or; swap_and_l; eauto.
+  - convert2asub. swap_and_r...
+    match_or; swap_and_r; eauto.
+Qed.
+
+Lemma iso_absorb_1 : forall A B,
+    lc_typ A -> lc_typ B -> A ~= A | A & B.
+Proof.
+  introv HA HB. splits.
+  - applys* DSub_UnionRL.
+  - applys* DSub_UnionL.
+Qed.
+
+Lemma iso_absorb_2 : forall A B,
+    lc_typ A -> lc_typ B -> A ~= A & B | A.
+Proof.
+  introv HA HB. splits.
+  - applys* DSub_UnionRR.
+  - applys* DSub_UnionL.
+Qed.
+
+Lemma iso_absorb_3 : forall A B,
+    lc_typ A -> lc_typ B -> A ~= A | B & A.
+Proof.
+  introv HA HB. splits.
+  - applys* DSub_UnionRL.
+  - applys* DSub_UnionL.
+Qed.
+
+Lemma iso_absorb_4 : forall A B,
+    lc_typ A -> lc_typ B -> A ~= B & A | A.
+Proof.
+  introv HA HB. splits.
+  - applys* DSub_UnionRR.
+  - applys* DSub_UnionL.
+Qed.
+
+Lemma iso_dup_1 : forall A B C,
+    A ~= B -> A ~= C -> A ~= B | C.
+Proof.
+  introv (?&?) (?&?). splits.
+  - applys~ DSub_UnionRL.
+  - applys* DSub_UnionL.
+Qed.
+
+#[export] Hint Resolve iso_refl : core.
+
+#[export] Hint Immediate iso_symm iso_trans iso_or iso_or_2 iso_and
+  iso_or_match iso_and_match : core.
+
+Lemma iso_asub2dsub : forall A B,
+    A ~~ B <-> A ~= B.
+Proof.
+  split; intros (H1&H2); split; convert2dsub; easy.
+Qed.
+
+Lemma new_splu_iso : forall A B C,
+    new_splu A B C -> A ~= B | C.
+Proof.
+  introv H. applys iso_asub2dsub.
+  applys* nsplu_isomorphic.
+Qed.
+
+Lemma splu_iso : forall A B C,
+    splu A B C -> A ~= B | C.
+Proof.
+  introv H. applys* new_splu_iso.
+Qed.
+
+#[export] Hint Resolve new_splu_iso splu_iso : core.

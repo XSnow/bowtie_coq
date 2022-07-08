@@ -8,18 +8,6 @@ Require Export SimpleSub.
 Notation "A <<>> B"        := (Distinguishability A B)
                                 (at level 65, B at next level, no associativity) : type_scope.
 
-Ltac basic_auto :=
-  destruct_conj; auto_unify;
-  try exists; try splits;
-  try reflexivity;
-  try lazymatch goal with
-      | |- lc_typ _ => eauto
-      | |- spli _ _ _ => try eapply spli_rename_open; try eassumption; econstructor; try eassumption;
-                         eauto
-      | |- splu _ _ _ => try eapply splu_rename_open; try eassumption; econstructor; try eassumption;
-                         eauto
-      end; try eassumption; elia.
-
 Lemma distinguishabilityax_rcd_inv : forall l A B,
     DistinguishabilityAx (t_rcd l A) (t_rcd l B) -> False.
 Proof.

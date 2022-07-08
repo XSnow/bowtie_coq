@@ -172,17 +172,6 @@ Lemma lc_fty_inv_2 : forall A:typ , lc_Fty [| A |] -> lc_typ A.
 Proof. introv H. inverts~ H. Qed.
 
 #[export] Hint Resolve lc_fty_inv_1 lc_fty_inv_2 : core.
-(*
-Ltac solve_lc_by_regularity A :=
-  match goal with
-  | H: ApplyTy _ _ _ |- _ => match type of H with context[ A ] => apply applyty_lc in H end
-  | H: NApplyTy _ _ _ |- _ => match type of H with context[ A ] => apply napplyty_lc in H end
-  end;
-  destruct_conj.
-
-#[export] Hint Extern 1 (lc_typ ?A ) => progress solve_lc_by_regularity A : core.
-#[export] Hint Extern 1 (lc_typ (?A -^ _) ) => progress solve_lc_by_regularity A : core.
- *)
 
 Lemma napplyty_bot : forall A,
     NApplyTy t_bot A -> False.
@@ -372,7 +361,7 @@ Proof.
   - forwards~: napplyty_rename C H0.
 Qed.
 
-(*------------------------------ Soundness Type-Level Dispatch -----------------------------------*)
+(*------------------- Soundness Type-Level Dispatch --------------------------*)
 
 (* Soundness of Type-Level Dispatch [1] *)
 Lemma applyty_soundness_1 : forall A B C,
@@ -606,7 +595,7 @@ Qed.
 
 #[export] Hint Immediate napplyty_sub_inv applyty_forall_inv : FalseHd.
 
-(*------------------------------ Lemma B.10 -----------------------------------*)
+(*------------------------------ Lemma B.10 ----------------------------------*)
 
 (* B.10 [1] *)
 Lemma monotonicity_applyty_1 : forall A A' (F : Fty) C,
@@ -727,180 +716,6 @@ Lemma apply_box_false_2 : forall l V1 V2,
 Proof with eauto.
   introv Val. induction* Val.
 Qed.
-
-(*****************************************************************************)
-Definition iso A B := A <: B /\ B <: A.
-
-Notation "A ~= B"        := (iso A B)
-                              (at level 65, B at next level, no associativity) : type_scope.
-
-Lemma iso_subst_sub : forall A B C,
-    A <: B -> A ~= C -> C <: B.
-Proof.
-  introv H1 (H2&H3). convert2asub. applys algo_trans; try eassumption.
-Qed.
-
-Lemma iso_lc : forall A B,
-    A ~= B -> lc_typ A /\ lc_typ B.
-Proof.
-  introv (H1&H2). eauto.
-Qed.
-
-Ltac iso_inverts_all_lc := repeat lazymatch goal with
-                             | H: _ ~= _ |- _ => forwards (?&?): iso_lc H; clear H
-                             end;
-                           inverts_all_lc.
-
-Lemma iso_symm : forall A B,
-    A ~= B -> B ~= A.
-Proof.
-  introv (H1&H2).
-  split~.
-Qed.
-
-Lemma iso_refl : forall A,
-    lc_typ A -> A ~= A.
-Proof.
-  introv H. induction H; split.
-  all: applys~ DSub_Refl.
-Qed.
-
-Lemma iso_trans : forall A B C,
-    A ~= B -> B ~= C -> A ~= C.
-Proof. introv (?&?) (?&?).
-       split; applys DSub_Trans; eassumption.
-Qed.
-
-Lemma iso_or : forall A B C,
-    A ~= B -> A ~= C -> A ~= B|C.
-Proof.
-  introv (H1&H2) (H3&H4).
-  all: split; constructor~.
-Qed.
-Lemma iso_or_2 : forall A B C,
-    A ~= C -> B ~= C -> A|B ~= C.
-Proof.
-  introv H1 H2. eauto using iso_or, iso_symm.
-Qed.
-
-Lemma iso_or_match : forall A1 A2 B1 B2,
-    A1 ~= B1 -> A2 ~= B2 -> A1|A2 ~= B1|B2.
-Proof.
-  introv (H1&H2) (H3&H4).
-  all: split; convert2asub; match_or; auto.
-Qed.
-
-Lemma iso_and : forall A B C,
-    A ~= B -> A ~= C -> A ~= B&C.
-Proof.
-  introv (H1&H2) (H3&H4).
-  all: split; constructor~.
-Qed.
-
-Lemma iso_and_match : forall A1 A2 B1 B2,
-    A1 ~= B1 -> A2 ~= B2 -> A1&A2 ~= B1&B2.
-Proof.
-  introv (H1&H2) (H3&H4).
-  all: split; convert2asub; match_and; auto.
-Qed.
-
-Lemma iso_shuffle : forall A B C D,
-    lc_typ A -> lc_typ B -> lc_typ C -> lc_typ D ->
-    (A | B) | (C | D) ~= (A | C) | (B | D).
-Proof.
-  intros. split.
-  - applys DSub_UnionL.
-    convert2asub; match_or; applys* ASub_orl.
-    convert2asub; match_or; applys* ASub_orr.
-  - applys DSub_UnionL.
-    convert2asub; match_or; applys* ASub_orl.
-    convert2asub; match_or; applys* ASub_orr.
-Qed.
-
-Lemma iso_dist_1 : forall A B C,
-    lc_typ A -> lc_typ B -> lc_typ C ->
-    (A | B) & C ~= (A & C) | (B & C).
-Proof.
-  intros. split.
-  all: convert2asub; match_or; eauto.
-Qed.
-
-Lemma iso_dist_2 : forall A B C,
-    lc_typ A -> lc_typ B -> lc_typ C ->
-    C & (A | B) ~= (C & A) | (C & B).
-Proof with try solve [eassumption || constructor; eassumption].
-  intros. split.
-  - convert2asub. swap_and_l...
-    match_or; swap_and_l; eauto.
-  - convert2asub. swap_and_r...
-    match_or; swap_and_r; eauto.
-Qed.
-
-Lemma iso_absorb_1 : forall A B,
-    lc_typ A -> lc_typ B -> A ~= A | A & B.
-Proof.
-  introv HA HB. splits.
-  - applys* DSub_UnionRL.
-  - applys* DSub_UnionL.
-Qed.
-
-Lemma iso_absorb_2 : forall A B,
-    lc_typ A -> lc_typ B -> A ~= A & B | A.
-Proof.
-  introv HA HB. splits.
-  - applys* DSub_UnionRR.
-  - applys* DSub_UnionL.
-Qed.
-
-Lemma iso_absorb_3 : forall A B,
-    lc_typ A -> lc_typ B -> A ~= A | B & A.
-Proof.
-  introv HA HB. splits.
-  - applys* DSub_UnionRL.
-  - applys* DSub_UnionL.
-Qed.
-
-Lemma iso_absorb_4 : forall A B,
-    lc_typ A -> lc_typ B -> A ~= B & A | A.
-Proof.
-  introv HA HB. splits.
-  - applys* DSub_UnionRR.
-  - applys* DSub_UnionL.
-Qed.
-
-Lemma iso_dup_1 : forall A B C,
-    A ~= B -> A ~= C -> A ~= B | C.
-Proof.
-  introv (?&?) (?&?). splits.
-  - applys~ DSub_UnionRL.
-  - applys* DSub_UnionL.
-Qed.
-
-#[export] Hint Resolve iso_refl : core.
-
-#[export] Hint Immediate iso_symm iso_trans iso_or iso_or_2 iso_and
-  iso_or_match iso_and_match : core.
-
-Lemma iso_asub2dsub : forall A B,
-    A ~~ B <-> A ~= B.
-Proof.
-  split; intros (H1&H2); split; convert2dsub; easy.
-Qed.
-
-Lemma new_splu_iso : forall A B C,
-    new_splu A B C -> A ~= B | C.
-Proof.
-  introv H. applys iso_asub2dsub.
-  applys* nsplu_isomorphic.
-Qed.
-
-Lemma splu_iso : forall A B C,
-    splu A B C -> A ~= B | C.
-Proof.
-  introv H. applys* new_splu_iso.
-Qed.
-
-#[export] Hint Resolve new_splu_iso splu_iso : core.
 
 (*------------------------- Inversion of Type-Level Dispatch -----------------*)
 
