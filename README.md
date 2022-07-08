@@ -10,7 +10,7 @@ definition in Coq)
 
 We rely on two Coq libraries:
 
-- [`metalib`](https://github.com/plclub/metalib) for the locally nameless
+- [Metalib](https://github.com/plclub/metalib) for the locally nameless
 representation, which needs to be downloaded and installed.
 
 - [LibTactics.v](./coq/LibTactics.v) from [the TLC Coq library](https://www.chargueraud.org/softs/tlc/)
@@ -46,7 +46,7 @@ Our Coq proofs are verified in Coq **8.14.1**.
 
 #### Build and Compile the Proofs
 
-1. Enter [coq/](./coq) directory.
+1. Enter [coq](./coq) directory.
 
 2. Type `make` in the terminal to build and compile the proofs.
 
