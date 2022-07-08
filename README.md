@@ -70,10 +70,10 @@ We downloaded it from [here](http://gallium.inria.fr/~fpottier/ssphs/LibTactics.
 
 - [DistSubtyping.v](./coq/DistSubtyping.v) contains subtyping-related proofs.
 
+- [SimpleSub.v](./coq/SimpleSub.v) is about the coverage relations.
+
 - [ApplyTy.v](./coq/ApplyTy.v) proves the soundness and completeness,
 monotonicity, and some inversion lemmas of the type-level dispatch relation.
-
-- [SimpleSub.v](./coq/SimpleSub.v) is about the coverage relations.
 
 - [Distinguishability.v](./coq./Distinguishability.v) is about the distinguishability
 relation.

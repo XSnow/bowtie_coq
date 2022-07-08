@@ -3,7 +3,7 @@ LibTactics.v
 Definitions.v
 LN_Lemmas.v
 DistSubtyping.v
-ApplyTy.v
 SimpleSub.v
+ApplyTy.v
 Distinguishability.v
 Dispatch.v

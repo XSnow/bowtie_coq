@@ -1,6 +1,7 @@
 Require Import LibTactics.
 Require Import Coq.micromega.Lia.
 Require Import LN_Lemmas.
+Require Export ApplyTy.
 Require Export Distinguishability.
 
 

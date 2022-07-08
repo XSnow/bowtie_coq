@@ -1,7 +1,7 @@
 Require Import LibTactics.
 Require Import Coq.micromega.Lia.
 Require Import LN_Lemmas.
-Require Export ApplyTy.
+Require Export DistSubtyping.
 
 Notation "A <p B"        := (PositiveSubtyping A B)
                               (at level 65, B at next level, no associativity) : type_scope.
@@ -30,7 +30,98 @@ Proof. introv H. inverts H. inverts H0. Qed.
 #[export] Hint Immediate valtyp_bot_false : FalseHd.
 
 Ltac solve_false := try intro; try solve [false; eauto 3 with FalseHd].
+Ltac inverts_neg_false :=
+  match goal with
+  | H: isNegTyp _ |- _ => inverts H; fail
+  end.
 
+#[export]
+Hint Extern 1 => inverts_neg_false : FalseHd.
+
+#[export]
+Hint Extern 2 => repeat lazymatch goal with
+                 | H: isNegTyp (_ & _) |- _ => inverts H
+                 | H: isNegTyp (_ | _) |- _ => inverts H
+                 end; inverts_neg_false : FalseHd.
+
+#[export]
+ Hint Extern 2 =>
+  repeat lazymatch goal with
+  | H1: isValTyp (_ & _) |- _ => inverts H1
+  | H1: isValTyp (_ | _) |- _ => inverts H1
+  | H1: isValTyp (t_rcd _ _) |- _ => inverts H1
+   end;
+  try lazymatch goal with
+  | H1: isValTyp t_bot |- _ => inverts H1
+  | H1: isValTyp (t_tvar_b _) |- _ => inverts H1
+  | H1: isValTyp (t_tvar_f _) |- _ => inverts H1
+   end; inverts_neg_false : FalseHd.
+
+#[export]
+Hint Extern 0 =>
+match goal with
+| H: UnionOrdinaryFty (fty_StackArg _) |- _ => inverts H
+end : FalseHd.
+
+Ltac indTypFtySize s :=
+  assert (SizeInd: exists i, s < i) by eauto;
+  destruct SizeInd as [i SizeInd];
+  repeat match goal with | [ h : typ |- _ ] => (gen h) end;
+  repeat match goal with | [ h : Fty |- _ ] => (gen h) end;
+  induction i as [ | i IH]; [
+    intros; match goal with | [ H : _ < 0 |- _ ] => inverts H end
+    | intros ].
+
+
+(*-------------------------- neg types and val types -------------------------*)
+
+Lemma isnegtyp_lc : forall A, isNegTyp A -> lc_typ A.
+Proof. introv H. induction~ H. Qed.
+
+Lemma isvaltyp_lc : forall A, isValTyp A -> lc_typ A.
+Proof. introv H. induction H; auto using isnegtyp_lc. Qed.
+
+#[export] Hint Immediate isnegtyp_lc isvaltyp_lc : core.
+
+Lemma negtyp2valtyp : forall A,
+    isNegTyp A -> isValTyp A.
+Proof.
+  introv Neg.
+  induction* Neg.
+Qed.
+
+#[export] Hint Immediate negtyp2valtyp : core.
+
+Lemma negtyp_spli_inv : forall A A1 A2,
+    isNegTyp A -> spli A A1 A2 -> isNegTyp A1 /\ isNegTyp A2.
+Proof.
+  introv Val Spl.
+  induction Spl; inverts~ Val; split*.
+  all: try forwards* (?&?): IHSpl.
+Qed.
+
+Lemma negtyp_splu_inv : forall A A1 A2,
+    isNegTyp A -> splu A A1 A2 -> isNegTyp A1 /\ isNegTyp A2.
+Proof.
+  introv Val Spl.
+  induction Spl; inverts~ Val; split*.
+  all: try forwards* (?&?): IHSpl.
+Qed.
+
+Lemma valtyp_splu_inv : forall A A1 A2,
+    isValTyp A -> splu A A1 A2 -> isValTyp A1 /\ isValTyp A2.
+Proof.
+  introv Val Spl. gen A1 A2.
+  induction Val; intros.
+  - inverts Spl. forwards* : IHVal.
+  - forwards* (?&?): negtyp_splu_inv H.
+Qed.
+
+Lemma valtyp_rcd_inv : forall l V,
+    isValTyp(t_rcd l V) -> isValTyp V.
+Proof.
+  introv H. inverts~ H. inverts H0.
+Qed.
 
 Lemma psub_valtyp : forall A B,
     A <p B -> isValTyp A.
@@ -54,6 +145,46 @@ Proof.
 Qed.
 
 #[export] Hint Immediate nsub_valfty nsub_valtyp : core.
+
+Lemma valtyp_spli_inv : forall A A1 A2,
+    isValTyp A -> spli A A1 A2 -> isValTyp A1 /\ isValTyp A2.
+Proof.
+  introv Val Spl.
+  induction Spl; inverts~ Val; split*.
+  all: try match goal with
+           | H1: isNegTyp (_ & _) |- _ => inverts* H1
+           | H1: isNegTyp (_ | _) |- _ => inverts* H1
+           end.
+  all: try forwards* (?&?): IHSpl.
+  all: try match goal with
+         | H1: spli ?A _ _, H2: isNegTyp ?A |- _ => forwards* (?&?): negtyp_spli_inv H2 H1
+         | H2: isNegTyp _ _ _ |- _ => forwards* (?&?): negtyp_spli_inv H2
+           end.
+  all: solve_false.
+Qed.
+
+Ltac inverts_typ :=
+  try
+    lazymatch goal with
+    | H1:isValFty (fty_StackArg (_ & _)) |- _ => inverts H1
+    | H1:isValFty (fty_StackArg (_ | _)) |- _ => inverts H1
+    | H1:isValTyp (_ & _) |- _ => inverts H1
+    | H1:isValTyp (_ | _) |- _ => inverts H1
+    | H1:isValTyp (t_rcd _ _) |- _ => apply valtyp_rcd_inv in H1
+    | H1:isValTyp ?A, H2:spli ?A _ _ |- _ => forwards (?, ?) : valtyp_spli_inv H1 H2
+    | H1:isValTyp ?A, H2:splu ?A _ _ |- _ => forwards (?, ?) : valtyp_splu_inv H1 H2
+    end;
+  try
+    lazymatch goal with
+    | H1:isNegTyp t_bot |- _ => inverts H1
+    | H1:isNegTyp (t_rcd _ _) |- _ => inverts H1
+    | H1:isNegTyp (_ & _) |- _ => inverts H1
+    | H1:isNegTyp (_ | _) |- _ => inverts H1
+    | H1:isNegTyp ?A, H2:spli ?A _ _ |- _ => forwards (?, ?) : negtyp_spli_inv H1 H2
+    | H1:isNegTyp ?A, H2:splu ?A _ _ |- _ => forwards (?, ?) : negtyp_splu_inv H1 H2
+    end.
+
+#[export] Hint Extern 1 (isValTyp _) => inverts_typ : core.
 
 (*-------------------------- psub inversion lemmas  -------------------------*)
 
