@@ -1035,18 +1035,18 @@ DistinguishabilityAx :: '' ::=
 
   defn
   |-ax A <> B
-  :: :: DistinguishabilityAx :: ''
+  :: :: DistinguishabilityAx :: 'DistAx'
   {{ tex \distax{[[A]]}{[[B]]} }}
   by
 
   l1 != l2
-  ------------------ :: DistAxIn
+  ------------------ :: In
   |-ax In l1 A <> In l2 B
 
-  ------------------ :: DistAxEmptyL
+  ------------------ :: EmptyL
   |-ax Empty <> B
 
-  ------------------ :: DistAxEmptyR
+  ------------------ :: EmptyR
   |-ax A <> Empty
 
 
@@ -1055,49 +1055,138 @@ Distinguishability :: '' ::=
 
   defn
   |- A <> B
-  :: :: Distinguishability :: ''
+  :: :: Distinguishability :: 'Dist'
   {{ tex \dist{[[A]]}{[[B]]} }}
   by
 
   |-ax A <> B
-  ----------- :: DistAx
+  ----------- :: Ax
   |- A <> B
 
   |- A <> B
-  --------------------- :: DistIn
+  --------------------- :: In
   |- In l A <> In l B
 
   splitU A = A1 | A2
   |- A1 <> B
   |- A2 <> B
-  ---------------- :: DistUnion
+  ---------------- :: Union
   |- A <> B
 
   splitU A = A1 | A2
   |- B <> A1
   |- B <> A2
-  ---------------- :: DistUnionSym
+  ---------------- :: UnionSym
   |- B <> A
 
   |- A <> B
-  ---------------- :: DistIntersectL
+  ---------------- :: IntersectL
   |- A & A' <> B
 
   |- A' <> B
-  ---------------- :: DistIntersectR
+  ---------------- :: IntersectR
   |- A & A' <> B
 
   |- B <> A
-  ---------------- :: DistIntersectLSym
+  ---------------- :: IntersectLSym
   |- B <> A & A'
 
   |- B <> A'
-  ---------------- :: DistIntersectRSym
+  ---------------- :: IntersectRSym
   |- B <> A & A'
 
-  % |- B <> A
-  % ----------- :: DistSym
-  % |- A <> B
+
+defns
+DistinguishabilityAx_Dec :: '' ::=
+
+  defn
+  ||-ax A <> B
+  :: :: DistinguishabilityAx_Dec :: 'DistAxDec'
+  {{ tex \distax{[[A]]}{[[B]]} }}
+  {{ com the definition on the paper }}
+  by
+
+  l1 != l2
+  ------------------ :: In
+  ||-ax In l1 A <> In l2 B
+
+  ------------------ :: Empty
+  ||-ax Empty <> B
+
+
+defns
+Distinguishability_Dec :: '' ::=
+
+  defn
+  ||- A <> B
+  :: :: Distinguishability_Dec :: 'DistDec'
+  {{ tex \dist{[[A]]}{[[B]]} }}
+  {{ com the definition on the paper }}
+  by
+
+  ||- A <> B
+  --------------------- :: In
+  ||- In l A <> In l B
+
+  ||- A1 <> B
+  ||- A2 <> B
+  ---------------- :: Union
+  ||- A1|A2 <> B
+
+  ||- A <> B
+  ---------------- :: IntersectL
+  ||- A & A' <> B
+
+  ||- A' <> B
+  ---------------- :: IntersectR
+  ||- A & A' <> B
+
+  ||-ax A <> B
+  ----------- :: Ax
+  ||- A <> B
+
+  ||- B <> A
+  ----------- :: Sym
+  ||- A <> B
+
+  ||- A <> B'
+  B <: B'
+  ----------- :: Sub
+  ||- A <> B
+
+
+defns
+Distinguishability_DecAlt :: '' ::=
+
+  defn
+  |||- A <> B
+  :: :: Distinguishability_DecAlt :: 'DistDecAlt'
+  {{ tex \dist{[[A]]}{[[B]]} }}
+  {{ com the definition on the paper minus intersection rules }}
+  by
+
+  |||- A <> B
+  --------------------- :: In
+  |||- In l A <> In l B
+
+  |||- A1 <> B
+  |||- A2 <> B
+  ---------------- :: Union
+  |||- A1|A2 <> B
+
+  ||-ax A <> B
+  ----------- :: Ax
+  |||- A <> B
+
+  |||- B <> A
+  ----------- :: Sym
+  |||- A <> B
+
+  |||- A <> B'
+  B <: B'
+  ----------- :: Sub
+  |||- A <> B
+
 
 defns
 MergeabilityAx :: '' ::=

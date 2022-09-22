@@ -603,3 +603,67 @@ Proof with solve_false.
     applys IH H SubB; first_match; try eassumption; elia; eauto.
     applys IH H0 SubB; first_match; try eassumption; elia; eauto.
 Qed.
+
+(** The Equivalence of the algorithmic distinguishability and the declarative ones *)
+Lemma distinguishability_sound : forall A B,
+    A <<>> B -> Distinguishability_Dec A B.
+Proof with eauto using dsub_or.
+  introv Dis. induction Dis.
+  - (* ax *) induction* H.
+  - (* rcd *) eauto.
+  - (* splu *)
+    applys DistDecSym. apply DistDecSym in IHDis1. apply DistDecSym in IHDis2.
+    applys DistDecSub (A1|A2)...
+  - (* splu *)
+    applys DistDecSub (A1|A2)...
+  - (* intersection *)
+    applys DistDecSym. apply DistDecSym in IHDis.
+    applys DistDecSub A...
+  - (* intersection *)
+    applys DistDecSym. apply DistDecSym in IHDis.
+    applys DistDecSub A'...
+  - (* intersection *)
+    applys DistDecSub A...
+  - (* intersection *)
+    applys DistDecSub A'...
+Qed.
+
+Lemma distinguishability_complete : forall A B,
+     Distinguishability_Dec A B -> A <<>> B.
+Proof.
+  introv Dis. induction* Dis.
+  - (* ax *) induction* H.
+  - (* sub *) applys* distinguishability_downward.
+Qed.
+
+(* the equivalence still holds after removing two intersection rules from dec *)
+Lemma distinguishability_sound_alt : forall A B,
+    A <<>> B -> Distinguishability_DecAlt A B.
+Proof with eauto using dsub_or.
+  introv Dis. induction Dis.
+  - (* ax *) induction* H.
+  - (* rcd *) eauto.
+  - (* splu *)
+    applys DistDecAltSym. apply DistDecAltSym in IHDis1. apply DistDecAltSym in IHDis2.
+    applys DistDecAltSub (A1|A2)...
+  - (* splu *)
+    applys DistDecAltSub (A1|A2)...
+  - (* intersection *)
+    applys DistDecAltSym. apply DistDecAltSym in IHDis.
+    applys DistDecAltSub A...
+  - (* intersection *)
+    applys DistDecAltSym. apply DistDecAltSym in IHDis.
+    applys DistDecAltSub A'...
+  - (* intersection *)
+    applys DistDecAltSub A...
+  - (* intersection *)
+    applys DistDecAltSub A'...
+Qed.
+
+Lemma distinguishability_complete_alt : forall A B,
+     Distinguishability_DecAlt A B -> A <<>> B.
+Proof.
+  introv Dis. induction* Dis.
+  - (* ax *) induction* H.
+  - (* sub *) applys* distinguishability_downward.
+Qed.

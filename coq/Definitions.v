@@ -833,6 +833,65 @@ Inductive Distinguishability : typ -> typ -> Prop :=    (* defn Distinguishabili
      Distinguishability B A' ->
      Distinguishability B (t_and A A').
 
+(* defns DistinguishabilityAx_Dec *)
+Inductive DistinguishabilityAx_Dec : typ -> typ -> Prop :=    (* defn DistinguishabilityAx_Dec *)
+ | DistAxDecIn : forall (l1:l) (A:typ) (l2:l) (B:typ),
+     lc_typ A ->
+     lc_typ B ->
+      l1  <>  l2  ->
+     DistinguishabilityAx_Dec (t_rcd l1 A) (t_rcd l2 B)
+ | DistAxDecEmpty : forall (B:typ),
+     lc_typ B ->
+     DistinguishabilityAx_Dec t_bot B.
+
+(* defns Distinguishability_Dec *)
+Inductive Distinguishability_Dec : typ -> typ -> Prop :=    (* defn Distinguishability_Dec *)
+ | DistDecIn : forall (l5:l) (A B:typ),
+     Distinguishability_Dec A B ->
+     Distinguishability_Dec (t_rcd l5 A) (t_rcd l5 B)
+ | DistDecUnion : forall (A1 A2 B:typ),
+     Distinguishability_Dec A1 B ->
+     Distinguishability_Dec A2 B ->
+     Distinguishability_Dec (t_or A1 A2) B
+ | DistDecIntersectL : forall (A A' B:typ),
+     lc_typ A' ->
+     Distinguishability_Dec A B ->
+     Distinguishability_Dec (t_and A A') B
+ | DistDecIntersectR : forall (A A' B:typ),
+     lc_typ A ->
+     Distinguishability_Dec A' B ->
+     Distinguishability_Dec (t_and A A') B
+ | DistDecAx : forall (A B:typ),
+     DistinguishabilityAx_Dec A B ->
+     Distinguishability_Dec A B
+ | DistDecSym : forall (A B:typ),
+     Distinguishability_Dec B A ->
+     Distinguishability_Dec A B
+ | DistDecSub : forall (A B B':typ),
+     Distinguishability_Dec A B' ->
+     declarative_subtyping B B' ->
+     Distinguishability_Dec A B.
+
+(* defns Distinguishability_DecAlt *)
+Inductive Distinguishability_DecAlt : typ -> typ -> Prop :=    (* defn Distinguishability_DecAlt *)
+ | DistDecAltIn : forall (l5:l) (A B:typ),
+     Distinguishability_DecAlt A B ->
+     Distinguishability_DecAlt (t_rcd l5 A) (t_rcd l5 B)
+ | DistDecAltUnion : forall (A1 A2 B:typ),
+     Distinguishability_DecAlt A1 B ->
+     Distinguishability_DecAlt A2 B ->
+     Distinguishability_DecAlt (t_or A1 A2) B
+ | DistDecAltAx : forall (A B:typ),
+     DistinguishabilityAx_Dec A B ->
+     Distinguishability_DecAlt A B
+ | DistDecAltSym : forall (A B:typ),
+     Distinguishability_DecAlt B A ->
+     Distinguishability_DecAlt A B
+ | DistDecAltSub : forall (A B B':typ),
+     Distinguishability_DecAlt A B' ->
+     declarative_subtyping B B' ->
+     Distinguishability_DecAlt A B.
+
 (* defns MergeabilityAx *)
 Inductive MergeabilityAx : typ -> typ -> Prop :=    (* defn MergeabilityAx *)
  | MergeAxTopL : forall (B:typ),
@@ -922,6 +981,6 @@ Inductive sim : typ -> typ -> Prop :=    (* defn sim *)
 
 
 (** infrastructure *)
-Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy ApplyTySimple NApplyTySimple NApplyTy new_spli new_splu new_sub NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
+Hint Constructors declarative_subtyping isNegTyp isValTyp isValFty PositiveSubtyping NegativeSubtyping ordu ordi spli splu algo_sub UnionOrdinaryFty ApplyTy ApplyTySimple NApplyTySimple NApplyTy new_spli new_splu new_sub NotDistinguishableTypes NotDistinguishable DistinguishabilityAx Distinguishability DistinguishabilityAx_Dec Distinguishability_Dec Distinguishability_DecAlt MergeabilityAx Mergeability TypeWF sim lc_typ lc_Fty : core.
 
 
