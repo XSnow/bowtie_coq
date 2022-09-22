@@ -160,22 +160,6 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
  | DSub_CovAll : forall (L:vars) (A B:typ),
       ( forall X , X \notin  L  -> declarative_subtyping  ( open_typ_wrt_typ A (t_tvar_f X) )   ( open_typ_wrt_typ B (t_tvar_f X) )  )  ->
      declarative_subtyping (t_forall A) (t_forall B)
- | DSub_CovInterL : forall (A C B:typ),
-     lc_typ C ->
-     declarative_subtyping A B ->
-     declarative_subtyping (t_and A C) (t_and B C)
- | DSub_CovInterR : forall (C A B:typ),
-     lc_typ C ->
-     declarative_subtyping A B ->
-     declarative_subtyping (t_and C A) (t_and C B)
- | DSub_CovUnionL : forall (A C B:typ),
-     lc_typ C ->
-     declarative_subtyping A B ->
-     declarative_subtyping (t_or A C) (t_or B C)
- | DSub_CovUnionR : forall (C A B:typ),
-     lc_typ C ->
-     declarative_subtyping A B ->
-     declarative_subtyping (t_or C A) (t_or C B)
  | DSub_FunCon : forall (A1 B A2:typ),
      lc_typ B ->
      declarative_subtyping A2 A1 ->
@@ -189,16 +173,6 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
      lc_typ A ->
      lc_typ B ->
      declarative_subtyping (t_and  (t_arrow C A)   (t_arrow C B) )  (t_arrow C (t_and A B)) 
- | DSub_CovDistIUnionL : forall (A C B:typ),
-     lc_typ A ->
-     lc_typ B ->
-     lc_typ C ->
-     declarative_subtyping (t_and  (t_or A C)   (t_or B C) ) (t_or  (t_and A B)  C)
- | DSub_CovDistIUnionR : forall (C A B:typ),
-     lc_typ C ->
-     lc_typ A ->
-     lc_typ B ->
-     declarative_subtyping (t_and  (t_or C A)   (t_or C B) ) (t_or C  (t_and A B) )
  | DSub_CovDistIAll : forall (A B:typ),
      lc_typ (t_forall A) ->
      lc_typ (t_forall B) ->
@@ -216,11 +190,6 @@ Inductive declarative_subtyping : typ -> typ -> Prop :=    (* defn declarative_s
      lc_typ B ->
      lc_typ C ->
      declarative_subtyping (t_and  (t_or A B)  C) (t_or  (t_and A C)   (t_and B C) )
- | DSub_CovDistUInterR : forall (C A B:typ),
-     lc_typ A ->
-     lc_typ C ->
-     lc_typ B ->
-     declarative_subtyping (t_and C  (t_or A B) ) (t_or  (t_and C A)   (t_and C B) )
  | DSub_FunDistI : forall (A1 B A2:typ),
      lc_typ A1 ->
      lc_typ A2 ->

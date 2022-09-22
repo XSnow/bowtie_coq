@@ -1295,6 +1295,87 @@ Proof with (elia; inverts_all_lc; try eassumption; simpl in *; solve_false; try 
   Unshelve. applys empty.
 Defined.
 
+(* admissible rules *)
+Lemma DSub_CovInterL : forall (A C B:typ),
+    lc_typ C -> declarative_subtyping A B ->
+    declarative_subtyping (t_and A C) (t_and B C).
+Proof.
+  introv Lc HS.
+  applys* DSub_InterR.
+Qed.
+
+Lemma DSub_CovInterR : forall (C A B:typ),
+     lc_typ C -> declarative_subtyping A B ->
+     declarative_subtyping (t_and C A) (t_and C B).
+Proof.
+  introv Lc HS.
+  applys* DSub_InterR.
+Qed.
+
+Lemma DSub_CovUnionL : forall (A C B:typ),
+     lc_typ C -> declarative_subtyping A B ->
+     declarative_subtyping (t_or A C) (t_or B C).
+Proof.
+  introv Lc HS.
+  applys* DSub_UnionL.
+Qed.
+
+Lemma DSub_CovUnionR : forall (C A B:typ),
+     lc_typ C -> declarative_subtyping A B ->
+     declarative_subtyping (t_or C A) (t_or C B).
+Proof.
+  introv Lc HS.
+  applys* DSub_UnionL.
+Qed.
+
+Lemma DSub_CovDistIUnionL : forall (A C B:typ),
+    lc_typ A -> lc_typ B -> lc_typ C ->
+    declarative_subtyping (t_and  (t_or A C) (t_or B C) ) (t_or (t_and A B) C).
+Proof.
+  introv Lc1 Lc2 Lc3.
+  applys DSub_Trans.
+  applys* DSub_CovDistUInterL.
+  applys DSub_UnionL.
+  - applys DSub_Trans (t_and (t_or B C) A).
+    + applys* DSub_InterR.
+    + applys DSub_Trans.
+      applys* DSub_CovDistUInterL.
+      applys* DSub_UnionL.
+  - applys* DSub_UnionRR.
+Qed.
+
+Lemma DSub_CovDistIUnionR : forall (C A B:typ),
+    lc_typ C -> lc_typ A -> lc_typ B ->
+    declarative_subtyping (t_and  (t_or C A) (t_or C B) ) (t_or C (t_and A B) ).
+Proof.
+  introv Lc1 Lc2 Lc3.
+  applys DSub_Trans.
+  applys* DSub_CovDistUInterL.
+  applys DSub_UnionL.
+  - applys* DSub_UnionRL.
+  - applys DSub_Trans (t_and (t_or C B) A).
+    + applys* DSub_InterR.
+    + applys DSub_Trans.
+      applys* DSub_CovDistUInterL.
+      applys* DSub_UnionL.
+Qed.
+
+Lemma DSub_CovDistUInterR : forall (C A B:typ),
+    lc_typ A -> lc_typ C -> lc_typ B ->
+     declarative_subtyping (t_and C (t_or A B) ) (t_or  (t_and C A) (t_and C B) ).
+Proof.
+  introv Lc1 Lc2 Lc3.
+  applys DSub_Trans (t_and (t_or A B) C).
+  - applys* DSub_InterR.
+  - applys DSub_Trans.
+    applys* DSub_CovDistUInterL.
+    applys DSub_UnionL.
+    + applys* DSub_UnionRL.
+    + applys* DSub_UnionRR.
+Qed.
+
+#[export] Hint Resolve DSub_CovInterL DSub_CovInterR DSub_CovUnionL DSub_CovUnionR DSub_CovDistIUnionL DSub_CovDistIUnionR DSub_CovDistUInterR : core.
+
 Lemma dsub_splu: forall A B C,
     splu A B C -> declarative_subtyping B A /\ declarative_subtyping C A.
 Proof.

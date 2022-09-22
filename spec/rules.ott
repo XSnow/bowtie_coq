@@ -134,46 +134,56 @@ DSub :: '' ::=
   ----------- :: Refl
   A <: A
 
+
   A1 <: A2
   A2 <: A3
   ------------- :: Trans
   A1 <: A3
 
+
   A <: B
   -------------------- :: CovIn
   In l A <: In l B
-  
+
+
   A <: B
   -------------------- :: CovArr
   C -> A <: C -> B
-  
+
+
   A <: B
   --------------------------- :: CovAll
   forall X. A <: forall X. B
-  
-  A <: B
-  -------------------- :: CovInterL
-  A & C <: B & C
-  
-  A <: B
-  -------------------- :: CovInterR
-  C & A <: C & B
 
-  A <: B
-  -------------------- :: CovUnionL
-  A | C <: B | C
-  
-  A <: B
-  -------------------- :: CovUnionR
-  C | A <: C | B
+
+  % A <: B
+  % -------------------- :: CovInterL
+  % A & C <: B & C
+
+
+  % A <: B
+  % -------------------- :: CovInterR
+  % C & A <: C & B
+
+
+  % A <: B
+  % -------------------- :: CovUnionL
+  % A | C <: B | C
+
+
+  % A <: B
+  % -------------------- :: CovUnionR
+  % C | A <: C | B
+
 
   A2 <: A1
   -------------------- :: FunCon
   A1 -> B <: A2 -> B
 
+
   ------------------------------------- :: CovDistIIn
   (In l A) & (In l B) <: In l (A & B)
-  
+
   ------------------------------------- :: CovDistIArr
   (C -> A) & (C -> B) <: (C -> A & B)
   
@@ -183,45 +193,30 @@ DSub :: '' ::=
    
   % ------------------------------------- :: CovDistIInterR
   %  (C & A) & (C & B) <: C & (A & B)
-  
-  ------------------------------------- :: CovDistIUnionL
-  (A | C) & (B | C) <: (A & B) | C
-  
-  ------------------------------------- :: CovDistIUnionR
-  (C | A) & (C | B) <: C | (A & B)
+
+  % ------------------------------------- :: CovDistIUnionL
+  % (A | C) & (B | C) <: (A & B) | C
+
+  % ------------------------------------- :: CovDistIUnionR
+  % (C | A) & (C | B) <: C | (A & B)
 
   ------------------------------------------------------ :: CovDistIAll
   (forall X. A) & (forall X. B) <: (forall X. A & B)  
 
-
-% I omit these two (and two in the following CovDistU set of rules) since they are trivially admissible
-
   ------------------------------------- :: CovDistUIn
   In l (A | B) <: (In l A) | (In l B)
-  
+
   ------------------------------------------------------ :: CovDistUAll
   forall X. (A | B) <: (forall X. A) | (forall X. B)
 
   ------------------------------------- :: CovDistUInterL
   (A | B) & C <: (A & C) | (B & C)
-   
-  ------------------------------------- :: CovDistUInterR
-  C & (A | B) <: (C & A) | (C & B)
 
-
+  % ------------------------------------- :: CovDistUInterR
+  % C & (A | B) <: (C & A) | (C & B)
 
   ------------------------------------------------- :: FunDistI
   (A1 -> B) & (A2 -> B) <: (A1 | A2) -> B 
-
-
-% I think these are derivable from the above
-
-  % --------------------------------------- :: UnionDistI 
-  % A1 & (A2 | A3) <: (A1 & A2) | (A1 & A3)
-
-  % --------------------------------------- :: InterDistU
-  % A1 | (A2 & A3) <: (A1 | A2) & (A1 | A3)
-
 
   A1 <: B
   ----------------- :: InterLL
@@ -248,7 +243,7 @@ DSub :: '' ::=
   A <: B2
   ------------ :: UnionRR
   A <: B1 | B2
-  
+
   ---------- :: Empty
   Empty <: B
 
