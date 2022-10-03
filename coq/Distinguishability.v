@@ -335,7 +335,7 @@ Proof with basic_auto.
   induction SI; intros; inverts_all_ord; inverts_all_spl; solve_false.
   - exists...
     (* left... *)
-  - instantiate_cofinites. forwards* : H0 H2. destruct_conj.
+  - instantiate_cofinites. forwards~ : H0 H2. intuition eauto. destruct_conj.
     exists; splits; try applys SpI_forall; try applys SpU_forall; intros.
     all: try ( lazymatch goal with
          | H: splu (?A -^ _) _ _ |- splu (?A -^ _ ) _ _ =>

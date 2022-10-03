@@ -232,7 +232,7 @@ Proof with try eassumption; elia; destruct_conj; subst.
     all: inverts WF.
     + forwards: applyty_valtyp_psub A2 HS1... 1-2: eauto.
       forwards: applyty_valtyp_psub (A1 & A2) HS1... 1-3: eauto.
-      applys* DSub_Trans x2.
+      applys~ DSub_Trans x2.
     + forwards: applyty_valtyp_psub A2 HS2... 1-2: eauto.
       forwards: applyty_valtyp_psub (A1 & A2) HS1... 1-3: eauto.
       applys~ DSub_Trans x3.
@@ -449,7 +449,7 @@ Proof with inverts_all_spl; solve_false.
   inductions Spl...
   - applys~ botlike_inv.
   - forwards* [?|?]: IHSpl.
-  - forwards* [?|?]: IHSpl.
+  - forwards* [?|?]: IHSpl; intuition eauto.
 Qed.
 
 Lemma botlike_splu_inv : forall A B C,

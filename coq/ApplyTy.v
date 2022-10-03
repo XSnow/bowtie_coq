@@ -110,7 +110,7 @@ Lemma ordu_or_split_Fty: forall F,
 Proof.
   introv HL.
   destruct~ HL.
-  forwards* [?|(?&?&?)]: ordu_or_split A.
+  forwards~ [?|(?&?&?)]: ordu_or_split A. intuition eauto.
 Qed.
 
 Lemma applyty_total : forall A F,
@@ -175,7 +175,7 @@ Proof with elia; solve_false; try eassumption.
       * (* Both *)  inverts HA2...
         ** exists*. applys* ApplyTyInterL. forwards~ : proj2 (IH F B) H1...
         ** forwards (?&?): proj1 (IH F B) H1... exists*.
-    + (* forall *) inverts HA1... inverts HA2... exists*.
+    + (* forall *) inverts HA1... inverts HA2... exists~.
     + (* rcd *) inverts HA1...
   - subst.
     forwards: applyty_splitu_arg_inv HA1 H0. forwards: applyty_splitu_arg_inv HA2 H0.
@@ -646,7 +646,7 @@ Proof.
   all: try (forwards [?|?]: IHHA; [ eassumption |.. ]).
   all: try (forwards [?|?]: IHHA1; [ eassumption |.. ]).
   all: try (forwards [?|?]: IHHA2; [ eassumption |.. ]).
-  all: try solve [left*]; try solve [right*].
+  all: try solve [left*; auto]; try solve [right*; auto].
 Qed.
 
 (* [4] *)

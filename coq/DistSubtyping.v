@@ -262,6 +262,7 @@ Qed.
 Lemma declarative_subtyping_lc : forall A B, declarative_subtyping A B -> lc_typ A /\ lc_typ B.
 Proof.
   introv H. induction H; destruct_conj; split*.
+  all: eauto.
   all: inverts H; inverts H0; econstructor;
     intros; autorewrite with open; eauto.
 Qed.
@@ -273,7 +274,7 @@ Proof with firstorder using ordu_lc, ordi_lc, splu_lc, spli_lc.
 Qed.
 
 Lemma new_splu_lc : forall A B C, new_splu A B C-> lc_typ A /\ lc_typ B /\ lc_typ C.
-Proof. introv H. induction* H. Qed.
+Proof. introv H. induction* H. splits; eauto. Qed.
 
 Lemma new_spli_lc : forall A B C, new_spli A B C-> lc_typ A /\ lc_typ B /\ lc_typ C.
 Proof with firstorder using new_splu_lc.
@@ -1242,7 +1243,7 @@ Proof with (try eassumption; elia; eauto 3).
   introv.
   indTypSize (size_typ C).
   lets~ [Hi1|(?&?&Hi1)]: ordi_or_split C.
-  - applys* ASub_and.
+  - applys* ASub_and; [ applys* ASub_andl | applys* ASub_andr ].
   - (* split C x x0 *)
     forwards Hs1: IH A B x... forwards Hs2: IH A B x0...
     applys ASub_and...
@@ -1301,7 +1302,7 @@ Lemma DSub_CovInterL : forall (A C B:typ),
     declarative_subtyping (t_and A C) (t_and B C).
 Proof.
   introv Lc HS.
-  applys* DSub_InterR.
+  applys~ DSub_InterR.
 Qed.
 
 Lemma DSub_CovInterR : forall (C A B:typ),
@@ -1309,7 +1310,7 @@ Lemma DSub_CovInterR : forall (C A B:typ),
      declarative_subtyping (t_and C A) (t_and C B).
 Proof.
   introv Lc HS.
-  applys* DSub_InterR.
+  applys~ DSub_InterR.
 Qed.
 
 Lemma DSub_CovUnionL : forall (A C B:typ),
@@ -1325,7 +1326,7 @@ Lemma DSub_CovUnionR : forall (C A B:typ),
      declarative_subtyping (t_or C A) (t_or C B).
 Proof.
   introv Lc HS.
-  applys* DSub_UnionL.
+  applys~ DSub_UnionL.
 Qed.
 
 Lemma DSub_CovDistIUnionL : forall (A C B:typ),
@@ -1337,11 +1338,11 @@ Proof.
   applys* DSub_CovDistUInterL.
   applys DSub_UnionL.
   - applys DSub_Trans (t_and (t_or B C) A).
-    + applys* DSub_InterR.
+    + applys~ DSub_InterR.
     + applys DSub_Trans.
-      applys* DSub_CovDistUInterL.
-      applys* DSub_UnionL.
-  - applys* DSub_UnionRR.
+      applys~ DSub_CovDistUInterL.
+      applys~ DSub_UnionL.
+  - applys~ DSub_UnionRR.
 Qed.
 
 Lemma DSub_CovDistIUnionR : forall (C A B:typ),
@@ -1352,12 +1353,12 @@ Proof.
   applys DSub_Trans.
   applys* DSub_CovDistUInterL.
   applys DSub_UnionL.
-  - applys* DSub_UnionRL.
+  - applys~ DSub_UnionRL.
   - applys DSub_Trans (t_and (t_or C B) A).
-    + applys* DSub_InterR.
+    + applys~ DSub_InterR.
     + applys DSub_Trans.
-      applys* DSub_CovDistUInterL.
-      applys* DSub_UnionL.
+      applys~ DSub_CovDistUInterL.
+      applys~ DSub_UnionL.
 Qed.
 
 Lemma DSub_CovDistUInterR : forall (C A B:typ),
@@ -1366,12 +1367,12 @@ Lemma DSub_CovDistUInterR : forall (C A B:typ),
 Proof.
   introv Lc1 Lc2 Lc3.
   applys DSub_Trans (t_and (t_or A B) C).
-  - applys* DSub_InterR.
+  - applys~ DSub_InterR.
   - applys DSub_Trans.
-    applys* DSub_CovDistUInterL.
+    applys~ DSub_CovDistUInterL.
     applys DSub_UnionL.
-    + applys* DSub_UnionRL.
-    + applys* DSub_UnionRR.
+    + applys~ DSub_UnionRL.
+    + applys~ DSub_UnionRR.
 Qed.
 
 #[export] Hint Resolve DSub_CovInterL DSub_CovInterR DSub_CovUnionL DSub_CovUnionR DSub_CovDistIUnionL DSub_CovDistIUnionR DSub_CovDistUInterR : core.
@@ -1831,7 +1832,8 @@ Proof with try applys ASub_refl; try match goal with |- lc_typ _ => eauto with l
       * use_left_l...
       * applys algo_trans IHnew_splu. use_right_r... use_right_l...
   - applys algo_trans (t_forall (A1|A2))...
-    + split_l; applys ASub_forall; intros; instantiate_cofinites;
+    + split_l; auto;
+      applys ASub_forall; intros; instantiate_cofinites;
        autorewrite with open...
       use_left_r... use_right_r...
     + applys ASub_forall; intros; instantiate_cofinites;
@@ -1885,8 +1887,8 @@ Proof with eauto using ASub_refl.
     + constructor~.
   - split; applys algo_trans (t_forall (A1&A2)).
     + econstructor. intros. instantiate_cofinites. autorewrite with open. easy.
-    + split_r; econstructor; intros; autorewrite with open. use_left_l... use_right_l...
-    + convert2dsub. applys* DSub_CovDistIAll.
+    + split_r; auto; econstructor; intros; autorewrite with open. use_left_l... use_right_l...
+    + convert2dsub. applys~ DSub_CovDistIAll.
     + econstructor. intros. instantiate_cofinites. autorewrite with open. easy.
   - destruct IHHs. split; applys algo_trans (t_rcd l5 (A1&A2)).
     + econstructor...

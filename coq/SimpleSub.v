@@ -158,7 +158,8 @@ Proof.
   all: try match goal with
          | H1: spli ?A _ _, H2: isNegTyp ?A |- _ => forwards* (?&?): negtyp_spli_inv H2 H1
          | H2: isNegTyp _ _ _ |- _ => forwards* (?&?): negtyp_spli_inv H2
-           end.
+         end.
+  all: auto.
   all: solve_false.
 Qed.
 
@@ -260,7 +261,7 @@ Lemma psub_merge_intersection : forall A B B1 B2,
     spli B B1 B2 -> isValTyp A -> A <p B1 -> A <p B2 -> A <p B.
 Proof.
   introv Spl Val Sub1 Sub2. gen A.
-  induction* Spl; intros.
+  induction* Spl; intros; auto.
   - inverts_psub Sub1; inverts_psub Sub2; eauto.
   - inverts_psub Sub1; inverts_psub Sub2; eauto.
   - inverts_psub Sub1; inverts_psub Sub2; subst; eauto.
@@ -624,15 +625,14 @@ Qed.
 (* Completeness of Coverage Relations [2] *)
 Lemma apply2nsub : forall A F C,
     isNegTyp A -> isValFty F -> ApplyTy A F C -> A <n F.
-Proof.
+Proof with auto.
   introv Neg Val App.
-  induction App; try solve [inverts Neg]; inverts Val.
-  - (* forall *) eauto.
+  induction App; try solve [inverts Neg]; inverts Val...
   - (* arrow *)
     inverts* H0. constructor~.
     applys~ sub2psub.
-  - (* union *) inverts* Neg.
-  - (* union *) inverts* Neg.
+  - (* union *) inverts* Neg...
+  - (* union *) inverts* Neg...
   - (* splu *) inverts_typ. applys* nsub_unionL.
   - (* intersection *) inverts* Neg.
   - (* intersection *) inverts* Neg.
@@ -758,7 +758,7 @@ Proof.
     induction H; try inverts_typ; eauto.
     + inverts_typ. applys* Sim_Neg.
     + inverts_typ. applys* Sim_Neg.
-    + applys* Sim_Neg.
+    + applys~ Sim_Neg.
 Qed.
 
 Lemma sim_psub : forall A B,
