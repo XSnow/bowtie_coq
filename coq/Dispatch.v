@@ -34,35 +34,6 @@ Qed.
 
 #[export] Hint Immediate distinguishability_downward_both : core.
 
-
-Lemma lc_andl_inv : forall A B,
-    lc_typ (A&B) -> lc_typ A.
-Proof.
-  introv H. inverts~ H.
-Qed.
-
-Lemma lc_andr_inv : forall A B,
-    lc_typ (A&B) -> lc_typ B.
-Proof.
-  introv H. inverts~ H.
-Qed.
-
-Lemma lc_orl_inv : forall A B,
-    lc_typ (A|B) -> lc_typ A.
-Proof.
-  introv H. inverts~ H.
-Qed.
-
-Lemma lc_orr_inv : forall A B,
-    lc_typ (A|B) -> lc_typ B.
-Proof.
-  introv H. inverts~ H.
-Qed.
-
-#[export] Hint Resolve lc_andl_inv lc_andr_inv lc_orl_inv lc_orr_inv : core.
-
-(****************************************************************************)
-
 (* Lemma B.12 Dispatch *)
 Lemma dispatch : forall A1 A2 B B' C1 C2',
     ordu B -> ordu B' -> A1 >><< A2 ->

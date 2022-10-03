@@ -10,7 +10,6 @@ Coercion typ_as_ftyp : typ >-> Fty.
 Notation "[| A |]"        := (fty_StackTyArg A)
                                (at level 5) : type_scope.
 
-
 (*****************************************************************************)
 
 #[export] Hint Immediate orduFty_lc : core.

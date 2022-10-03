@@ -4,6 +4,35 @@ Require Import LN_Lemmas.
 Require Export SimpleSub.
 
 
+(*-------------------------- locally closed types -------------------------*)
+
+Lemma lc_andl_inv : forall A B,
+    lc_typ (A&B) -> lc_typ A.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+Lemma lc_andr_inv : forall A B,
+    lc_typ (A&B) -> lc_typ B.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+Lemma lc_orl_inv : forall A B,
+    lc_typ (A|B) -> lc_typ A.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+Lemma lc_orr_inv : forall A B,
+    lc_typ (A|B) -> lc_typ B.
+Proof.
+  introv H. inverts~ H.
+Qed.
+
+#[export] Hint Resolve lc_andl_inv lc_andr_inv lc_orl_inv lc_orr_inv : core.
+
+(******************************************************************************)
 
 Notation "A <<>> B"        := (Distinguishability A B)
                                 (at level 65, B at next level, no associativity) : type_scope.

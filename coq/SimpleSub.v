@@ -72,7 +72,6 @@ Ltac indTypFtySize s :=
     intros; match goal with | [ H : _ < 0 |- _ ] => inverts H end
     | intros ].
 
-
 (*-------------------------- neg types and val types -------------------------*)
 
 Lemma isnegtyp_lc : forall A, isNegTyp A -> lc_typ A.
@@ -727,8 +726,6 @@ Qed.
 
 (******************************************************************************)
 (** similar *)
-
-Definition applicable A B := exists C, ApplyTy A B C.
 
 Definition similar A B := exists V, splu V A B /\ isValTyp V.
 
