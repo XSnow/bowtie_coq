@@ -34,6 +34,12 @@ including subtyping, dispatch, and some key properties of disjointness.
     correspond to `Mergeability` (related axioms in `MergeabilityAx`) and
     `Distinguishability_Dec` (related axioms in `DistinguishabilityAx_Dec`).
 
+    For mergeability, we make the symmetric rule implicit in Coq and adding
+    three more rules `MergeIntersectSym`, `MergeUnionSym`, and `MergeAxSym`.
+    Note that there is a typo in the rules for unions on the paper. Please refer
+    to our technical report [./appendix.pdf](./appendix.pdf) for the corrected
+    rules.
+
     There are two more formulations of distinguishability which are equivalent
     to the paper definition in Coq:`Distinguishability` and
     `Distinguishability_DecAlt`. The former is algorithmic and the latter
