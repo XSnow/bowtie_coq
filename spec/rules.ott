@@ -25,20 +25,9 @@ typ, A , B , C, V, Aneg :: 't_' ::= {{ com type }}
   | forall X . B                     ::  :: forall   (+ bind X in B +)
   | Top                              ::  :: top
   | Empty                            ::  :: bot
-
-%   | Tcov [ A ]                       :: M:: ctx      {{ icho (appctx_Tcov [[Tcov]] [[A]]) }}
   | ( A )                            :: S:: paren    {{ icho [[A]] }}
   | A [ X ~> B ]                     :: M:: tsubst   {{ coq (open_typ_wrt_typ [[X A]][[B]]) }}
 
-
-% Tcov {{ tex \tau }} :: 'ty_ctx_cov' ::= {{ com covariant type context }}
-%   | In l [-]            :: :: TcovIn   {{ tex \tytag{[[l]]}{\hole} }}
-%   | A -> [-]            :: :: TcovArr
-%   | forall [-]          :: :: TcovAll
-%   | [-] & A             :: :: TCovInterL
-%   | A & [-]             :: :: TCovInterR
-%   | [-] | A             :: :: TCovUnionL
-%   | A | [-]             :: :: TCovUnionR
 
 Fty {{ tex \hat{A} }}, FVty {{ tex \hat{V} }}, Ftyalt {{ tex \hat{B} }} :: 'fty_' ::= {{ com elimination type }}
   | A       :: :: StackArg
@@ -101,21 +90,6 @@ formula :: formula_ ::=
     {{ tex \neg [[formula]] }}
     {{ coq not ([[formula]]) }}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% embed
-% {{ coq
-% (** context application *)
-% Definition appctx_Tcov (Tcov5:Tcov) (A_6:A) : A :=
-%   match Tcov5 with
-%   | (ty_ctx_covTcovIn l5) => (t_rcd l5 A_6)
-%   | (ty_ctx_covTcovArr A5) => (t_arrow A5 A_6)
-%   | (ty_ctx_covTcovAll) => (t_forall A_6)
-%   | (ty_ctx_covTCovInterL A5) => (t_and A_6 A5)
-%   | (ty_ctx_covTCovInterR A5) => (t_and A5 A_6)
-%   | (ty_ctx_covTCovUnionL A5) => (t_or A_6 A5)
-%   | (ty_ctx_covTCovUnionR A5) => (t_or A5 A_6)
-% end.
-% }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% subtyping & positive / negative subtyping
@@ -134,71 +108,32 @@ DSub :: '' ::=
   ----------- :: Refl
   A <: A
 
-
   A1 <: A2
   A2 <: A3
   ------------- :: Trans
   A1 <: A3
 
-
   A <: B
   -------------------- :: CovIn
   In l A <: In l B
-
 
   A <: B
   -------------------- :: CovArr
   C -> A <: C -> B
 
-
   A <: B
   --------------------------- :: CovAll
   forall X. A <: forall X. B
 
-
-  % A <: B
-  % -------------------- :: CovInterL
-  % A & C <: B & C
-
-
-  % A <: B
-  % -------------------- :: CovInterR
-  % C & A <: C & B
-
-
-  % A <: B
-  % -------------------- :: CovUnionL
-  % A | C <: B | C
-
-
-  % A <: B
-  % -------------------- :: CovUnionR
-  % C | A <: C | B
-
-
   A2 <: A1
   -------------------- :: FunCon
   A1 -> B <: A2 -> B
-
 
   ------------------------------------- :: CovDistIIn
   (In l A) & (In l B) <: In l (A & B)
 
   ------------------------------------- :: CovDistIArr
   (C -> A) & (C -> B) <: (C -> A & B)
-  
-
-  % ------------------------------------- :: CovDistIInterL
-  %  (A & C) & (B & C) <: (A & B) & C
-   
-  % ------------------------------------- :: CovDistIInterR
-  %  (C & A) & (C & B) <: C & (A & B)
-
-  % ------------------------------------- :: CovDistIUnionL
-  % (A | C) & (B | C) <: (A & B) | C
-
-  % ------------------------------------- :: CovDistIUnionR
-  % (C | A) & (C | B) <: C | (A & B)
 
   ------------------------------------------------------ :: CovDistIAll
   (forall X. A) & (forall X. B) <: (forall X. A & B)  
@@ -211,9 +146,6 @@ DSub :: '' ::=
 
   ------------------------------------- :: CovDistUInterL
   (A | B) & C <: (A & C) | (B & C)
-
-  % ------------------------------------- :: CovDistUInterR
-  % C & (A | B) <: (C & A) | (C & B)
 
   ------------------------------------------------- :: FunDistI
   (A1 -> B) & (A2 -> B) <: (A1 | A2) -> B 
@@ -281,9 +213,6 @@ NegTyp :: '' ::=
 
   ------------------ :: Top
   neg Top
-
-%  ------------------ :: Empty
-%  neg Empty
   
 
 defns
@@ -302,28 +231,6 @@ ValTyp :: '' ::=
   neg A
   ------------------ :: Neg
   val A
-  
-  % ---------------- :: Fun
-  % val A -> B
-
-  % ------------------ :: Rec
-  % val (In l Top)->A
-
-  % ------------------ :: Forall
-  % val forall X . A
-
-  % neg A
-  % neg B
-  % ------------------ :: Intersection
-  % val A & B
-
-  % neg A
-  % neg B
-  % ------------------ :: Union
-  % val A | B
-
-  % ------------------ :: Top
-  % val Top
 
 
 defns
@@ -382,6 +289,7 @@ PSub :: '' ::=
   --------- :: Neg
   V <p Aneg
 
+
 defns
 NSub :: '' ::=
 
@@ -403,9 +311,6 @@ NSub :: '' ::=
   Aneg2 <n Ftyalt
   -------------------- :: Union
   Aneg1 | Aneg2 <n Ftyalt
-
-%  -------------------- :: Empty
-%  Empty <n Fty
 
   Aneg1 <n Ftyalt
   -------------------- :: IntersectL
@@ -534,14 +439,6 @@ Split :: '' ::=
   ------------------------------ :: andr
   splitU A & B = A & B1 | A & B2
 
-%  splitU B = B1 | B2
-%  --------------------------------- :: SpUFunR
-%  splitU A -> B = A -> B1 | A -> B2
-%
-%  splitI A = A1 & A2
-%  --------------------------------- :: SpUFunL
-%  splitU A -> B = A1 -> B | A2 -> B
-
   splitU A = A1 | A2
   --------------------------------------------------- :: forall
   splitU forall X . A = forall X . A1 | forall X . A2
@@ -558,7 +455,6 @@ AlgorithmicSubtyping :: '' ::=
   A <a B  :: :: algo_sub :: ASub_
   {{ com Algorithmic Subtyping }}
   by
-  
   
   ---------------------- :: refl
   A <a A
@@ -614,6 +510,7 @@ AlgorithmicSubtyping :: '' ::=
   ------------------------- :: orr
   A <a B
 
+
 defns
 OrduFty :: '' ::=
 
@@ -627,7 +524,8 @@ OrduFty :: '' ::=
 
   ---------------- :: OrdUTypeArg
   ordinaryUFty [A]
-  
+
+
 defns
 Appty :: '' ::=
 
@@ -635,6 +533,7 @@ Appty :: '' ::=
   apply ( A , Fty ) => B
   :: :: ApplyTy :: ''
   {{ tex \applyty{[[ A ]]}{[[ Fty ]]}{[[ B ]]} }}
+  {{ com type-level dispatch }}
   by
 
   ordinaryUFty Fty
@@ -678,96 +577,6 @@ Appty :: '' ::=
   apply(A2, Fty) => A2'
   ------------------------------ :: ApplyTyInterBoth
   apply(A1 & A2, Fty) => A1' & A2'
-  
-
-  defn
-  applySm ( A , Fty ) => B
-  :: :: ApplyTySimple :: 'ApplyTySm'
-  {{ tex \applyty{[[ A ]]}{[[ Fty ]]}{[[ B ]]} }}
-  by
-
-  -------------------------- :: Empty
-  applySm(Empty, Fty) => Empty
-
-  ------------------------------------ :: FunTy
-  applySm(forall X . A, [B]) => A[X~>B]
-
-  B <: A
-  ----------------------- :: Fun
-  applySm(A -> A', B) => A'
-
-  applySm(A1, Fty) => A1'
-  applySm(A2, Fty) => A2'
-  -------------------------------- :: Union
-  applySm(A1 | A2, Fty) => A1' | A2'
-
-  applySm(A1, Fty) => A1'
-  applySm(A2, Fty) =/>
-  ------------------------------ :: InterL
-  applySm(A1 & A2, Fty) => A1'
-
-  applySm(A1, Fty) =/>
-  applySm(A2, Fty) => A2'
-  ------------------------------ :: InterR
-  applySm(A1 & A2, Fty) => A2'
-
-  applySm(A1, Fty) => A1'
-  applySm(A2, Fty) => A2'
-  ---------------------------------- :: InterBoth
-  applySm(A1 & A2, Fty) => A1' & A2'
-
-  defn
-  applySm ( A , Fty ) =/>
-  :: :: NApplyTySimple :: 'NApplyTySm'
-  {{ tex \napplyty{[[ A ]]}{[[ Fty ]]} }}
-  by
-
-  ---------------------------------- :: Top
-  applySm(Top, Fty) =/>
-  
-  ---------------------------------- :: Var
-  applySm(X, Fty) =/>
-  
-  ---------------------------------- :: In
-  applySm(In l A, Fty) =/>
-  
-  ---------------------------------- :: All
-  applySm(forall X . A, B) =/>
-
-  lc_typ A 
-  ordinaryUFty B
-  not (B <: A)
-  ----------------------- :: Fun
-  applySm(A -> A', B) =/>
-
-  ----------------------- :: FunFty
-  applySm(A -> A', [B]) =/>
-
-  ordinaryUFty Fty
-  applySm(A1, Fty) =/>
-  -------------------------------- :: UnionL
-  applySm(A1 | A2, Fty) =/>
-
-  ordinaryUFty Fty
-  applySm(A2, Fty) =/>
-  -------------------------------- :: UnionR
-  applySm(A1 | A2, Fty) =/>
-  
-  splitU B = B1 | B2
-  applySm(A, B1) =/>
-  ------------------------ :: UnionArgL
-  applySm(A, B) =/>
-  
-  splitU B = B1 | B2
-  applySm(A, B2) =/>
-  ------------------------ :: UnionArgR
-  applySm(A, B) =/>
-
-  ordinaryUFty Fty
-  applySm(A1, Fty) =/>
-  applySm(A2, Fty) =/>
-  ------------------------------ :: Inter
-  applySm(A1 & A2, Fty) =/>
 
 
   defn
@@ -831,7 +640,8 @@ Appty :: '' ::=
 defns
 NewSplit :: '' ::=
 
-  defn splitI A ~ B1 & B2 :: :: new_spli :: NSpI_
+  defn
+  splitI A ~ B1 & B2 :: :: new_spli :: NSpI_
   by
 
   -------------------- :: and
@@ -862,7 +672,8 @@ NewSplit :: '' ::=
   splitI In l A ~ In l A1 & In l A2
 
 
-  defn splitU A ~ B1 | B2 :: :: new_splu :: NSpU_
+  defn
+  splitU A ~ B1 | B2 :: :: new_splu :: NSpU_
   by
 
   -------------------- :: or
@@ -876,14 +687,6 @@ NewSplit :: '' ::=
   ------------------------------ :: andr
   splitU A & B ~ A & B1 | A & B2
 
-%  splitU B ~ B1 | B2
-%  --------------------------------- :: SpUFunR
-%  splitU A -> B ~ A -> B1 | A -> B2
-%
-%  splitI A ~ A1 & A2
-%  --------------------------------- :: SpUFunL
-%  splitU A -> B ~ A1 -> B | A2 -> B
-%
   splitU A ~ A1 | A2
   --------------------------------------------------- :: forall
   splitU forall X . A ~ forall X . A1 | forall X . A2
@@ -900,7 +703,6 @@ NewAlgorithmicSubtyping :: '' ::=
   A <na B  :: :: new_sub :: NSub_
   {{ com New Algorithmic Subtyping }}
   by
-  
   
   ---------------------- :: refl
   A <na A
@@ -956,7 +758,10 @@ NewAlgorithmicSubtyping :: '' ::=
   ------------------------- :: orr
   A <na B
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Disjointness: distinguishability and mergeabililty
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 defns
 DistinguishabilityAx :: '' ::=
 
@@ -1048,7 +853,7 @@ Distinguishability_Dec :: '' ::=
   ||- A <> B
   :: :: Distinguishability_Dec :: 'DistDec'
   {{ tex \dist{[[A]]}{[[B]]} }}
-  {{ com the definition on the paper }}
+  {{ com declarative formulation of distinguishability }}
   by
 
   ||- A <> B
@@ -1089,7 +894,7 @@ Distinguishability_DecAlt :: '' ::=
   |||- A <> B
   :: :: Distinguishability_DecAlt :: 'DistDecAlt'
   {{ tex \dist{[[A]]}{[[B]]} }}
-  {{ com the definition on the paper minus intersection rules }}
+  {{ com simplified declarative formulation of distinguishability }}
   by
 
   |||- A <> B
@@ -1140,10 +945,6 @@ Mergeability :: '' ::=
   {{ tex \judgmerg{[[A]]}{[[B]]} }}
   by
   
-  % |- A >< B
-  % --------------------- :: MergeIn
-  % |- In l A >< In l B
-
   |- A <> B
   ----------------------- :: MergeFunL
   |- A -> A' >< B -> B'
@@ -1175,10 +976,6 @@ Mergeability :: '' ::=
   |- B >< A'
   ---------------- :: MergeUnionSym
   |- B >< A | A'
-
-  % |- B >< A
-  % ----------- :: MergeSym
-  % |- A >< B
   
   |-ax A >< B
   ----------- :: MergeAx
@@ -1248,9 +1045,3 @@ Similarity :: '' ::=
   V1 ~ V2
   ----------------------- :: In
   In l V1 ~ In l V2
-
-  % ----------------------- :: Fun
-  % A->B1 ~ A->B2
-
-  % ----------------------- :: forall
-  % forall X.A ~ forall X.B
