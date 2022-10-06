@@ -90,9 +90,9 @@ including subtyping, dispatch, and some key properties of disjointness.
 
 ## Download, installation, and sanity-testing
 
-- The stable URL of the artifact (including the virtual machine image) is: ZENODO-URL-HERE
+- The stable URL of the artifact (including the virtual machine image) is [HERE](https://zenodo.org/record/7151519#.Yz5tjX5ByXI).
 
-- The image is also available on the Docker Hub with the name sxsnow/bowtie.
+- The image is also available on the Docker Hub with the name `sxsnow/bowtie`.
 
 - The source code is also available at [GitHub](https://github.com/XSnow/bowtie_coq).
 
@@ -103,11 +103,11 @@ Docker installed in your machine. Then you can either 1) execute the following t
 if you have downloaded the offline docker image,
 
    ```
-   docker import docker_image.tar bowtie
+   xzcat docker_image.tar.xz | docker import - bowtie
    docker run -it --user=coq --workdir=/home/coq bowtie /bin/bash -l
    ```
 
-or 2) get the container from Docker Hub.
+or 2) get the container from Docker Hub and derive a container from it.
 
   ```
   docker run -it sxsnow/bowtie
