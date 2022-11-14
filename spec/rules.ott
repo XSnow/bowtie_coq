@@ -265,10 +265,6 @@ PSub :: '' ::=
   In l V <p In l A 
 
   val V
-  -------- :: Top
-  V <p Top
-
-  val V
   V <p A
   ---------- :: UnionL
   V <p A | B

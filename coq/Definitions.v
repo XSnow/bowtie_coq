@@ -270,9 +270,6 @@ Inductive PositiveSubtyping : typ -> typ -> Prop :=    (* defn PositiveSubtyping
      isValTyp V ->
      PositiveSubtyping V A ->
      PositiveSubtyping (t_rcd l5 V) (t_rcd l5 A)
- | PSub_Top : forall (V:typ),
-     isValTyp V ->
-     PositiveSubtyping V t_top
  | PSub_UnionL : forall (V A B:typ),
      lc_typ B ->
      isValTyp V ->

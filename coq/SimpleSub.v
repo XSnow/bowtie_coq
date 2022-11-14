@@ -393,7 +393,6 @@ Proof with solve_false.
   -(* record *)
     inverts Sub.
     + inverts_typ; eauto... forwards: IH H; try eassumption; elia. eauto.
-    + inverts_typ; eauto...
     + inverts Val... applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_left.
     + inverts Val... applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_left.
     + inverts Val... applys~ PSub_Intersect.
@@ -417,7 +416,6 @@ Proof with solve_false.
   -(* record *)
     inverts Sub.
     + inverts_typ; eauto... forwards: IH H; try eassumption; elia. eauto.
-    + inverts_typ; eauto...
     + inverts Val... applys~ PSub_UnionL. applys psub_rcd H2. applys* psub_splu_valtyp_right.
     + inverts Val... applys~ PSub_UnionR. applys psub_rcd H2. applys* psub_splu_valtyp_right.
     + inverts Val... applys~ PSub_Intersect.
@@ -489,7 +487,6 @@ Proof.
   - inverts Spl. inverts Sub.
     + forwards: IH H4; try eassumption; elia; destruct_conj.
       split; applys~ PSub_In.
-    + split*.
     + forwards* (?&?): IH H1; elia.
     + forwards* (?&?): IH H1; elia.
     + forwards~ (?&?): IH H0; [eauto | ..]; elia.
@@ -514,7 +511,6 @@ Proof.
   - inverts Spl. inverts Sub.
     + forwards: IH H4; try eassumption; elia; destruct_conj.
       split; applys~ PSub_In.
-    + split*.
     + forwards* (?&?): IH H1; elia.
     + forwards* (?&?): IH H1; elia.
     + forwards~ (?&?): IH H0; [eauto | ..]; elia.
