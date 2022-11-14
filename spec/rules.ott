@@ -33,8 +33,6 @@ Fty {{ tex \hat{A} }}, FVty {{ tex \hat{V} }}, Ftyalt {{ tex \hat{B} }} :: 'fty_
   | A       :: :: StackArg
   | [ A ]   :: :: StackTyArg
 
-%contextrules
-%  Tcov _:: typ :: typ
 
 substitutions
   single typ X   :: typsubst
@@ -861,14 +859,6 @@ Distinguishability_Dec :: '' ::=
   ---------------- :: Union
   ||- A1|A2 <> B
 
-  ||- A <> B
-  ---------------- :: IntersectL
-  ||- A & A' <> B
-
-  ||- A' <> B
-  ---------------- :: IntersectR
-  ||- A & A' <> B
-
   ||-ax A <> B
   ----------- :: Ax
   ||- A <> B
@@ -881,39 +871,6 @@ Distinguishability_Dec :: '' ::=
   B <: B'
   ----------- :: Sub
   ||- A <> B
-
-
-defns
-Distinguishability_DecAlt :: '' ::=
-
-  defn
-  |||- A <> B
-  :: :: Distinguishability_DecAlt :: 'DistDecAlt'
-  {{ tex \dist{[[A]]}{[[B]]} }}
-  {{ com simplified declarative formulation of distinguishability }}
-  by
-
-  |||- A <> B
-  --------------------- :: In
-  |||- In l A <> In l B
-
-  |||- A1 <> B
-  |||- A2 <> B
-  ---------------- :: Union
-  |||- A1|A2 <> B
-
-  ||-ax A <> B
-  ----------- :: Ax
-  |||- A <> B
-
-  |||- B <> A
-  ----------- :: Sym
-  |||- A <> B
-
-  |||- A <> B'
-  B <: B'
-  ----------- :: Sub
-  |||- A <> B
 
 
 defns
@@ -1023,6 +980,7 @@ TypeWellformedness :: '' ::=
 
   ---------- :: TyWfEmpty
   D |- Empty
+
 
 defns
 Similarity :: '' ::=
