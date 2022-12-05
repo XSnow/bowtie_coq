@@ -49,15 +49,17 @@ including subtyping, dispatch, and some key properties of disjointness.
     `applyty_soundness_1`, `applyty_completeness_1_all`,
     `applyty_soundness_2`, and `applyty_completeness_2`.
 
-  + Lemma 5.1 (Monotonicity of Type-Level Dispatch) of the paper
+  + Lemma 5.1 (Soundness and Completeness of Algorithmic Subtyping) of the paper
+    corresponds to `Theorem dsub2asub` in `coq/DistSubtyping.v`
+
+  + Lemma 5.2 (Monotonicity of Type-Level Dispatch) of the paper
     corresponds to the following Coq lemmas in `coq/ApplyTy.v`:
     `monotonicity_applyty_1` and `monotonicity_applyty_2_1`.
 
 - Others
 
-  + The algorithmic formulation of subtyping is proved to be equivalent to
-    the declarative formulation in `Theorem dsub2asub` in `coq/DistSubtyping.v`.
-    `Theorem decidability` proves that the algorithmic formulation is decidable.
+  + `Theorem decidability` in `coq/DistSubtyping.v` proves that the algorithmic
+    formulation of subtyping is decidable.
 
   + The negation of union splitting (`splu`) is defined as `ordu`. The
     correctness of the definition is justified by `Lemma ordu_or_split` and
