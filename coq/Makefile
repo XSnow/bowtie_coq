@@ -58,9 +58,11 @@ Definitions.v: $(OTT_LOC)/$(OTTFILE).ott
 		$(RM) $@; \
 		exit 1; \
 	fi >&2
+	sed -i '1iSet Warnings "-notation-overridden,-parsing,-deprecated-hint-without-locality".\n' Definitions.v
 
 LN_Lemmas.v: $(OTT_LOC)/$(OTTFILE).ott
 	$(LNGEN) --coq LN_Lemmas.v --coq-ott Definitions $(OTT_LOC)/$(OTTFILE).ott
+	sed -i '1iSet Warnings "-non-recursive,-deprecated-hint-without-locality,-deprecated,-fragile-hint-constr".\n' LN_Lemmas.v
 
 $(COQMKFILENAME): Makefile Definitions.v
 	coq_makefile -arg '-w -variable-collision,-meta-collision,-require-in-module' -f _CoqProject -o $(COQMKFILENAME)

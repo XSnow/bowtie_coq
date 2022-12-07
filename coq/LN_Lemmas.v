@@ -1,3 +1,5 @@
+Set Warnings "-non-recursive,-deprecated-hint-without-locality,-deprecated,-fragile-hint-constr".
+
 Require Import Coq.Arith.Wf_nat.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Program.Equality.
